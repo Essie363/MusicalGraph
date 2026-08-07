@@ -68,6 +68,7 @@ E:\AI VibeCoding Project\MusicGraph\
 ├── import_cp.py            ← 导入 CP 关系到 relations 表
 ├── merge_baike.py          ← 合并百科 JSON 到 DB
 ├── snapshot_export.py       ← 导出 data/snapshot_*.csv 快照
+├── web/verify.js             ← 前端一键回归验证（node web/verify.js）
 ├── make_profile_template.py  ← 生成档案补齐模板 data/profile_template.csv
 ├── fetch_baike.py            ← 百度百科抓取（2026-08 起被反爬拦截，暂不可用）
 └── refresh_all.py             ← 一键刷新：快照 + 网页数据

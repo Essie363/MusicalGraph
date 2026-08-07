@@ -27,6 +27,12 @@
 python refresh_all.py   # 刷新 data/snapshot_*.csv 快照 + web/data.js 网页数据
 ```
 
+### 一键回归验证（改完网页/数据后跑）
+
+```bash
+node web/verify.js   # 自动检查 13 项核心功能（需本机 Chrome）
+```
+
 ### 常用数据操作
 
 ```bash
