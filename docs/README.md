@@ -59,4 +59,5 @@ python import_from_file.py
 - `PROJECT_RULES.md` — 通用工作原则（继承全局版）
 - `docs/AI_CONTEXT.md` — 给 AI 的完整项目上下文
 - `docs/TODO.md` — 待办事项（按优先级）
+- `docs/DEPLOY.md` — 上线部署指南（Supabase + Next.js + Vercel）
 - `docs/LESSONS.md` — 经验沉淀
