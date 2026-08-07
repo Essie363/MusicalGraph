@@ -152,10 +152,10 @@
     });
   }
 
-  // ---- 力导向模拟：进入时带动效，收敛后停下（不再晃动）----
-  var simRunning = false, simFrame = 0, quietFrames = 0;
-  function tick() {
-    if (!simRunning) return;
+  // ---- 布局与入场动效：先瞬间算好稳定布局，再用 0.8 秒平滑展开，之后完全静止 ----
+  var entranceT = 1, entranceStart = 0;   // entranceT: 0→1 入场进度
+
+  function physicsStep() {
     var list = Object.keys(nodes).map(function (k) { return nodes[k]; });
     var ks = 0.02, kr = 1200, kd = 0.85, dt = 0.3;
     for (var i = 0; i < list.length; i++) {
@@ -183,32 +183,40 @@
       n.vx *= kd; n.vy *= kd;
       n.x += n.vx * dt; n.y += n.vy * dt;
     });
-    // 动能检测：总动能足够低且持续若干帧 -> 停止模拟
-    var energy = 0;
-    list.forEach(function (n) { if (!n.fixed) energy += n.vx * n.vx + n.vy * n.vy; });
-    var converged = energy < 2 && ++quietFrames >= 10;
-    simFrame++;
-    if (converged || simFrame >= 240) {
-      simRunning = false;
-      list.forEach(function (n) { n.vx = 0; n.vy = 0; });
-      centerOnCentralNode();
-      return;
-    }
-    if (energy >= 2) quietFrames = 0;
-    requestAnimationFrame(tick);
   }
-  function startSim() { if (!simRunning) { simRunning = true; simFrame = 0; quietFrames = 0; requestAnimationFrame(tick); } }
-  // 稳定后把"连接数最多的人"放到画布中心（首页只定位，不跳转）
-  function centerOnCentralNode() {
+
+  // 同步快速收敛（几十毫秒）得到稳定的"网络形状"，并把"连接最多的人"放到画布中心
+  function layoutAndCenter() {
+    for (var i = 0; i < 300; i++) physicsStep();
+    Object.keys(nodes).forEach(function (k) { var n = nodes[k]; n.vx = 0; n.vy = 0; });
     var deg = {};
     edges.forEach(function (e) { deg[e.a] = (deg[e.a] || 0) + 1; deg[e.b] = (deg[e.b] || 0) + 1; });
     var best = null, bestDeg = -1;
     Object.keys(deg).forEach(function (id) { if (deg[id] > bestDeg) { bestDeg = deg[id]; best = id; } });
     if (best && nodes[best]) {
-      var n = nodes[best];
-      view.x = -n.x * view.zoom;
-      view.y = -n.y * view.zoom;
+      var cx = nodes[best].x, cy = nodes[best].y;
+      Object.keys(nodes).forEach(function (k) { nodes[k].x -= cx; nodes[k].y -= cy; });
     }
+    // 软边界：让图谱整体落在屏幕范围内（宽 650 / 高 370 的椭圆）
+    var RX = 650, RY = 370;
+    Object.keys(nodes).forEach(function (k) {
+      var n = nodes[k];
+      var r = Math.sqrt(Math.pow(n.x / RX, 2) + Math.pow(n.y / RY, 2));
+      if (r > 1) { n.x /= r; n.y /= r; }
+    });
+    view.x = 0; view.y = 0;
+    if (view.zoom < 1) view.zoom = 1;
+  }
+
+  // 0.8 秒入场动效：节点从中心平滑展开到各自位置
+  function playEntrance() {
+    entranceT = 0;
+    entranceStart = performance.now();
+  }
+  function updateEntrance(now) {
+    if (entranceT >= 1) return;
+    var t = Math.min(1, (now - entranceStart) / 800);
+    entranceT = 1 - Math.pow(1 - t, 3);   // easeOutCubic
   }
 
   // ---- 渲染 ----
@@ -236,28 +244,31 @@
 
   function draw() {
     if (homeView.classList.contains("hidden")) return;
+    updateEntrance(performance.now());
+    var pe = entranceT;   // 入场进度 0→1
     ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
     ctx.save();
     ctx.translate(canvas.clientWidth / 2 + view.x, canvas.clientHeight / 2 + view.y);
     ctx.scale(view.zoom, view.zoom);
-    edges.forEach(function (e) {
-      var a = nodes[e.a], b = nodes[e.b];
+    edges.forEach(function (ed) {
+      var a = nodes[ed.a], b = nodes[ed.b];
       if (!a || !b) return;
-      ctx.strokeStyle = e.color; ctx.globalAlpha = e.dashed ? 0.45 : 0.65;
-      ctx.lineWidth = (e.width || 1) / view.zoom;
-      ctx.setLineDash(e.dashed ? [6, 5] : []);
-      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+      ctx.strokeStyle = ed.color; ctx.globalAlpha = (ed.dashed ? 0.45 : 0.65) * (0.25 + 0.75 * pe);
+      ctx.lineWidth = (ed.width || 1) / view.zoom;
+      ctx.setLineDash(ed.dashed ? [6, 5] : []);
+      ctx.beginPath(); ctx.moveTo(a.x * pe, a.y * pe); ctx.lineTo(b.x * pe, b.y * pe); ctx.stroke();
       ctx.setLineDash([]); ctx.globalAlpha = 1;
     });
     Object.keys(nodes).forEach(function (k) {
       var n = nodes[k];
-      ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+      var x = n.x * pe, y = n.y * pe;
+      ctx.beginPath(); ctx.arc(x, y, n.r, 0, Math.PI * 2);
       ctx.fillStyle = n.color; ctx.fill();
       ctx.strokeStyle = "#fff"; ctx.lineWidth = 1.5;
       ctx.stroke();
       if (view.zoom > 0.5) {
         ctx.fillStyle = "#333"; ctx.font = "12px sans-serif"; ctx.textAlign = "center";
-        ctx.fillText(n.label, n.x, n.y + n.r + 14);
+        ctx.fillText(n.label, x, y + n.r + 14);
       }
     });
     ctx.restore();
@@ -405,7 +416,8 @@
       visibleTypes[ty] = !visibleTypes[ty];
       el.classList.toggle("off", !visibleTypes[ty]);
       buildGraph();
-      startSim();
+      layoutAndCenter();
+      playEntrance();
       updateStats();
     });
   });
@@ -869,6 +881,7 @@
   }
 
   // ---- 供自动化验证读取的调试接口（对日常使用无影响）----
+  window.__entranceT = function () { return entranceT; };
   window.__homeNodeIds = function () { return Object.keys(nodes); };
   window.__homeNodeScreen = function (id) {
     var n = nodes[id]; if (!n) return null;
@@ -888,7 +901,8 @@
   // ---- 启动 ----
   buildGraph();
   resizeHome();
-  startSim();
+  layoutAndCenter();
+  playEntrance();
   requestAnimationFrame(draw);
   buildHotChips();
   updateStats();
