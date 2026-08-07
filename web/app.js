@@ -208,11 +208,11 @@
     });
     var w = Math.max(1, maxX - minX), h = Math.max(1, maxY - minY);
     var TW = canvas.clientWidth - 160, TH = canvas.clientHeight - 160;
-    var s = Math.min(1, TW / w, TH / h);
+    var s = Math.min(1, TW / w, TH / h) * 1.414;
     KEYS.forEach(function (k) { nodes[k].x *= s; nodes[k].y *= s; });
     // 重叠消除：把靠得太近的人推开，保证任意两人之间至少 40px、互不遮挡
-    var MIN_D = 44;
-    for (var it = 0; it < 80; it++) {
+    var MIN_D = 62;
+    for (var it = 0; it < 100; it++) {
       var moved = false;
       for (var i = 0; i < KEYS.length; i++) {
         for (var j = i + 1; j < KEYS.length; j++) {
