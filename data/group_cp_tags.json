@@ -1,0 +1,892 @@
+[
+ {
+  "name": "郭耀嵘",
+  "artist_id": 473,
+  "group_tag": "郭萱"
+ },
+ {
+  "name": "郭耀嵘",
+  "artist_id": 473,
+  "group_tag": "郭叶"
+ },
+ {
+  "name": "洪果",
+  "artist_id": 579,
+  "group_tag": "中戏17"
+ },
+ {
+  "name": "柳智彦",
+  "artist_id": 3200,
+  "group_tag": "上戏17"
+ },
+ {
+  "name": "胥子含",
+  "artist_id": 1172,
+  "group_tag": "丫蛋"
+ },
+ {
+  "name": "阿云嘎",
+  "artist_id": 29,
+  "group_tag": "云次方"
+ },
+ {
+  "name": "白倬铭",
+  "artist_id": 1304,
+  "group_tag": "J娟"
+ },
+ {
+  "name": "白倬铭",
+  "artist_id": 1304,
+  "group_tag": "J彬"
+ },
+ {
+  "name": "陈志",
+  "artist_id": 846,
+  "group_tag": "闪导"
+ },
+ {
+  "name": "邓欣锐",
+  "artist_id": 608,
+  "group_tag": "中戏17"
+ },
+ {
+  "name": "翟李朔天",
+  "artist_id": 3207,
+  "group_tag": "上戏12"
+ },
+ {
+  "name": "翟李朔天",
+  "artist_id": 3207,
+  "group_tag": "605"
+ },
+ {
+  "name": "高杨",
+  "artist_id": 257,
+  "group_tag": "权超羊"
+ },
+ {
+  "name": "高雨晨",
+  "artist_id": 712,
+  "group_tag": "弯顶第一初恋"
+ },
+ {
+  "name": "高雨晨",
+  "artist_id": 712,
+  "group_tag": "彬高叶"
+ },
+ {
+  "name": "郭虹旭",
+  "artist_id": 212,
+  "group_tag": "香娟"
+ },
+ {
+  "name": "郭嘉轩",
+  "artist_id": 261,
+  "group_tag": "上戏17"
+ },
+ {
+  "name": "顾易",
+  "artist_id": 299,
+  "group_tag": "上音409"
+ },
+ {
+  "name": "黄雪煌",
+  "artist_id": 3622,
+  "group_tag": "谭黄"
+ },
+ {
+  "name": "胡超政",
+  "artist_id": 24,
+  "group_tag": "上音13"
+ },
+ {
+  "name": "胡超政",
+  "artist_id": 24,
+  "group_tag": "213"
+ },
+ {
+  "name": "姜崃",
+  "artist_id": 756,
+  "group_tag": "中戏17"
+ },
+ {
+  "name": "姜崃",
+  "artist_id": 756,
+  "group_tag": "闪嵘"
+ },
+ {
+  "name": "姜崃",
+  "artist_id": 756,
+  "group_tag": "妹嵘"
+ },
+ {
+  "name": "纪晓坤",
+  "artist_id": 498,
+  "group_tag": "纪汤"
+ },
+ {
+  "name": "梁景皓",
+  "artist_id": 3721,
+  "group_tag": "枫森"
+ },
+ {
+  "name": "梁景皓",
+  "artist_id": 3721,
+  "group_tag": "景其"
+ },
+ {
+  "name": "林大钦",
+  "artist_id": 961,
+  "group_tag": "饼面"
+ },
+ {
+  "name": "刘朱烨",
+  "artist_id": 993,
+  "group_tag": "烨奕"
+ },
+ {
+  "name": "李存贤",
+  "artist_id": 826,
+  "group_tag": "中戏17"
+ },
+ {
+  "name": "李磊",
+  "artist_id": 476,
+  "group_tag": "330"
+ },
+ {
+  "name": "李锐涵",
+  "artist_id": 1916,
+  "group_tag": "上音13"
+ },
+ {
+  "name": "李锐涵",
+  "artist_id": 1916,
+  "group_tag": "213"
+ },
+ {
+  "name": "李苏霖",
+  "artist_id": 477,
+  "group_tag": "祝苏"
+ },
+ {
+  "name": "卢翰林",
+  "artist_id": 2169,
+  "group_tag": "浙音211"
+ },
+ {
+  "name": "卢翰林",
+  "artist_id": 2169,
+  "group_tag": "卢赵彪"
+ },
+ {
+  "name": "卢翰林",
+  "artist_id": 2169,
+  "group_tag": "卢叶"
+ },
+ {
+  "name": "毛二",
+  "artist_id": 259,
+  "group_tag": "中戏17"
+ },
+ {
+  "name": "冒海飞",
+  "artist_id": 1903,
+  "group_tag": "璎"
+ },
+ {
+  "name": "浦弘斐",
+  "artist_id": 2138,
+  "group_tag": "中戏21"
+ },
+ {
+  "name": "钱蒙楠",
+  "artist_id": 305,
+  "group_tag": "siva6009"
+ },
+ {
+  "name": "龚子祺",
+  "artist_id": 1066,
+  "group_tag": "上音409"
+ },
+ {
+  "name": "王瀚宇",
+  "artist_id": 270,
+  "group_tag": "歪祝"
+ },
+ {
+  "name": "叶嘉雯",
+  "artist_id": 320,
+  "group_tag": "叶烟"
+ },
+ {
+  "name": "张沁丹",
+  "artist_id": 274,
+  "group_tag": "丫蛋"
+ },
+ {
+  "name": "张沁丹",
+  "artist_id": 274,
+  "group_tag": "烟熏茶叶蛋"
+ },
+ {
+  "name": "张沁丹",
+  "artist_id": 274,
+  "group_tag": "烟蛋"
+ },
+ {
+  "name": "赵嘉艳",
+  "artist_id": 771,
+  "group_tag": "叶烟"
+ },
+ {
+  "name": "赵嘉艳",
+  "artist_id": 771,
+  "group_tag": "烟蛋"
+ },
+ {
+  "name": "赵嘉艳",
+  "artist_id": 771,
+  "group_tag": "烟熏茶叶蛋"
+ },
+ {
+  "name": "赵雨卉",
+  "artist_id": 280,
+  "group_tag": "邓卉"
+ },
+ {
+  "name": "赵雨卉",
+  "artist_id": 280,
+  "group_tag": "丫卉"
+ },
+ {
+  "name": "赵雨卉",
+  "artist_id": 280,
+  "group_tag": "杭卉"
+ },
+ {
+  "name": "邱俊阳",
+  "artist_id": 3179,
+  "group_tag": "浙音211"
+ },
+ {
+  "name": "邵立君",
+  "artist_id": 682,
+  "group_tag": "siva6009"
+ },
+ {
+  "name": "邵立君",
+  "artist_id": 682,
+  "group_tag": "明立"
+ },
+ {
+  "name": "邵立君",
+  "artist_id": 682,
+  "group_tag": "君诚"
+ },
+ {
+  "name": "邵奕磊",
+  "artist_id": 758,
+  "group_tag": "中戏17"
+ },
+ {
+  "name": "邵奕磊",
+  "artist_id": 758,
+  "group_tag": "桶贵"
+ },
+ {
+  "name": "邵奕磊",
+  "artist_id": 758,
+  "group_tag": "妹桶"
+ },
+ {
+  "name": "沈育奇",
+  "artist_id": 2168,
+  "group_tag": "星33动物园"
+ },
+ {
+  "name": "宋元明",
+  "artist_id": 686,
+  "group_tag": "北舞18"
+ },
+ {
+  "name": "孙一城",
+  "artist_id": 1777,
+  "group_tag": "北舞18"
+ },
+ {
+  "name": "孙一城",
+  "artist_id": 1777,
+  "group_tag": "多元"
+ },
+ {
+  "name": "汤佳明",
+  "artist_id": 577,
+  "group_tag": "siva6009"
+ },
+ {
+  "name": "汤佳明",
+  "artist_id": 577,
+  "group_tag": "纪汤"
+ },
+ {
+  "name": "汤佳明",
+  "artist_id": 577,
+  "group_tag": "明立"
+ },
+ {
+  "name": "汤佳明",
+  "artist_id": 577,
+  "group_tag": "国泰明安"
+ },
+ {
+  "name": "汤佳明",
+  "artist_id": 577,
+  "group_tag": "汤相"
+ },
+ {
+  "name": "王浩楠",
+  "artist_id": 1032,
+  "group_tag": "中戏17"
+ },
+ {
+  "name": "王敏辉",
+  "artist_id": 674,
+  "group_tag": "上音409"
+ },
+ {
+  "name": "王敏辉",
+  "artist_id": 674,
+  "group_tag": "娟心蔡"
+ },
+ {
+  "name": "王敏辉",
+  "artist_id": 674,
+  "group_tag": "双辉"
+ },
+ {
+  "name": "王敏辉",
+  "artist_id": 674,
+  "group_tag": "J娟"
+ },
+ {
+  "name": "王敏辉",
+  "artist_id": 674,
+  "group_tag": "香娟"
+ },
+ {
+  "name": "王培杰",
+  "artist_id": 481,
+  "group_tag": "瑁"
+ },
+ {
+  "name": "王天择",
+  "artist_id": 844,
+  "group_tag": "中戏17"
+ },
+ {
+  "name": "吴以瀚",
+  "artist_id": 751,
+  "group_tag": "中戏17"
+ },
+ {
+  "name": "吴以瀚",
+  "artist_id": 751,
+  "group_tag": "妹嵘"
+ },
+ {
+  "name": "吴以瀚",
+  "artist_id": 751,
+  "group_tag": "妹桶"
+ },
+ {
+  "name": "吴以瀚",
+  "artist_id": 751,
+  "group_tag": "妹瑞"
+ },
+ {
+  "name": "吴以瀚",
+  "artist_id": 751,
+  "group_tag": "妹楠"
+ },
+ {
+  "name": "吴志军",
+  "artist_id": 232,
+  "group_tag": "军杭"
+ },
+ {
+  "name": "吴志军",
+  "artist_id": 232,
+  "group_tag": "钱军"
+ },
+ {
+  "name": "相征",
+  "artist_id": 264,
+  "group_tag": "上戏18"
+ },
+ {
+  "name": "相征",
+  "artist_id": 264,
+  "group_tag": "相汤"
+ },
+ {
+  "name": "许昌泰",
+  "artist_id": 1626,
+  "group_tag": "siva6009"
+ },
+ {
+  "name": "许昌泰",
+  "artist_id": 1626,
+  "group_tag": "国泰明安"
+ },
+ {
+  "name": "徐杭",
+  "artist_id": 223,
+  "group_tag": "军杭"
+ },
+ {
+  "name": "徐昊",
+  "artist_id": 269,
+  "group_tag": "昊猫"
+ },
+ {
+  "name": "徐均朔",
+  "artist_id": 211,
+  "group_tag": "上音407"
+ },
+ {
+  "name": "徐泽辉",
+  "artist_id": 25,
+  "group_tag": "上音409"
+ },
+ {
+  "name": "徐泽辉",
+  "artist_id": 25,
+  "group_tag": "双辉"
+ },
+ {
+  "name": "叶筱玮",
+  "artist_id": 3267,
+  "group_tag": "穹顶第一初恋"
+ },
+ {
+  "name": "叶筱玮",
+  "artist_id": 3267,
+  "group_tag": "彬高叶"
+ },
+ {
+  "name": "叶宇锋",
+  "artist_id": 2170,
+  "group_tag": "siva20"
+ },
+ {
+  "name": "叶宇锋",
+  "artist_id": 2170,
+  "group_tag": "1001"
+ },
+ {
+  "name": "叶宇锋",
+  "artist_id": 2170,
+  "group_tag": "卢叶"
+ },
+ {
+  "name": "肖德俊",
+  "artist_id": 4529,
+  "group_tag": "上戏17"
+ },
+ {
+  "name": "郭耀嵘",
+  "artist_id": 473,
+  "group_tag": "辽宁大连"
+ },
+ {
+  "name": "郭耀嵘",
+  "artist_id": 473,
+  "group_tag": "2012级"
+ },
+ {
+  "name": "洪果",
+  "artist_id": 579,
+  "group_tag": "河北承德"
+ },
+ {
+  "name": "洪果",
+  "artist_id": 579,
+  "group_tag": "2017级"
+ },
+ {
+  "name": "林润欣",
+  "artist_id": 21,
+  "group_tag": "江苏淮安"
+ },
+ {
+  "name": "林润欣",
+  "artist_id": 21,
+  "group_tag": "2025级"
+ },
+ {
+  "name": "刘乙萱",
+  "artist_id": 285,
+  "group_tag": "黑龙江牡丹江"
+ },
+ {
+  "name": "王竞琦",
+  "artist_id": 1171,
+  "group_tag": "山东日照"
+ },
+ {
+  "name": "徐丽东HSU,LI-TONG",
+  "artist_id": 4532,
+  "group_tag": "浙江温州"
+ },
+ {
+  "name": "徐瑶",
+  "artist_id": 96,
+  "group_tag": "山西大同"
+ },
+ {
+  "name": "徐瑶",
+  "artist_id": 96,
+  "group_tag": "2007级"
+ },
+ {
+  "name": "胥子含",
+  "artist_id": 1172,
+  "group_tag": "浙江杭州"
+ },
+ {
+  "name": "叶嘉雯",
+  "artist_id": 320,
+  "group_tag": "厦门"
+ },
+ {
+  "name": "叶嘉雯",
+  "artist_id": 320,
+  "group_tag": "2017级"
+ },
+ {
+  "name": "张沁丹",
+  "artist_id": 274,
+  "group_tag": "湖北宜昌"
+ },
+ {
+  "name": "张沁丹",
+  "artist_id": 274,
+  "group_tag": "2015级"
+ },
+ {
+  "name": "赵雨卉",
+  "artist_id": 280,
+  "group_tag": "江苏南京"
+ },
+ {
+  "name": "赵雨卉",
+  "artist_id": 280,
+  "group_tag": "2014级本科/2018级硕士"
+ },
+ {
+  "name": "郑涵一",
+  "artist_id": 1667,
+  "group_tag": "吉林长春"
+ },
+ {
+  "name": "郑涵一",
+  "artist_id": 1667,
+  "group_tag": "2020级"
+ },
+ {
+  "name": "郑涵一",
+  "artist_id": 1667,
+  "group_tag": "(好像)"
+ },
+ {
+  "name": "左一平",
+  "artist_id": 903,
+  "group_tag": "吉林长春"
+ },
+ {
+  "name": "冒海飞",
+  "artist_id": 1903,
+  "group_tag": "江苏南通"
+ },
+ {
+  "name": "浦弘斐",
+  "artist_id": 2138,
+  "group_tag": "辽宁大连"
+ },
+ {
+  "name": "浦弘斐",
+  "artist_id": 2138,
+  "group_tag": "2021级"
+ },
+ {
+  "name": "邱俊阳",
+  "artist_id": 3179,
+  "group_tag": "山东淄博"
+ },
+ {
+  "name": "邱俊阳",
+  "artist_id": 3179,
+  "group_tag": "2021级"
+ },
+ {
+  "name": "亓振源",
+  "artist_id": 2905,
+  "group_tag": "siva20"
+ },
+ {
+  "name": "亓振源",
+  "artist_id": 2905,
+  "group_tag": "1001"
+ },
+ {
+  "name": "邵奕磊",
+  "artist_id": 758,
+  "group_tag": "楠贤"
+ },
+ {
+  "name": "邵奕磊",
+  "artist_id": 758,
+  "group_tag": "妹楠"
+ },
+ {
+  "name": "施博威",
+  "artist_id": 862,
+  "group_tag": "浙江台州"
+ },
+ {
+  "name": "舒荣波",
+  "artist_id": 214,
+  "group_tag": "四川成都"
+ },
+ {
+  "name": "宋元明",
+  "artist_id": 686,
+  "group_tag": "河南平顶山"
+ },
+ {
+  "name": "宋元明",
+  "artist_id": 686,
+  "group_tag": "2018级"
+ },
+ {
+  "name": "孙欣业",
+  "artist_id": 714,
+  "group_tag": "上戏18"
+ },
+ {
+  "name": "汤佳明",
+  "artist_id": 577,
+  "group_tag": "浙江宁波"
+ },
+ {
+  "name": "汤佳明",
+  "artist_id": 577,
+  "group_tag": "2019级"
+ },
+ {
+  "name": "汤佳明",
+  "artist_id": 577,
+  "group_tag": "汤"
+ },
+ {
+  "name": "谭祖弘",
+  "artist_id": 3624,
+  "group_tag": "谭黄"
+ },
+ {
+  "name": "王敏辉",
+  "artist_id": 674,
+  "group_tag": "浙江义乌"
+ },
+ {
+  "name": "王敏辉",
+  "artist_id": 674,
+  "group_tag": "2015级"
+ },
+ {
+  "name": "王培杰",
+  "artist_id": 481,
+  "group_tag": "山东东营"
+ },
+ {
+  "name": "王培杰",
+  "artist_id": 481,
+  "group_tag": "珞"
+ },
+ {
+  "name": "王瑞",
+  "artist_id": 2872,
+  "group_tag": "江苏淮安"
+ },
+ {
+  "name": "吴盛祥",
+  "artist_id": 3159,
+  "group_tag": "安徽阜阳"
+ },
+ {
+  "name": "吴盛祥",
+  "artist_id": 3159,
+  "group_tag": "2022级"
+ },
+ {
+  "name": "吴志军",
+  "artist_id": 232,
+  "group_tag": "浙江台州"
+ },
+ {
+  "name": "相征",
+  "artist_id": 264,
+  "group_tag": "山东日照"
+ },
+ {
+  "name": "相征",
+  "artist_id": 264,
+  "group_tag": "2018级"
+ },
+ {
+  "name": "肖德俊",
+  "artist_id": 4529,
+  "group_tag": "广东东莞"
+ },
+ {
+  "name": "肖德俊",
+  "artist_id": 4529,
+  "group_tag": "2017级"
+ },
+ {
+  "name": "许昌泰",
+  "artist_id": 1626,
+  "group_tag": "广东深圳"
+ },
+ {
+  "name": "许昌泰",
+  "artist_id": 1626,
+  "group_tag": "2019级"
+ },
+ {
+  "name": "徐杭",
+  "artist_id": 223,
+  "group_tag": "浙江杭州"
+ },
+ {
+  "name": "徐杭",
+  "artist_id": 223,
+  "group_tag": "2019级"
+ },
+ {
+  "name": "叶麒圣",
+  "artist_id": 1323,
+  "group_tag": "四川南充"
+ },
+ {
+  "name": "叶麒圣",
+  "artist_id": 1323,
+  "group_tag": "2010级"
+ },
+ {
+  "name": "叶筱玮",
+  "artist_id": 3267,
+  "group_tag": "江苏南京"
+ },
+ {
+  "name": "叶筱玮",
+  "artist_id": 3267,
+  "group_tag": "2015级"
+ },
+ {
+  "name": "叶筱玮",
+  "artist_id": 3267,
+  "group_tag": "跨顶第一初恋"
+ },
+ {
+  "name": "殷浩伦",
+  "artist_id": 27,
+  "group_tag": "辽宁抚顺"
+ },
+ {
+  "name": "于滨嘉",
+  "artist_id": 429,
+  "group_tag": "吉林长春"
+ },
+ {
+  "name": "遇泓羊",
+  "artist_id": 675,
+  "group_tag": "黑龙江哈尔滨"
+ },
+ {
+  "name": "于晓璘",
+  "artist_id": 480,
+  "group_tag": "山东青岛"
+ },
+ {
+  "name": "余镇鳌",
+  "artist_id": 896,
+  "group_tag": "卜鳌"
+ },
+ {
+  "name": "张力夫",
+  "artist_id": 2150,
+  "group_tag": "中戏21"
+ },
+ {
+  "name": "张玮伦",
+  "artist_id": 507,
+  "group_tag": "辽宁抚顺"
+ },
+ {
+  "name": "张玮伦",
+  "artist_id": 507,
+  "group_tag": "2016级"
+ },
+ {
+  "name": "张玮伦",
+  "artist_id": 507,
+  "group_tag": "上戏16"
+ },
+ {
+  "name": "张泽echo",
+  "artist_id": 4535,
+  "group_tag": "河南郑州"
+ },
+ {
+  "name": "张泽echo",
+  "artist_id": 4535,
+  "group_tag": "2012级"
+ },
+ {
+  "name": "张泽echo",
+  "artist_id": 4535,
+  "group_tag": "上戏12"
+ },
+ {
+  "name": "张泽echo",
+  "artist_id": 4535,
+  "group_tag": "605"
+ },
+ {
+  "name": "张智涵",
+  "artist_id": 205,
+  "group_tag": "福建厦门"
+ },
+ {
+  "name": "张智涵",
+  "artist_id": 205,
+  "group_tag": "2013级"
+ },
+ {
+  "name": "张智涵",
+  "artist_id": 205,
+  "group_tag": "上音13"
+ },
+ {
+  "name": "张智涵",
+  "artist_id": 205,
+  "group_tag": "213"
+ },
+ {
+  "name": "张泽",
+  "artist_id": 256,
+  "group_tag": "上戏12 605"
+ }
+]

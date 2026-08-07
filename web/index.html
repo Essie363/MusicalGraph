@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MusicGraph · 音乐剧演员关系图谱</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>MusicGraph 音乐剧演员关系图谱</h1>
+  <div class="search-box">
+    <input id="search" type="text" placeholder="搜索演员 / 作品…" autocomplete="off">
+    <div id="dropdown" class="dropdown hidden"></div>
+    <div id="hot" class="hot">
+      <span class="hot-label">热门：</span>
+      <span id="hot-chips"></span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div id="graph-wrap">
+    <canvas id="graph"></canvas>
+    <div id="hint">拖拽空白平移 · 滚轮缩放 · 点击节点查看档案 · 点击空白取消选择</div>
+  </div>
+  <aside id="panel" class="hidden">
+    <button id="panel-close" title="关闭">×</button>
+    <h2 id="p-name"></h2>
+    <div id="p-nickname" class="sub"></div>
+    <dl id="p-fields"></dl>
+    <h3 id="p-cast-title" class="hidden">演员表</h3>
+    <ul id="p-cast" class="hidden"></ul>
+    <h3 id="p-rel-title">关系</h3>
+    <ul id="p-relations"></ul>
+    <h3 id="p-mus-title">参演剧目</h3>
+    <ul id="p-musicals"></ul>
+    <h3 id="p-cw-title">常共演搭档</h3>
+    <ul id="p-cowork"></ul>
+    <h3 id="p-gr-title" class="hidden">所属团体</h3>
+    <ul id="p-groups" class="hidden"></ul>
+  </aside>
+</main>
+
+<footer>
+  <span>图例：</span>
+  <span class="lg lg-couple" data-type="couple" title="点击显示/隐藏">情侣</span>
+  <span class="lg lg-classmate" data-type="classmate" title="点击显示/隐藏">同学</span>
+  <span class="lg lg-friend" data-type="friend" title="点击显示/隐藏">好友</span>
+  <span class="lg lg-teacher" data-type="teacher_student" title="点击显示/隐藏">师生</span>
+  <span class="lg lg-company" data-type="same_company" title="点击显示/隐藏">同公司</span>
+  <span class="lg lg-cowork" data-type="co_work" title="点击显示/隐藏">共演</span>
+  <span id="filter-tip" class="filter-tip">点击图例可筛选关系类型</span>
+  <label><input type="checkbox" id="expand-cowork"> 点击节点时展开共演搭档</label>
+  <span id="stats"></span>
+</footer>
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

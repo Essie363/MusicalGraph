@@ -1,0 +1,102 @@
+[
+  {
+    "id": 293,
+    "name": "孙豆尔",
+    "match": true,
+    "birth_date": null,
+    "birth_place": "哈尔滨",
+    "school": "青岛大学音乐学院音乐表演专业、韩国韩世大学",
+    "school_detail": null,
+    "summary": "孙豆尔（曾用名孙嘉欢、孙佳欢），中国内地男歌手、音乐剧演员，出生于哈尔滨，毕业于青岛大学音乐学院音乐表演专业及韩国韩世大学。"
+  },
+  {
+    "id": 2006,
+    "name": "陈诗",
+    "match": false,
+    "birth_date": null,
+    "birth_place": null,
+    "school": null,
+    "school_detail": null,
+    "summary": null
+  },
+  {
+    "id": 856,
+    "name": "杨宇威",
+    "match": false,
+    "birth_date": null,
+    "birth_place": null,
+    "school": null,
+    "school_detail": null,
+    "summary": null
+  },
+  {
+    "id": 481,
+    "name": "王培杰",
+    "match": true,
+    "birth_date": "1989-09-02",
+    "birth_place": null,
+    "school": "北京电影学院",
+    "school_detail": null,
+    "summary": "王培杰，1989年9月2日出生，中国男演员，毕业于北京电影学院表演系，活跃于音乐剧、影视剧及话剧领域。"
+  },
+  {
+    "id": 608,
+    "name": "邓欣锐",
+    "match": null,
+    "birth_date": null,
+    "birth_place": null,
+    "school": null,
+    "school_detail": null,
+    "summary": "FETCH_FAILED"
+  },
+  {
+    "id": 1780,
+    "name": "朱羿达",
+    "match": null,
+    "birth_date": null,
+    "birth_place": null,
+    "school": null,
+    "school_detail": null,
+    "summary": "FETCH_FAILED"
+  },
+  {
+    "id": 3158,
+    "name": "蓝浩",
+    "match": false,
+    "birth_date": null,
+    "birth_place": null,
+    "school": null,
+    "school_detail": null,
+    "summary": null
+  },
+  {
+    "id": 44,
+    "name": "樊苏颐",
+    "match": true,
+    "birth_date": null,
+    "birth_place": null,
+    "school": "四川音乐学院",
+    "school_detail": "2007年进入绵阳市博远艺术职业学校学习芭蕾舞；2013年考入四川音乐学院舞蹈学院",
+    "summary": "樊苏颐，音乐剧演员，芭蕾舞出身，四川音乐学院学生。2007年，樊苏颐进入绵阳市博远艺术职业学校学习芭蕾舞。2013年考入四川音乐学院舞蹈学院。"
+  },
+  {
+    "id": 266,
+    "name": "施哲明",
+    "match": true,
+    "birth_date": "1989-04-09",
+    "birth_place": null,
+    "school": "南京航空航天大学",
+    "school_detail": "毕业于南京航空航天大学艺术学院音乐表演专业，后考入江苏省话剧院成为职业话剧演员",
+    "summary": "施哲明（1989年4月9日-），中国内地男演员、音乐剧演员，毕业于南京航空航天大学艺术学院音乐表演专业，曾为江苏省演艺集团...。"
+  },
+  {
+    "id": 1307,
+    "name": "刘岩",
+    "match": true,
+    "birth_date": null,
+    "birth_place": "吉林省吉林市",
+    "school": "吉林艺术学院",
+    "school_detail": null,
+    "summary": "刘岩，出生于吉林省吉林市，中国音乐剧男演员，毕业于吉林艺术学院古典舞专业。2007年，主演原创音乐剧《蝶》，并凭此剧在2010年第九届中国艺术节评选中获得文华奖表演奖。"
+  }
+]

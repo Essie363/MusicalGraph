@@ -1,0 +1,12 @@
+# Python 缓存
+__pycache__/
+*.pyc
+
+# 可重新生成的中间产物/缓存
+data/raw/            # 演员演出 CSV 缓存（crawler.py 可重新抓取）
+data/actor_shows.csv # 中间产物（build_tables.py 生成）
+data/show_cast.csv   # 中间产物（build_tables.py 生成）
+
+# 本地环境文件
+.DS_Store
+Thumbs.db

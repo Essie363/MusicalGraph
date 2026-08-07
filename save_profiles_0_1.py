@@ -1,0 +1,18 @@
+import json
+import os
+from pathlib import Path
+
+BASE = Path(__file__).resolve().parent  # 脚本所在目录 = 项目根
+OUT = BASE / "data" / "profiles"
+os.makedirs(OUT, exist_ok=True)
+
+batches = {
+    0: [{"id":862,"name":"施博威","match":None,"birth_date":None,"birth_place":None,"school":None,"school_detail":None,"summary":"FETCH_FAILED"},{"id":299,"name":"顾易","match":True,"birth_date":None,"birth_place":None,"school":"上海音乐学院音乐剧系","school_detail":None,"summary":"顾易，男歌手。2021年以选手身份参加哔哩哔哩原创音乐综艺节目《我的音乐你听吗》，期间演唱《一枝独秀》《随你几分像》等作品。2023年2月10日参演音乐剧《猎罪图鉴》，2024年1月4日为都市职场剧《你也有今天》演唱插曲《不见踪影》。"},{"id":290,"name":"钱安琪","match":True,"birth_date":None,"birth_place":None,"school":None,"school_detail":None,"summary":"钱安琪，演员，代表作品包括电影《鲛珠传》、音乐剧《四两青春》《猎罪图鉴》等。2017年出演奇幻动作电影《鲛珠传》。2021年参与华语原创音乐剧《生死签》首演，饰演角色并演唱主题曲。"},{"id":305,"name":"钱蒙楠","match":True,"birth_date":None,"birth_place":None,"school":"上海视觉艺术学院","school_detail":"2022年11月，参演上海视觉艺术学院2019级音乐剧表演与教育专业毕业大戏《妈妈再爱我一次》(青春版)，饰演老搭档和舞厅经理。","summary":"钱蒙楠，演员，出演过多部音乐剧，包括《猎罪图鉴》、《德米安》、《小火焰》等。2022年11月，参演上海视觉艺术学院毕业大戏《妈妈再爱我一次》。"},{"id":264,"name":"相征","match":False,"birth_date":None,"birth_place":None,"school":None,"school_detail":None,"summary":None},{"id":575,"name":"徐佳文","match":False,"birth_date":None,"birth_place":None,"school":None,"school_detail":None,"summary":None},{"id":577,"name":"汤佳明","match":True,"birth_date":None,"birth_place":None,"school":None,"school_detail":"2019年，在毕业大戏《妈妈再爱我一次》中饰演成年小强","summary":"汤佳明，中国音乐剧演员，代表作品包括音乐剧《德米安》中文版。2019年，在毕业大戏《妈妈再爱我一次》中饰演成年小强。2023年7月参演音乐剧《孙伯符》。"},{"id":300,"name":"田野","match":False,"birth_date":None,"birth_place":None,"school":None,"school_detail":None,"summary":None},{"id":968,"name":"王逸飞","match":False,"birth_date":None,"birth_place":None,"school":None,"school_detail":None,"summary":None},{"id":274,"name":"张沁丹","match":True,"birth_date":"1997年7月24日","birth_place":None,"school":"上海戏剧学院","school_detail":"1997年7月24日出生，毕业于上海戏剧学院，是中国音乐剧演员","summary":"张沁丹，1997年7月24日出生，毕业于上海戏剧学院，是中国音乐剧演员。她以其极具辨识度的嗓音和舞台表现力活跃于音乐剧领域，曾参演多部中文原创音乐剧，包括《人间失格》《伪装者2022》《猎罪图鉴》《道林格雷的画像》等作品。"}],
+    1: [{"id":847,"name":"朱亮","match":False,"birth_date":None,"birth_place":None,"school":None,"school_detail":None,"summary":"朱亮，单田芳评书《白眉大侠》《龙虎风云会》中的虚构角色"},{"id":1626,"name":"许昌泰","match":None,"birth_date":None,"birth_place":None,"school":None,"school_detail":None,"summary":"FETCH_FAILED"},{"id":683,"name":"邓贤凌","match":None,"birth_date":None,"birth_place":None,"school":None,"school_detail":None,"summary":"FETCH_FAILED"},{"id":429,"name":"于滨嘉","match":None,"birth_date":None,"birth_place":None,"school":None,"school_detail":None,"summary":"FETCH_FAILED"},{"id":216,"name":"李秋盟","match":True,"birth_date":"1991年9月8日","birth_place":None,"school":None,"school_detail":None,"summary":"李秋盟，出生于1991年09月08日，是中国音乐剧演员，主要活跃于环境式驻演音乐剧及原创剧目领域。其代表作品包括《阿波罗尼亚》《桑塔露琪亚》等。"},{"id":681,"name":"李政绪","match":False,"birth_date":None,"birth_place":None,"school":None,"school_detail":None,"summary":"橄榄球运动员"},{"id":826,"name":"李存贤","match":False,"birth_date":None,"birth_place":None,"school":None,"school_detail":None,"summary":"后唐时期政治人物"},{"id":284,"name":"陈旭","match":False,"birth_date":None,"birth_place":None,"school":None,"school_detail":None,"summary":"女，1963年生，博士，教授"},{"id":852,"name":"陈科铭","match":True,"birth_date":None,"birth_place":None,"school":"星海音乐学院","school_detail":"星海音乐学院音乐剧专业在读研究生","summary":"陈科铭，中国男歌手、音乐剧演员、APLUS组合成员，星海音乐学院音乐剧专业在读研究生。"},{"id":288,"name":"王洁璐","match":False,"birth_date":None,"birth_place":None,"school":None,"school_detail":None,"summary":"税务局稽查局副局长"}],
+}
+
+for bi, rows in batches.items():
+    path = os.path.join(OUT, f"batch_{bi}.json")
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(rows, f, ensure_ascii=False, indent=1)
+    print("saved", path, len(rows))
