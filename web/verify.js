@@ -79,10 +79,54 @@ function check(name, cond, extra) {
   const nameAfter = await page.textContent("#ap-name");
   check("点击搭档跳到对方详情页", nameAfter !== nameBefore, nameBefore + " -> " + nameAfter);
 
+  console.log("== 演员页关系图节点点击 ==");
+  {
+    const prevHash = await page.evaluate(() => location.hash);
+    const apIds = await page.evaluate(() => {
+      const ns = window.__apNodes ? window.__apNodes() : {};
+      const cid = window.__apCenterId ? window.__apCenterId() : null;
+      return Object.keys(ns).filter(k => k !== cid);
+    });
+    let apClicked = false;
+    for (const aid of apIds.slice(0, 25)) {
+      const pos = await page.evaluate((i) => window.__apNodeScreen(i), aid);
+      if (!pos) continue;
+      await page.mouse.click(pos.x, pos.y);
+      await page.waitForTimeout(700);
+      const hash = await page.evaluate(() => location.hash);
+      if (hash === "#/actor/" + aid) { apClicked = true; break; }
+      await page.evaluate((h) => { location.hash = h; }, prevHash);
+      await page.waitForTimeout(600);
+    }
+    check("演员页关系图点击人物跳转", apClicked, "前25个节点均未跳转");
+  }
+
   console.log("== 返回首页 ==");
   await page.click("#ap-back");
   await page.waitForTimeout(600);
   check("返回图谱首页", await page.$eval("#home-view", el => !el.classList.contains("hidden")));
+
+  console.log("== 首页节点点击跳转 ==");
+  {
+    const rect = await page.evaluate(() => {
+      const r = document.getElementById("graph").getBoundingClientRect();
+      return { l: r.left, t: r.top, r: r.right, b: r.bottom };
+    });
+    const ids = await page.evaluate(() => (window.__homeNodeIds ? window.__homeNodeIds() : []).slice(0, 40));
+    let homeClicked = false;
+    for (const id of ids) {
+      const pos = await page.evaluate((i) => window.__homeNodeScreen(i), id);
+      if (!pos) continue;
+      if (pos.x < rect.l + 5 || pos.x > rect.r - 5 || pos.y < rect.t + 5 || pos.y > rect.b - 5) continue;
+      await page.mouse.click(pos.x, pos.y);
+      await page.waitForTimeout(700);
+      const hash = await page.evaluate(() => location.hash);
+      if (hash === "#/actor/" + id) { homeClicked = true; break; }
+      await page.evaluate(() => { location.hash = "#/"; });
+      await page.waitForTimeout(600);
+    }
+    check("首页点击人物进入详情页", homeClicked);
+  }
 
   console.log("== 作品 ==");
   await page.fill("#search", "哈姆雷特");

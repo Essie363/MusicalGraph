@@ -279,36 +279,46 @@
     return hit;
   }
 
-  var dragging = null, panning = false, lastX = 0, lastY = 0;
+  // 点击与拖动区分：按住人物拖动=调整位置；原地点击=进入该演员详情页
+  var dragging = null, panning = false, lastX = 0, lastY = 0, dragMoved = false;
   canvas.addEventListener("mousedown", function (e) {
     var rect = canvas.getBoundingClientRect();
     var px = e.clientX - rect.left, py = e.clientY - rect.top;
     var hit = hitTest(px, py);
     lastX = e.clientX; lastY = e.clientY;
+    dragMoved = false;
     if (hit) { dragging = hit; nodes[hit].fixed = true; }
     else { panning = true; }
   });
   window.addEventListener("mousemove", function (e) {
     if (dragging) {
+      if (Math.abs(e.clientX - lastX) + Math.abs(e.clientY - lastY) > 4) dragMoved = true;
       var rect = canvas.getBoundingClientRect();
       var p = screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
       nodes[dragging].x = p.x; nodes[dragging].y = p.y;
     } else if (panning) {
       view.x += e.clientX - lastX; view.y += e.clientY - lastY;
+    } else {
+      // 悬停提示：指到人物时显示手型，提示可点击
+      var rect = canvas.getBoundingClientRect();
+      var h = hitTest(e.clientX - rect.left, e.clientY - rect.top);
+      canvas.style.cursor = h ? "pointer" : "default";
     }
     lastX = e.clientX; lastY = e.clientY;
   });
   window.addEventListener("mouseup", function (e) {
     if (dragging) {
-      if (nodes[dragging]) nodes[dragging].fixed = false;
+      var hit = dragging;
+      if (nodes[hit]) nodes[hit].fixed = false;
       dragging = null;
+      if (!dragMoved) goActor(hit);   // 单击人物 -> 进入该演员的关系详情页
       return;
     }
     if (panning) {
       panning = false;
       var rect = canvas.getBoundingClientRect();
       var hit = hitTest(e.clientX - rect.left, e.clientY - rect.top);
-      if (hit) goActor(hit);      // 点击人物 -> 进入该演员的关系详情页
+      if (hit) goActor(hit);
     }
   });
   canvas.addEventListener("wheel", function (e) {
@@ -586,17 +596,27 @@
     if (t < 1) requestAnimationFrame(apDrawFrame); else apAnimating = false;
   }
 
-  apCanvas.addEventListener("click", function (e) {
-    if (!apCenterId || !apNodes[apCenterId]) return;
+  // 点击判定：节点圆 + 下方名字文字区都算可点击（提高命中率，点名字也能跳转）
+  function apHitTest(clientX, clientY) {
+    if (!apCenterId || !apNodes[apCenterId]) return null;
     var rect = apCanvas.getBoundingClientRect();
-    var px = e.clientX - rect.left, py = e.clientY - rect.top;
+    var px = clientX - rect.left, py = clientY - rect.top;
     var best = null, bd = 1e9;
     Object.keys(apNodes).forEach(function (k) {
       var n = apNodes[k];
       var x = apCanvas.clientWidth / 2 + n.x, y = apCanvas.clientHeight / 2 + n.y;
       var d = (x - px) * (x - px) + (y - py) * (y - py);
-      if (d < (n.r + 6) * (n.r + 6) && d < bd) { bd = d; best = k; }
+      var R = n.r + 18;
+      var inLabel = Math.abs(px - x) <= 60 && py >= y + n.r - 4 && py <= y + n.r + 26;
+      if ((d < R * R || inLabel) && d < bd) { bd = d; best = k; }
     });
+    return best;
+  }
+  apCanvas.addEventListener("mousemove", function (e) {
+    apCanvas.style.cursor = apHitTest(e.clientX, e.clientY) ? "pointer" : "default";
+  });
+  apCanvas.addEventListener("click", function (e) {
+    var best = apHitTest(e.clientX, e.clientY);
     if (best && best !== apCenterId) goActor(best);
   });
 
@@ -847,6 +867,23 @@
       chips.appendChild(span);
     });
   }
+
+  // ---- 供自动化验证读取的调试接口（对日常使用无影响）----
+  window.__homeNodeIds = function () { return Object.keys(nodes); };
+  window.__homeNodeScreen = function (id) {
+    var n = nodes[id]; if (!n) return null;
+    var rect = canvas.getBoundingClientRect();
+    return { x: rect.left + canvas.clientWidth / 2 + view.x + n.x * view.zoom,
+             y: rect.top + canvas.clientHeight / 2 + view.y + n.y * view.zoom };
+  };
+  window.__apNodes = function () { return apNodes; };
+  window.__apCenterId = function () { return apCenterId; };
+  window.__apNodeScreen = function (id) {
+    var n = apNodes[id]; if (!n) return null;
+    var rect = apCanvas.getBoundingClientRect();
+    return { x: rect.left + apCanvas.clientWidth / 2 + n.x,
+             y: rect.top + apCanvas.clientHeight / 2 + n.y };
+  };
 
   // ---- 启动 ----
   buildGraph();
