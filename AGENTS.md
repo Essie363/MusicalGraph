@@ -99,6 +99,13 @@ shows: id | date | time | city | musical | theatre
 show_casts: show_id | artist_id | role
 ```
 
+### roles / actor_roles（剧目角色，2,272 个角色 / 372 部剧 / 7,816 条演员-角色）
+```
+roles: id | musical_id | name
+actor_roles: artist_id | musical_id | role_id
+```
+- 由 y.saoju 剧目卡司接口提供，如郑棋元在《哈姆雷特》饰克劳狄斯
+
 ### co_work_edges（共演边，机器推导，48,343 对）
 ```
 actor_a | actor_b | co_show_count | co_musical_count | first_co_date | last_co_date
@@ -175,6 +182,7 @@ python sync.py
 - [x] 前端移动端支持（2026-08-07：触摸平移/拖拽/双指缩放 + 响应式布局，手机可用）
 - [x] 前端首屏优化（2026-08-07：热门演员快捷入口 + 自动聚焦）+ 一键刷新脚本 refresh_all.py
 - [x] 前端关系类型筛选（2026-08-07：点击图例切换显示 情侣/同学 等关系类型）
+- [x] 前端角色展示（2026-08-07：演员参演剧目带角色名，作品演员表带角色，如郑棋元在《哈姆雷特》饰克劳狄斯）
 - [x] 前端团体视图（2026-08-07：搜索团体 → 成员列表 → 点击跳转演员，档案显示所属团体）
 - [x] 数据质量审计（2026-08-07：确认无脏数据；同名演员 15 组为合理多义；前端合并同对多名 CP）
 - [x] 百科档案合并（2026-08-07：merge_baike.py 合并 19 条百科数据，uncovered_actors.csv 已更新）
