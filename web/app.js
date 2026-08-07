@@ -10,11 +10,13 @@
 
   var TYPE_COLOR = {
     couple: "#e0546f", cp: "#e0546f", classmate: "#2f9e6e", friend: "#3f7fd6",
-    teacher_student: "#8b5fd6", same_company: "#d68a2f", co_work: "#9aa3b2"
+    teacher_student: "#8b5fd6", same_company: "#d68a2f", co_work: "#9aa3b2",
+    married: "#c0392b", ex: "#8d93a5"
   };
   var TYPE_LABEL = {
     couple: "情侣", cp: "CP", classmate: "同学", friend: "好友",
-    teacher_student: "师生", same_company: "同公司", co_work: "共演"
+    teacher_student: "师生", same_company: "同公司", co_work: "共演",
+    married: "伴侣", ex: "前任"
   };
 
   // ---- 数据准备：统一 id 为字符串，避免数字/字符串 === 比较失败导致"自己"错判 ----
@@ -105,7 +107,7 @@
   var view = { x: 0, y: 0, zoom: 1 };
   var nodes = {}, edges = [];
   var visibleTypes = {};
-  ["couple", "cp", "classmate", "friend", "teacher_student", "same_company", "co_work"]
+  ["couple", "cp", "classmate", "friend", "teacher_student", "same_company", "co_work", "married", "ex"]
     .forEach(function (ty) { visibleTypes[ty] = true; });
 
   function ensureNode(id, extra) {
@@ -663,7 +665,8 @@
     var box = document.getElementById("ap-legend");
     box.innerHTML = "";
     [
-      ["情侣(待补充)", TYPE_COLOR.couple], ["CP", TYPE_COLOR.cp], ["同学", TYPE_COLOR.classmate],
+      ["伴侣", TYPE_COLOR.married], ["情侣", TYPE_COLOR.couple], ["前任", TYPE_COLOR.ex],
+      ["CP", TYPE_COLOR.cp], ["同学", TYPE_COLOR.classmate],
       ["好友", TYPE_COLOR.friend], ["师生", TYPE_COLOR.teacher_student], ["同公司", TYPE_COLOR.same_company],
       ["共演", TYPE_COLOR.co_work], ["团体", "#2f9e6e"]
     ].forEach(function (pair) {

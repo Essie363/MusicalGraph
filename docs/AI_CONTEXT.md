@@ -57,6 +57,7 @@ V1 核心功能：
 - [x] 首页入场动效优化（瞬间算好稳定布局 + 0.8 秒平滑展开入场，之后完全静止；最中心的人自动居中）
 - [x] 首页排版松弛化（线条更细更淡、节点更小；归一化适配屏幕 + 重叠消除，零遮挡，自动缩放保证名字清晰）
 - [x] 首页密度减半（布局面积×2、最小间距 44→62px、平均 237→335px，密度降为 1/2，零遮挡）
+- [x] 真实情侣数据分三类入库（伴侣 16 / 情侣 28 / 前任 25，共 69 对；前端图例独立三个标签，可分别筛选）
 - [x] 百科档案合并（merge_baike.py，19 条；uncovered_actors.csv 已更新为 883 人）
 - [x] 快照导出脚本（snapshot_export.py → data/snapshot_*.csv）
 
@@ -85,9 +86,9 @@ V1 核心功能：
 ### co_work_edges（共演边，机器推导，48,343 对）
 `actor_a | actor_b | co_show_count | co_musical_count | first_co_date | last_co_date`
 
-### relations（用户关系，193 条）
+### relations（用户关系，268 条）
 `type_id | actor_a | actor_b | detail | source_type | status`
-- type_id → relation_types：cp（粉丝组合）/ classmate / friend / teacher_student / same_company / co_work / couple（真实情侣，暂空）
+- type_id → relation_types：cp（粉丝组合）/ classmate / friend / teacher_student / same_company / co_work / couple（情侣）/ married（伴侣）/ ex（前任）
 - source_type：user | derived | media | official
 - status：pending | approved | rejected（现有 CP 均为 approved）
 

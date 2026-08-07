@@ -116,7 +116,7 @@ actor_a | actor_b | co_show_count | co_musical_count | first_co_date | last_co_d
 ```
 type_id | actor_a | actor_b | detail | source_type | status
 ```
-- type_id 对应 relation_types（cp=粉丝组合/classmate=同学/friend=好友/teacher_student=师生/same_company=同公司/co_work=共演/couple=真实情侣·待补充）
+- type_id 对应 relation_types（cp=粉丝组合/classmate=同学/friend=好友/teacher_student=师生/same_company=同公司/co_work=共演/couple=情侣/married=伴侣/ex=前任）
 - source_type: user | derived | media | official
 - status: pending | approved | rejected
 
@@ -193,6 +193,7 @@ python sync.py
 - [x] 首页入场动效优化（2026-08-07：改为"瞬间算好稳定布局 + 0.8 秒平滑展开"，进入后完全静止，不再长时间晃动；最中心的人自动居中）
 - [x] 首页排版松弛化（2026-08-07：线条变细变淡、节点变小；布局做归一化适配屏幕 + 重叠消除，任意两人最小间距约 44px、零遮挡，自动缩放 0.92 保证名字清晰）
 - [x] 首页密度减半（2026-08-07：布局面积×2、最小间距 44→62px、平均间距 237→335px，密度精确降为 1/2，仍零遮挡）
+- [x] 真实情侣数据分三类入库（2026-08-07：伴侣 16 / 情侣 28 / 前任 25，共 69 对；前端图例独立为 伴侣/情侣/前任 三个标签，可分别筛选）
 - [x] 百科档案合并（2026-08-07：merge_baike.py 合并 19 条百科数据，uncovered_actors.csv 已更新）
 - [x] 快照导出脚本（2026-08-07：snapshot_export.py 统一导出 data/snapshot_*.csv，relations 含同学/情侣分类）
 - [ ] 将 SQLite 数据迁移到 Supabase

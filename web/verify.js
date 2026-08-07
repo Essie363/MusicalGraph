@@ -48,6 +48,8 @@ function check(name, cond, extra) {
   const stats = await page.textContent("#stats");
   check("图谱统计显示", /节点/.test(stats), stats);
   check("热门演员入口", await page.$$eval("#hot-chips .chip", els => els.length) >= 5);
+  const legendTexts = await page.$$eval(".lg[data-type]", els => els.map(e => e.textContent));
+  check("伴侣/情侣/前任三标签图例", ["伴侣", "情侣", "前任"].every(x => legendTexts.includes(x)), legendTexts.join(","));
 
   console.log("== 搜索演员 -> 详情页 ==");
   await openActor("郑云龙");
