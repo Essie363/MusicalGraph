@@ -7,6 +7,11 @@ data/raw/
 data/actor_shows.csv
 data/show_cast.csv
 
+# 密钥/环境变量（绝不提交！）
+.env
+.env.*
+!.env.example
+
 # 本地环境文件
 .DS_Store
 Thumbs.db
