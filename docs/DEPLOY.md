@@ -154,7 +154,7 @@ create table review_logs (
 
 ## 第 2 步：导入现有数据
 
-写一个一次性 Python 脚本 `migrate_supabase.py`，从 `music_graph.db` 读出各表，用 Supabase 的 REST API 批量插入：
+项目已自带迁移脚本 **`migrate_supabase.py`**（纯标准库，支持 `--dry-run` 离线自检）。它会从 `music_graph.db` 读出各表，用 Supabase REST API 分批导入（按依赖顺序：relation_types → artists → musicals/roles/actor_roles → groups → shows/show_casts → co_work_edges → relations，保留原 id 保证外键一致）：
 
 1. `relation_types`（7 条）
 2. `artists`（4532 条，分批 500/次）
@@ -167,8 +167,14 @@ create table review_logs (
 
 环境变量（**不要提交到 Git**）：
 ```bash
-SUPABASE_URL=https://xxxx.supabase.co
-SUPABASE_ANON_KEY=eyJ...
+# Windows PowerShell
+$env:SUPABASE_URL="https://xxxx.supabase.co"
+$env:SUPABASE_SERVICE_KEY="eyJ..."   # Settings -> API -> service_role key（有写权限）
+
+# 先离线自检（不联网）
+python migrate_supabase.py --dry-run
+# 确认行数无误后真正导入
+python migrate_supabase.py
 ```
 
 ---
