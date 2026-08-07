@@ -62,12 +62,23 @@
       if (visibleTypes[r.type]) { active[r.a] = true; active[r.b] = true; }
     });
     Object.keys(active).forEach(function (id) { ensureNode(id); });
+
+    // 底层：共演边（若"共演"图例开启）——只画两端都在当前图谱里的边
+    if (visibleTypes["co_work"]) {
+      coWork.forEach(function (e) {
+        if (!nodes[e.a] || !nodes[e.b]) return;
+        edges.push({ a: e.a, b: e.b, type: "co_work", color: TYPE_COLOR["co_work"], dashed: true, width: 1, label: "共演" + e.count + "场" });
+      });
+    }
+
+    // 上层：明确关系边
     relations.forEach(function (r) {
       if (!visibleTypes[r.type]) return;
       if (!nodes[r.a] || !nodes[r.b]) return;
       edges.push({ a: r.a, b: r.b, type: r.type, color: TYPE_COLOR[r.type] || "#999", dashed: false, width: 2, label: r.typeName + (r.detail ? " · " + r.detail : "") });
       nodes[r.a].deg++; nodes[r.b].deg++;
     });
+
     // 节点半径按关系数
     Object.keys(nodes).forEach(function (id) {
       var n = nodes[id];
