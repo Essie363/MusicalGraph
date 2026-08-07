@@ -461,9 +461,9 @@
       var uniq = g.details.filter(function (v, i, arr) { return arr.indexOf(v) === i; });
       txt.innerHTML = actorLabel(g.other) + (uniq.length ? " <span class='rel-detail'>(" + uniq.join(" / ") + ")</span>" : "");
       li.appendChild(txt);
-      // 共同作品
-      var myMus = actorMusicals[id] || [], otherMus = actorMusicals[g.other] || [];
-      var common = myMus.filter(function (m) { return otherMus.indexOf(m) >= 0; });
+      // 共同作品（含各自角色）
+      var myMusObj = actorMusicals[id] || {}, otherMusObj = actorMusicals[g.other] || {};
+      var common = Object.keys(myMusObj).filter(function (m) { return otherMusObj.hasOwnProperty(m); });
       if (common.length) {
         var sub = document.createElement("div");
         sub.className = "rel-detail";
@@ -476,13 +476,15 @@
       var li = document.createElement("li"); li.textContent = "暂无手动关系记录";
       ul.appendChild(li);
     }
-    // 参演剧目
+    // 参演剧目（含角色）
     var um = document.getElementById("p-musicals"); um.innerHTML = "";
-    var myMusList = actorMusicals[id] || [];
+    var myMusObj = actorMusicals[id] || {};
+    var myMusList = Object.keys(myMusObj);
     if (myMusList.length) {
       myMusList.slice(0, 12).forEach(function (m) {
         var li = document.createElement("li");
-        li.textContent = m;
+        var rolesArr = myMusObj[m] || [];
+        li.innerHTML = m + (rolesArr.length ? " <span class='rel-detail'>（" + rolesArr.join(" / ") + "）</span>" : "");
         um.appendChild(li);
       });
       if (myMusList.length > 12) {
@@ -614,9 +616,17 @@
     var ul = document.getElementById("p-cast");
     ul.innerHTML = "";
     ul.classList.remove("hidden");
+    var castRoles = m.roles || {};
     (m.cast || []).slice(0, 100).forEach(function (aid) {
       var li = document.createElement("li");
       li.textContent = actorLabel(aid);
+      var rs = castRoles[aid] || [];
+      if (rs.length) {
+        var span = document.createElement("span");
+        span.className = "rel-detail";
+        span.textContent = "（" + rs.join(" / ") + "）";
+        li.appendChild(span);
+      }
       li.style.cursor = "pointer";
       li.style.color = "#3f7fd6";
       li.addEventListener("click", function () { focusActor(aid); });

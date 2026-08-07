@@ -63,26 +63,40 @@ def main():
             "detail": r["detail"] or "",
         })
 
-    # --- 参演剧目（用于"共同作品"） ---
+    # --- 参演剧目 + 角色（actor_roles + roles） ---
     musicals = {}
     for r in cur.execute("SELECT id, name FROM musicals"):
         musicals[r["id"]] = r["name"]
+    roles = {}
+    for r in cur.execute("SELECT id, musical_id, name FROM roles"):
+        roles[r["id"]] = {"musical_id": r["musical_id"], "name": r["name"]}
+    # actor_musicals: artist_id -> {musical_name: [role_name, ...]}
     actor_musicals = {}
-    for r in cur.execute("SELECT artist_id, musical_id FROM actor_roles"):
+    for r in cur.execute("SELECT artist_id, musical_id, role_id FROM actor_roles"):
         m = musicals.get(r["musical_id"])
         if m is None:
             continue
-        actor_musicals.setdefault(r["artist_id"], [])
-        if m not in actor_musicals[r["artist_id"]]:
-            actor_musicals[r["artist_id"]].append(m)
+        d = actor_musicals.setdefault(r["artist_id"], {})
+        d.setdefault(m, [])
+        role = roles.get(r["role_id"])
+        if role and role["name"] not in d[m]:
+            d[m].append(role["name"])
 
-    # --- 作品与演员表（musicals 视图） ---
+    # --- 作品与演员表（musicals 视图，成员带角色） ---
     musical_cast = {}
     for r in cur.execute("SELECT id, name FROM musicals"):
-        musical_cast[r["id"]] = {"name": r["name"], "cast": []}
-    for r in cur.execute("SELECT artist_id, musical_id FROM actor_roles"):
-        if r["musical_id"] in musical_cast and r["artist_id"] not in musical_cast[r["musical_id"]]["cast"]:
-            musical_cast[r["musical_id"]]["cast"].append(r["artist_id"])
+        musical_cast[r["id"]] = {"name": r["name"], "cast": [], "roles": {}}
+    for r in cur.execute("SELECT artist_id, musical_id, role_id FROM actor_roles"):
+        if r["musical_id"] not in musical_cast:
+            continue
+        mc = musical_cast[r["musical_id"]]
+        if r["artist_id"] not in mc["cast"]:
+            mc["cast"].append(r["artist_id"])
+        role = roles.get(r["role_id"])
+        if role:
+            mc["roles"].setdefault(r["artist_id"], [])
+            if role["name"] not in mc["roles"][r["artist_id"]]:
+                mc["roles"][r["artist_id"]].append(role["name"])
 
     # --- 团体（groups + members） ---
     group_list = []
