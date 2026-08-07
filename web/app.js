@@ -13,10 +13,24 @@
   var actors = D.actors, relations = D.relations, coWork = D.coWork, actorMusicals = D.actorMusicals || {}, musicals = D.musicals || {}, groups = D.groups || [];
   var coWorkByActor = {};
   coWork.forEach(function (e) {
+    if (e.a === e.b) return;  // 防御：剔除"自己共演自己"的异常数据
     (coWorkByActor[e.a] = coWorkByActor[e.a] || []).push(e);
     (coWorkByActor[e.b] = coWorkByActor[e.b] || []).push(e);
   });
   function actorName(id) { var a = actors[id]; return a ? a.name : "?" + id; }
+  // 同名演员自动加区分标识（昵称/备注，否则 #id），避免"看起来像自己"
+  var nameCount = {};
+  Object.keys(actors).forEach(function (k) { nameCount[actors[k].name] = (nameCount[actors[k].name] || 0) + 1; });
+  function actorLabel(id) {
+    var a = actors[id];
+    if (!a) return "?" + id;
+    if (nameCount[a.name] > 1) {
+      var dis = a.nickname || a.note || "";
+      if (dis) return a.name + "（" + dis.replace(/[\s/].*$/, "").slice(0, 6) + "）";
+      return a.name + "(#" + id + ")";
+    }
+    return a.name;
+  }
 
   // 初始节点：参与关系的人
   var baseIds = new Set();
@@ -178,8 +192,9 @@
       selected = id;
       // 展开共演
       if (expandCowork && fromExpand !== false) {
-        (coWorkByActor[id] || []).slice(0, 12).forEach(function (e) {
+        (coWorkByActor[id] || []).filter(function (e) { return e.a !== e.b; }).slice(0, 12).forEach(function (e) {
           var other = e.a === id ? e.b : e.a;
+          if (other === id) return;
           if (!nodes[other]) {
             var n = ensureNode(other, { color: "#b7bcc8" });
             n.r = 7;
@@ -389,7 +404,7 @@
       li.appendChild(tag);
       var txt = document.createElement("span");
       var uniq = g.details.filter(function (v, i, arr) { return arr.indexOf(v) === i; });
-      txt.innerHTML = actorName(g.other) + (uniq.length ? " <span class='rel-detail'>(" + uniq.join(" / ") + ")</span>" : "");
+      txt.innerHTML = actorLabel(g.other) + (uniq.length ? " <span class='rel-detail'>(" + uniq.join(" / ") + ")</span>" : "");
       li.appendChild(txt);
       // 共同作品
       var myMus = actorMusicals[id] || [], otherMus = actorMusicals[g.other] || [];
@@ -427,11 +442,12 @@
     }
     // 共演
     var uc = document.getElementById("p-cowork"); uc.innerHTML = "";
-    var list = (coWorkByActor[id] || []).slice(0, 10);
+    var list = (coWorkByActor[id] || []).filter(function (e) { return e.a !== e.b; }).slice(0, 10);
     list.forEach(function (e) {
       var other = e.a === id ? e.b : e.a;
+      if (other === id) return;  // 防御：绝不显示"自己"
       var li = document.createElement("li");
-      li.textContent = actorName(other) + "（共演 " + e.count + " 场）";
+      li.textContent = actorLabel(other) + "（共演 " + e.count + " 场）";
       uc.appendChild(li);
     });
     if (!list.length) {
@@ -515,9 +531,8 @@
     var ul = document.getElementById("p-cast");
     ul.innerHTML = ""; ul.classList.remove("hidden");
     (g.members || []).forEach(function (aid) {
-      var a = actors[aid];
       var li = document.createElement("li");
-      li.textContent = a ? a.name : "?" + aid;
+      li.textContent = actorLabel(aid);
       li.style.cursor = "pointer"; li.style.color = "#3f7fd6";
       li.addEventListener("click", function () { focusActor(aid); });
       ul.appendChild(li);
@@ -546,8 +561,7 @@
     ul.classList.remove("hidden");
     (m.cast || []).slice(0, 100).forEach(function (aid) {
       var li = document.createElement("li");
-      var a = actors[aid];
-      li.textContent = (a ? a.name : "?" + aid) + (a && a.nickname ? "（" + a.nickname + "）" : "");
+      li.textContent = actorLabel(aid);
       li.style.cursor = "pointer";
       li.style.color = "#3f7fd6";
       li.addEventListener("click", function () { focusActor(aid); });
