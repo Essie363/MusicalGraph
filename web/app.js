@@ -11,6 +11,30 @@
 
   // ---- 图数据构建 ----
   var actors = D.actors, relations = D.relations, coWork = D.coWork, actorMusicals = D.actorMusicals || {}, musicals = D.musicals || {}, groups = D.groups || [];
+
+  // 统一 id 类型：data.js 中 coWork/relations/cast/members 的 id 是数字，
+  // 而 actors 的 key 与渲染时用的 id 是字符串，=== 比较会失败导致"自己"错判。
+  function s(x) { return String(x); }
+  relations.forEach(function (r) { r.a = s(r.a); r.b = s(r.b); });
+  coWork.forEach(function (e) { e.a = s(e.a); e.b = s(e.b); });
+  Object.keys(musicals).forEach(function (mid) {
+    var m = musicals[mid];
+    if (m.cast) m.cast = m.cast.map(s);
+    if (m.roles) {
+      var nr = {};
+      Object.keys(m.roles).forEach(function (aid) { nr[s(aid)] = m.roles[aid]; });
+      m.roles = nr;
+    }
+  });
+  groups.forEach(function (g) { if (g.members) g.members = g.members.map(s); if (g.id !== undefined) g.id = s(g.id); });
+  var nam2 = {};
+  Object.keys(actorMusicals).forEach(function (aid) { nam2[s(aid)] = actorMusicals[aid]; });
+  actorMusicals = nam2;
+  // actors 里的 id 字段也统一为字符串（focusActor(hit.data.id) 会用这个值）
+  Object.keys(actors).forEach(function (k) { if (actors[k].id !== undefined) actors[k].id = s(actors[k].id); });
+  // musicals 数组 id 统一为字符串
+  Object.keys(musicals).forEach(function (k) { if (musicals[k].id !== undefined) musicals[k].id = s(musicals[k].id); });
+
   var coWorkByActor = {};
   coWork.forEach(function (e) {
     if (e.a === e.b) return;  // 防御：剔除"自己共演自己"的异常数据
