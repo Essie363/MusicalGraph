@@ -146,7 +146,7 @@ n2id = {}
 for aid, nm in cur.fetchall():
     n2id.setdefault(nm, []).append(aid)
 
-cp_type_id = cur.execute("SELECT id FROM relation_types WHERE code='couple'").fetchone()[0]
+cp_type_id = cur.execute("SELECT id FROM relation_types WHERE code='cp'").fetchone()[0]
 
 results = []
 for line in raw.strip().split("\n"):

@@ -107,7 +107,7 @@ actor_a | actor_b | co_show_count | co_musical_count | first_co_date | last_co_d
 ```
 type_id | actor_a | actor_b | detail | source_type | status
 ```
-- type_id 对应 relation_types（couple/classmate/friend/teacher_student/same_company/co_work）
+- type_id 对应 relation_types（cp=粉丝组合/classmate=同学/friend=好友/teacher_student=师生/same_company=同公司/co_work=共演/couple=真实情侣·待补充）
 - source_type: user | derived | media | official
 - status: pending | approved | rejected
 
@@ -164,7 +164,7 @@ python sync.py
 - [x] 百度百科自动抓取（部分成功，44 人）
 - [x] 手动档案导入（213 人有资料）
 - [x] note 字段拆分为 major + nickname + note
-- [x] CP 关系入库（123 条）
+- [x] CP 关系入库（123 条，type=cp 粉丝组合；couple 真实情侣暂空待补充）
 - [x] 团体表建设（33 个团体，69 人次）
 
 ### 待完成

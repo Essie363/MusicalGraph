@@ -5,7 +5,7 @@
   if (!D) { document.body.innerHTML = "<p style='padding:40px'>数据文件缺失：请先运行 python export_graph.py</p>"; return; }
 
   var TYPE_COLOR = {
-    couple: "#e0546f", classmate: "#2f9e6e", friend: "#3f7fd6",
+    couple: "#e0546f", cp: "#e0546f", classmate: "#2f9e6e", friend: "#3f7fd6",
     teacher_student: "#8b5fd6", same_company: "#d68a2f", co_work: "#9aa3b2"
   };
 
@@ -37,7 +37,7 @@
   }
 
   var visibleTypes = {};   // 类型 -> 是否显示（默认全开）
-  ["couple", "classmate", "friend", "teacher_student", "same_company", "co_work"]
+  ["couple", "cp", "classmate", "friend", "teacher_student", "same_company", "co_work"]
     .forEach(function (ty) { visibleTypes[ty] = true; });
 
   function buildGraph() {

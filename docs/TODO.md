@@ -33,4 +33,5 @@
 - [ ] Vercel 部署上线
 - [ ] 建立 docs/LESSONS.md 的持续更新习惯（同问题出现两次以上必须记录）
 - [x] 快照更新纳入流程（2026-08-07 完成）：数据变更后运行 `python refresh_all.py` 一键刷新快照 + 网页数据
+- [ ] 补充真实情侣（couple）数据（用户后续提供）
 - [ ] 重新创建计划任务 MusicGraphSync（每日 6:00 运行 `run_sync.bat`；当前任务不存在）

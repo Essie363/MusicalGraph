@@ -94,6 +94,7 @@ def main():
         ("co_work_edges", cur.execute("SELECT COUNT(*) FROM co_work_edges").fetchone()[0]),
         ("relations (total)", cur.execute("SELECT COUNT(*) FROM relations").fetchone()[0]),
         ("relations (classmate)", cur.execute("SELECT COUNT(*) FROM relations WHERE type_id=(SELECT id FROM relation_types WHERE code='classmate')").fetchone()[0]),
+        ("relations (cp)", cur.execute("SELECT COUNT(*) FROM relations WHERE type_id=(SELECT id FROM relation_types WHERE code='cp')").fetchone()[0]),
         ("relations (couple)", cur.execute("SELECT COUNT(*) FROM relations WHERE type_id=(SELECT id FROM relation_types WHERE code='couple')").fetchone()[0]),
         ("groups", cur.execute("SELECT COUNT(*) FROM groups").fetchone()[0]),
         ("group_members", cur.execute("SELECT COUNT(*) FROM group_members").fetchone()[0]),

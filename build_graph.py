@@ -242,7 +242,8 @@ cur.executemany("INSERT OR REPLACE INTO co_work_edges (actor_a,actor_b,co_show_c
 builtin = [
     ("co_work", "共演", 1, "同一场演出同台 / 同剧组(机器推导)"),
     ("classmate", "同学", 1, "曾在同一学校/专业学习"),
-    ("couple", "情侣", 1, "恋人/伴侣关系"),
+    ("couple", "情侣", 1, "现实中的真实情侣关系（当前暂无数据）"),
+    ("cp", "CP", 1, "粉丝组合/CP名"),
     ("spouse", "夫妻", 1, "婚姻关系"),
     ("teacher_student", "师生", 1, "师生关系"),
     ("same_company", "同公司", 1, "同属一家经纪/制作公司"),

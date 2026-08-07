@@ -12,7 +12,7 @@ for r in cur.fetchall():
     print(r)
 
 # Get CP type id
-cp_id = cur.execute("SELECT id FROM relation_types WHERE code='couple'").fetchone()[0]
+cp_id = cur.execute("SELECT id FROM relation_types WHERE code='cp'").fetchone()[0]
 
 # Add missing: 田野×相征 (300, 264), 田野×许昌泰 (300, 1626)
 for aid, bid, name in [(300, 264, "野相"), (300, 1626, "野泰")]:

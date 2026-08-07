@@ -40,7 +40,7 @@ V1 核心功能：
 - [x] 百度百科自动抓取（部分成功，44 人）
 - [x] 手动档案导入（213 人有资料，覆盖率约 9%）
 - [x] note 字段拆分为 major + nickname + note
-- [x] CP 关系入库（123 条）
+- [x] CP 关系入库（123 条，type=cp；couple 真实情侣暂空）
 - [x] 团体表建设（33 个团体 / 69 人次）
 - [x] 同学关系自动推导（同校 + 同 enrollment_year，70 对入库）
 - [x] 前端 MVP（`web/`：搜索演员/作品 + 关系图 + 档案面板 + 共同作品/参演剧目/作品演员表，零依赖离线可跑）
@@ -79,7 +79,7 @@ V1 核心功能：
 
 ### relations（用户关系，193 条）
 `type_id | actor_a | actor_b | detail | source_type | status`
-- type_id → relation_types：couple / classmate / friend / teacher_student / same_company / co_work
+- type_id → relation_types：cp（粉丝组合）/ classmate / friend / teacher_student / same_company / co_work / couple（真实情侣，暂空）
 - source_type：user | derived | media | official
 - status：pending | approved | rejected（现有 CP 均为 approved）
 

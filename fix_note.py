@@ -69,6 +69,7 @@ core_types = [
     ("classmate", "同学", 1),
     ("friend", "好友", 1),
     ("couple", "情侣", 1),
+    ("cp", "CP", 1),
     ("teacher_student", "师生", 1),
     ("same_company", "同公司", 1),
 ]
