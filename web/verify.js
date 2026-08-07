@@ -1,6 +1,7 @@
-// MusicGraph 前端一键回归验证（需本机 Chrome + playwright 本地模块）
+﻿// MusicGraph 前端一键回归验证（需本机 Chrome + playwright 本地模块）
 // 用法：node web/verify.js
-// 自动检查：数据加载 / 首页统计 / 搜索演员 / 角色展示 / 作品 / 团体 / 共演展开 / 类型筛选 / 无JS错误
+// 自动检查：数据加载 / 首页统计 / 搜索进入演员详情页 / 常共演无"自己"(多人) / 详情页互相跳转 /
+//          返回首页 / 作品 / 团体 / 类型筛选 / hash 直达详情页 / 无JS错误
 // playwright 优先用项目 node_modules，找不到则回退到 Codex 运行时内置路径
 let chromium;
 try { chromium = require("playwright").chromium; }
@@ -33,6 +34,13 @@ function check(name, cond, extra) {
   await page.goto(FILE_URL + "?v=" + Date.now(), { waitUntil: "load" });
   await page.waitForTimeout(3000);
 
+  async function openActor(name) {
+    await page.fill("#search", name);
+    await page.waitForTimeout(400);
+    await page.click("#dropdown .item:first-child");
+    await page.waitForTimeout(800);
+  }
+
   console.log("== 数据加载 ==");
   check("数据已加载", await page.evaluate(() => !!window.MUSIC_GRAPH && Object.keys(window.MUSIC_GRAPH.actors).length > 1000));
 
@@ -41,21 +49,40 @@ function check(name, cond, extra) {
   check("图谱统计显示", /节点/.test(stats), stats);
   check("热门演员入口", await page.$$eval("#hot-chips .chip", els => els.length) >= 5);
 
-  console.log("== 搜索演员 ==");
-  await page.fill("#search", "郑云龙");
-  await page.waitForTimeout(400);
-  const items = await page.$$eval("#dropdown .item", els => els.map(e => e.textContent));
-  check("搜索有结果", items.length > 0, items.slice(0, 2).join(" | "));
-  await page.click("#dropdown .item:first-child");
-  await page.waitForTimeout(700);
-  check("档案面板打开", !(await page.$eval("#panel", el => el.classList.contains("hidden"))));
-  check("关系列表有内容", await page.$$eval("#p-relations li", els => els.length) >= 1);
-  check("常共演有内容", await page.$$eval("#p-cowork li", els => els.length) >= 1);
-  const hasSelf = await page.$$eval("#p-cowork li", els => els.some(e => e.textContent.includes("郑云龙（共演")));
-  check("常共演无自己", !hasSelf);
-  // 角色展示：演员参演剧目应显示角色名
-  const rolesInMusicals = await page.$$eval("#p-musicals li", els => els.filter(e => /（/.test(e.textContent)).length);
+  console.log("== 搜索演员 -> 详情页 ==");
+  await openActor("郑云龙");
+  check("详情页打开", await page.$eval("#actor-view", el => !el.classList.contains("hidden")));
+  check("详情页姓名", (await page.textContent("#ap-name")) === "郑云龙", await page.textContent("#ap-name"));
+  check("关系列表有内容", await page.$$eval("#ap-relations li", els => els.length) >= 1);
+  check("常共演有内容", await page.$$eval("#ap-cowork li", els => els.length) >= 1);
+  const hasSelf1 = await page.$$eval("#ap-cowork li", els => els.some(e => e.textContent.startsWith("郑云龙共演")));
+  check("常共演无自己", !hasSelf1);
+  const rolesInMusicals = await page.$$eval("#ap-musicals li", els => els.filter(e => /（/.test(e.textContent)).length);
   check("参演剧目带角色", rolesInMusicals >= 1, "含角色条目数=" + rolesInMusicals);
+  const apCount = await page.evaluate(() => window.__apNodeCount || 0);
+  check("关系图渲染", apCount > 5, "节点数=" + apCount);
+
+  console.log("== 多人常共演无自己 ==");
+  const names = ["许昌泰", "郑棋元", "金圣权", "毛二", "张泽", "汤佳明", "阿云嘎", "刘令飞"];
+  const selfBad = [];
+  for (const n of names) {
+    await openActor(n);
+    const bad = await page.$$eval("#ap-cowork li", (els, nm) => els.some(e => e.textContent.startsWith(nm + "共演")), n);
+    if (bad) selfBad.push(n);
+  }
+  check("8人共演列表均无自己", selfBad.length === 0, "出现自己的人: " + selfBad.join("、"));
+
+  console.log("== 详情页互相跳转 ==");
+  const nameBefore = await page.textContent("#ap-name");
+  await page.click("#ap-cowork li:first-child span.c");
+  await page.waitForTimeout(800);
+  const nameAfter = await page.textContent("#ap-name");
+  check("点击搭档跳到对方详情页", nameAfter !== nameBefore, nameBefore + " -> " + nameAfter);
+
+  console.log("== 返回首页 ==");
+  await page.click("#ap-back");
+  await page.waitForTimeout(600);
+  check("返回图谱首页", await page.$eval("#home-view", el => !el.classList.contains("hidden")));
 
   console.log("== 作品 ==");
   await page.fill("#search", "哈姆雷特");
@@ -73,22 +100,30 @@ function check(name, cond, extra) {
   await page.waitForTimeout(500);
   check("团体成员", await page.$$eval("#p-cast li", els => els.length) >= 3);
 
-  console.log("== 共演展开 + 类型筛选 ==");
-  await page.check("#expand-cowork");
-  await page.fill("#search", "郑棋元");
-  await page.waitForTimeout(400);
-  await page.click("#dropdown .item:first-child");
-  await page.waitForTimeout(800);
-  check("展开共演不报错", errors.length === 0);
+  console.log("== 类型筛选 ==");
   await page.click('.lg[data-type="cp"]');
   await page.waitForTimeout(500);
   const stats2 = await page.textContent("#stats");
   check("类型筛选生效", stats2 !== stats, stats2);
-  await page.click('.lg[data-type="cp"]');
-  await page.waitForTimeout(500);
+
+  console.log("== hash 直达详情页 ==");
+  const zlyId = await page.evaluate(() => {
+    const a = window.MUSIC_GRAPH.actors;
+    for (const k in a) if (a[k].name === "郑云龙") return k;
+    return null;
+  });
+  if (zlyId) {
+    await page.goto(FILE_URL + "#/actor/" + zlyId, { waitUntil: "load" });
+    await page.waitForTimeout(1500);
+    const okName = (await page.textContent("#ap-name")) === "郑云龙";
+    const okView = await page.$eval("#actor-view", el => !el.classList.contains("hidden"));
+    check("直达详情页", okName && okView, "name=" + await page.textContent("#ap-name"));
+  } else {
+    check("直达详情页", false, "未找到郑云龙 id");
+  }
 
   console.log("== JS 错误 ==");
-  check("无 JS 错误", errors.length === 0, errors.slice(0, 2).join("; "));
+  check("无 JS 错误", errors.length === 0, errors.slice(0, 3).join("; "));
 
   await browser.close();
   console.log("\n结果: " + passed + " 通过, " + failed + " 失败");

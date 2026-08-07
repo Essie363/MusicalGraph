@@ -1,4 +1,8 @@
-/* MusicGraph 前端 MVP：零依赖 Canvas 力导向关系图 */
+﻿/* MusicGraph 前端：零依赖 Canvas 关系图
+   视图结构（hash 路由）：
+   - 首页 (#/)        ：全局关系图谱，只显示人名与关系连线（不显示共演场次），点击人物进入详情页
+   - 演员详情页 (#/actor/ID)：个人资料 + 以该演员为中心的关系网络 + 关系/共演/剧目/团体明细
+*/
 (function () {
   "use strict";
   var D = window.MUSIC_GRAPH;
@@ -8,12 +12,14 @@
     couple: "#e0546f", cp: "#e0546f", classmate: "#2f9e6e", friend: "#3f7fd6",
     teacher_student: "#8b5fd6", same_company: "#d68a2f", co_work: "#9aa3b2"
   };
+  var TYPE_LABEL = {
+    couple: "情侣", cp: "CP", classmate: "同学", friend: "好友",
+    teacher_student: "师生", same_company: "同公司", co_work: "共演"
+  };
 
-  // ---- 图数据构建 ----
-  var actors = D.actors, relations = D.relations, coWork = D.coWork, actorMusicals = D.actorMusicals || {}, musicals = D.musicals || {}, groups = D.groups || [];
-
-  // 统一 id 类型：data.js 中 coWork/relations/cast/members 的 id 是数字，
-  // 而 actors 的 key 与渲染时用的 id 是字符串，=== 比较会失败导致"自己"错判。
+  // ---- 数据准备：统一 id 为字符串，避免数字/字符串 === 比较失败导致"自己"错判 ----
+  var actors = D.actors, relations = D.relations, coWork = D.coWork,
+      actorMusicals = D.actorMusicals || {}, musicals = D.musicals || {}, groups = D.groups || [];
   function s(x) { return String(x); }
   relations.forEach(function (r) { r.a = s(r.a); r.b = s(r.b); });
   coWork.forEach(function (e) { e.a = s(e.a); e.b = s(e.b); });
@@ -30,14 +36,12 @@
   var nam2 = {};
   Object.keys(actorMusicals).forEach(function (aid) { nam2[s(aid)] = actorMusicals[aid]; });
   actorMusicals = nam2;
-  // actors 里的 id 字段也统一为字符串（focusActor(hit.data.id) 会用这个值）
   Object.keys(actors).forEach(function (k) { if (actors[k].id !== undefined) actors[k].id = s(actors[k].id); });
-  // musicals 数组 id 统一为字符串
   Object.keys(musicals).forEach(function (k) { if (musicals[k].id !== undefined) musicals[k].id = s(musicals[k].id); });
 
   var coWorkByActor = {};
   coWork.forEach(function (e) {
-    if (e.a === e.b) return;  // 防御：剔除"自己共演自己"的异常数据
+    if (e.a === e.b) return;                       // 防御：剔除"自己共演自己"的异常数据
     (coWorkByActor[e.a] = coWorkByActor[e.a] || []).push(e);
     (coWorkByActor[e.b] = coWorkByActor[e.b] || []).push(e);
   });
@@ -56,12 +60,53 @@
     return a.name;
   }
 
-  // 初始节点：参与关系的人
-  var baseIds = new Set();
-  relations.forEach(function (r) { baseIds.add(r.a); baseIds.add(r.b); });
+  // ============ hash 路由 ============
+  function currentActorId() {
+    var m = location.hash.match(/^#\/actor\/(.+)$/);
+    return m ? decodeURIComponent(m[1]) : null;
+  }
+  function goActor(id) {
+    var str = String(id);
+    if (currentActorId() === str) { showActorView(str); return; }
+    location.hash = "#/actor/" + encodeURIComponent(str);
+  }
+  function goHome() {
+    if (location.hash && location.hash !== "#" && location.hash !== "#/") location.hash = "#/";
+    showHomeView();
+  }
+  function goGroup(gid) { goHome(); showGroupPanel(gid); }
+  function goMusical(mid) { goHome(); showMusicalPanel(mid); }
+  window.addEventListener("hashchange", function () {
+    var id = currentActorId();
+    if (id) showActorView(id); else showHomeView();
+  });
 
-  var nodes = {};   // id -> {id,x,y,vx,vy,r,color,label,deg}
-  var edges = [];   // {a,b,type,color,dashed,width,label}
+  var homeView = document.getElementById("home-view");
+  var actorView = document.getElementById("actor-view");
+
+  function showHomeView() {
+    if (!homeView.classList.contains("hidden")) return;
+    homeView.classList.remove("hidden");
+    actorView.classList.add("hidden");
+    document.body.classList.remove("actor-mode");
+    resizeHome();
+    requestAnimationFrame(draw);
+  }
+  function showActorView(id) {
+    homeView.classList.add("hidden");
+    actorView.classList.remove("hidden");
+    document.body.classList.add("actor-mode");
+    hidePanel();
+    renderActorPage(id);
+  }
+
+  // ============ 首页：全局图谱 ============
+  var canvas = document.getElementById("graph"), ctx = canvas.getContext("2d");
+  var view = { x: 0, y: 0, zoom: 1 };
+  var nodes = {}, edges = [];
+  var visibleTypes = {};
+  ["couple", "cp", "classmate", "friend", "teacher_student", "same_company", "co_work"]
+    .forEach(function (ty) { visibleTypes[ty] = true; });
 
   function ensureNode(id, extra) {
     if (nodes[id]) return nodes[id];
@@ -74,10 +119,6 @@
     return nodes[id];
   }
 
-  var visibleTypes = {};   // 类型 -> 是否显示（默认全开）
-  ["couple", "cp", "classmate", "friend", "teacher_student", "same_company", "co_work"]
-    .forEach(function (ty) { visibleTypes[ty] = true; });
-
   function buildGraph() {
     nodes = {}; edges = [];
     // 参与任意可见类型关系的节点
@@ -87,11 +128,11 @@
     });
     Object.keys(active).forEach(function (id) { ensureNode(id); });
 
-    // 底层：共演边（若"共演"图例开启）——只画两端都在当前图谱里的边
+    // 底层：共演边（若"共演"图例开启）——只画两端都在当前图谱里的边；首页不显示场次数字
     if (visibleTypes["co_work"]) {
       coWork.forEach(function (e) {
         if (!nodes[e.a] || !nodes[e.b]) return;
-        edges.push({ a: e.a, b: e.b, type: "co_work", color: TYPE_COLOR["co_work"], dashed: true, width: 1, label: "共演" + e.count + "场" });
+        edges.push({ a: e.a, b: e.b, type: "co_work", color: TYPE_COLOR["co_work"], dashed: true, width: 1, label: "" });
       });
     }
 
@@ -106,26 +147,26 @@
     // 节点半径按关系数
     Object.keys(nodes).forEach(function (id) {
       var n = nodes[id];
-      var rels = relations.filter(function (r) { return (r.a === id || r.b === id) && visibleTypes[r.type]; });
-      n.r = 10 + Math.min(8, rels.length);
+      var rels = relations.filter(function (r) { return (r.a === id || r.b === id); });
+      n.r = 7 + Math.min(10, rels.length);
     });
   }
 
-  // ---- 力导向模拟 ----
-  var simRunning = false;
+  // ---- 力导向模拟：进入时带动效，收敛后停下（不再晃动）----
+  var simRunning = false, simFrame = 0, quietFrames = 0;
   function tick() {
-    var ks = 0.015, kc = 700, damp = 0.85, list = Object.keys(nodes).map(function (k) { return nodes[k]; });
+    if (!simRunning) return;
+    var list = Object.keys(nodes).map(function (k) { return nodes[k]; });
+    var ks = 0.02, kr = 1200, kd = 0.85, dt = 0.3;
     for (var i = 0; i < list.length; i++) {
       var a = list[i];
-      if (a.fixed) continue;
       for (var j = i + 1; j < list.length; j++) {
         var b = list[j];
-        var dx = a.x - b.x, dy = a.y - b.y;
-        var d2 = dx * dx + dy * dy + 1e-6;
-        var d = Math.sqrt(d2);
-        var f = kc / d2;
+        var dx = b.x - a.x, dy = b.y - a.y;
+        var d = Math.sqrt(dx * dx + dy * dy) + 1e-6;
+        var f = kr / (d * d);
         var fx = dx / d * f, fy = dy / d * f;
-        a.vx += fx; a.vy += fy; b.vx -= fx; b.vy -= fy;
+        a.vx -= fx; a.vy -= fy; b.vx += fx; b.vy += fy;
       }
     }
     edges.forEach(function (e) {
@@ -137,17 +178,18 @@
       var fx = dx / d * f, fy = dy / d * f;
       a.vx += fx; a.vy += fy; b.vx -= fx; b.vy -= fy;
     });
-    // 动能检测：总动能足够低且持续若干帧 -> 停止模拟（不再晃动）
-    var energy = 0;
     list.forEach(function (n) {
       if (n.fixed) return;
-      energy += n.vx * n.vx + n.vy * n.vy;
+      n.vx *= kd; n.vy *= kd;
+      n.x += n.vx * dt; n.y += n.vy * dt;
     });
+    // 动能检测：总动能足够低且持续若干帧 -> 停止模拟
+    var energy = 0;
+    list.forEach(function (n) { if (!n.fixed) energy += n.vx * n.vx + n.vy * n.vy; });
     var converged = energy < 2 && ++quietFrames >= 10;
     simFrame++;
-    if (converged || simFrame >= 240) {   // 收敛或最多约 5 秒后都停下来
+    if (converged || simFrame >= 240) {
       simRunning = false;
-      // 停止时清零速度，避免惯性漂移
       list.forEach(function (n) { n.vx = 0; n.vy = 0; });
       centerOnCentralNode();
       return;
@@ -155,10 +197,8 @@
     if (energy >= 2) quietFrames = 0;
     requestAnimationFrame(tick);
   }
-  var simFrame = 0;
-  var quietFrames = 0;
-  function startSim() { if (!simRunning) { simRunning = true; quietFrames = 0; requestAnimationFrame(tick); } }
-  // 稳定后把"连接数最多的人"放到画布中心
+  function startSim() { if (!simRunning) { simRunning = true; simFrame = 0; quietFrames = 0; requestAnimationFrame(tick); } }
+  // 稳定后把"连接数最多的人"放到画布中心（首页只定位，不跳转）
   function centerOnCentralNode() {
     var deg = {};
     edges.forEach(function (e) { deg[e.a] = (deg[e.a] || 0) + 1; deg[e.b] = (deg[e.b] || 0) + 1; });
@@ -168,22 +208,18 @@
       var n = nodes[best];
       view.x = -n.x * view.zoom;
       view.y = -n.y * view.zoom;
-      selectNode(best);
     }
   }
 
   // ---- 渲染 ----
-  var canvas = document.getElementById("graph"), ctx = canvas.getContext("2d");
-  var view = { x: 0, y: 0, zoom: 1 };
-  function resize() {
+  function resizeHome() {
     var dpr = window.devicePixelRatio || 1;
-    canvas.width = canvas.clientWidth * dpr;
-    canvas.height = canvas.clientHeight * dpr;
+    canvas.width = Math.max(100, canvas.clientWidth) * dpr;
+    canvas.height = Math.max(100, canvas.clientHeight) * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
-  window.addEventListener("resize", resize);
-  // 面板开关会改变 main 布局（flex），导致画布宽高变化——用 ResizeObserver 自动同步，
-  // 避免 clearRect 只清部分画布留下残影
+  window.addEventListener("resize", resizeHome);
+  // 面板开关会改变布局，导致画布宽高变化——用 ResizeObserver 自动同步，避免残影
   if (typeof ResizeObserver !== "undefined") {
     var graphWrap = document.getElementById("graph-wrap");
     var ro = new ResizeObserver(function () {
@@ -199,31 +235,25 @@
   }
 
   function draw() {
+    if (homeView.classList.contains("hidden")) return;
     ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
     ctx.save();
     ctx.translate(canvas.clientWidth / 2 + view.x, canvas.clientHeight / 2 + view.y);
     ctx.scale(view.zoom, view.zoom);
-    // edges
     edges.forEach(function (e) {
       var a = nodes[e.a], b = nodes[e.b];
       if (!a || !b) return;
-      ctx.strokeStyle = e.color; ctx.globalAlpha = e.dashed ? 0.5 : 0.65;
+      ctx.strokeStyle = e.color; ctx.globalAlpha = e.dashed ? 0.45 : 0.65;
       ctx.lineWidth = (e.width || 1) / view.zoom;
       ctx.setLineDash(e.dashed ? [6, 5] : []);
       ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
       ctx.setLineDash([]); ctx.globalAlpha = 1;
-      if (e.dashed && view.zoom > 0.7) {
-        ctx.fillStyle = "#888"; ctx.font = "10px sans-serif";
-        ctx.fillText(e.label || "", (a.x + b.x) / 2, (a.y + b.y) / 2 - 4);
-      }
     });
-    // nodes
-    var selId = selected;
     Object.keys(nodes).forEach(function (k) {
       var n = nodes[k];
       ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
       ctx.fillStyle = n.color; ctx.fill();
-      ctx.strokeStyle = (k === selId) ? "#222" : "#fff"; ctx.lineWidth = (k === selId ? 3 : 1.5);
+      ctx.strokeStyle = "#fff"; ctx.lineWidth = 1.5;
       ctx.stroke();
       if (view.zoom > 0.5) {
         ctx.fillStyle = "#333"; ctx.font = "12px sans-serif"; ctx.textAlign = "center";
@@ -235,59 +265,6 @@
   }
 
   // ---- 交互 ----
-  var selected = null;
-  var expandCowork = document.getElementById("expand-cowork").checked = false;
-  document.getElementById("expand-cowork").addEventListener("change", function (e) {
-    expandCowork = e.target.checked;
-    if (selected) selectNode(selected, true);
-  });
-
-  // 图例点击筛选关系类型
-  document.querySelectorAll(".lg[data-type]").forEach(function (el) {
-    el.addEventListener("click", function () {
-      var ty = el.getAttribute("data-type");
-      visibleTypes[ty] = !visibleTypes[ty];
-      el.classList.toggle("off", !visibleTypes[ty]);
-      var wasSelected = selected;
-      buildGraph();
-      // 重建后重新定位原选中节点
-      if (wasSelected && nodes[wasSelected]) {
-        var n = nodes[wasSelected];
-        view.x = -n.x * view.zoom; view.y = -n.y * view.zoom;
-        selectNode(wasSelected, true);
-      } else {
-        selected = null; hidePanel();
-      }
-      document.getElementById("stats").textContent =
-        "节点 " + Object.keys(nodes).length + " · 关系边 " + edges.length + " · 共演边 " + coWork.length;
-    });
-  });
-
-  function selectNode(id, fromExpand) {
-    if (id && nodes[id]) {
-      selected = id;
-      // 展开共演
-      var added = 0;
-      if (expandCowork && fromExpand !== false) {
-        (coWorkByActor[id] || []).filter(function (e) { return e.a !== e.b; }).slice(0, 12).forEach(function (e) {
-          var other = e.a === id ? e.b : e.a;
-          if (other === id) return;
-          if (!nodes[other]) {
-            var n = ensureNode(other, { color: "#b7bcc8" });
-            n.r = 7;
-            edges.push({ a: id, b: other, type: "co_work", color: "#9aa3b2", dashed: true, width: 1, label: "共演" + e.count + "场" });
-            added++;
-          }
-        });
-      }
-      if (added) startSim();   // 有新节点加入 -> 重新收敛布局
-      showPanel(id);
-    } else {
-      selected = null;
-      hidePanel();
-    }
-  }
-
   function screenToWorld(px, py) {
     return { x: (px - canvas.clientWidth / 2 - view.x) / view.zoom, y: (py - canvas.clientHeight / 2 - view.y) / view.zoom };
   }
@@ -329,10 +306,9 @@
     }
     if (panning) {
       panning = false;
-      // 判断是否点击（无位移）
       var rect = canvas.getBoundingClientRect();
       var hit = hitTest(e.clientX - rect.left, e.clientY - rect.top);
-      selectNode(hit);
+      if (hit) goActor(hit);      // 点击人物 -> 进入该演员的关系详情页
     }
   });
   canvas.addEventListener("wheel", function (e) {
@@ -348,7 +324,7 @@
   }, { passive: false });
 
   // ---- 触摸支持（移动端）----
-  var touches = null;          // {mode:'pan'|'drag'|'pinch', id, nodeId, startX, startY, startDist, startZoom}
+  var touches = null;
   var touchMoved = false;
   canvas.addEventListener("touchstart", function (e) {
     e.preventDefault();
@@ -372,7 +348,6 @@
       };
     }
   }, { passive: false });
-
   canvas.addEventListener("touchmove", function (e) {
     e.preventDefault();
     if (!touches) return;
@@ -380,93 +355,272 @@
     if (touches.mode === "pinch" && e.touches.length >= 2) {
       var a = e.touches[0], b = e.touches[1];
       var dist = Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
-      if (touches.startDist > 0) {
-        var before = screenToWorld(touches.cx, touches.cy);
-        view.zoom = Math.max(0.2, Math.min(4, touches.startZoom * dist / touches.startDist));
-        var after = screenToWorld(touches.cx, touches.cy);
-        view.x += (after.x - before.x) * view.zoom;
-        view.y += (after.y - before.y) * view.zoom;
-      }
-    } else {
-      var t = null;
-      for (var i = 0; i < e.touches.length; i++) {
-        if (e.touches[i].identifier === touches.id) { t = e.touches[i]; break; }
-      }
-      if (!t) return;
-      var px = t.clientX - rect.left, py = t.clientY - rect.top;
-      if (touches.mode === "drag") {
-        var p = screenToWorld(px, py);
-        nodes[touches.nodeId].x = p.x;
-        nodes[touches.nodeId].y = p.y;
-        nodes[touches.nodeId].fixed = true;
-      } else if (touches.mode === "pan") {
-        view.x += px - touches.startX;
-        view.y += py - touches.startY;
-      }
-      if (Math.abs(px - touches.startX) > 6 || Math.abs(py - touches.startY) > 6) touchMoved = true;
-      touches.startX = px; touches.startY = py;
+      var scale = dist / (touches.startDist || 1);
+      view.zoom = Math.max(0.2, Math.min(4, touches.startZoom * scale));
+      var cx = (a.clientX + b.clientX) / 2 - rect.left, cy = (a.clientY + b.clientY) / 2 - rect.top;
+      view.x += (touches.cx - cx) * (view.zoom / (touches.startZoom || 1));
+      view.y += (touches.cy - cy) * (view.zoom / (touches.startZoom || 1));
+      return;
+    }
+    if (touches.mode === "drag" && nodes[touches.nodeId]) {
+      var p = screenToWorld(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
+      nodes[touches.nodeId].x = p.x; nodes[touches.nodeId].y = p.y;
+      touchMoved = true;
+    } else if (touches.mode === "pan") {
+      view.x += e.touches[0].clientX - touches.startX; view.y += e.touches[0].clientY - touches.startY;
+      touches.startX = e.touches[0].clientX; touches.startY = e.touches[0].clientY;
+      touchMoved = true;
     }
   }, { passive: false });
-
   canvas.addEventListener("touchend", function (e) {
     e.preventDefault();
     if (!touches) return;
     if (touches.mode === "drag" && nodes[touches.nodeId]) nodes[touches.nodeId].fixed = false;
     var wasDrag = touches.mode === "drag";
     touches = null;
-    // 轻点（未移动）视为点击
     if (e.changedTouches && e.changedTouches.length === 1 && !touchMoved && !wasDrag) {
       var rect = canvas.getBoundingClientRect();
       var t = e.changedTouches[0];
       var hit = hitTest(t.clientX - rect.left, t.clientY - rect.top);
-      selectNode(hit);
+      if (hit) goActor(hit);
     }
     touchMoved = false;
   }, { passive: false });
   canvas.addEventListener("touchcancel", function () { touches = null; touchMoved = false; }, { passive: true });
 
-  // ---- 档案面板 ----
+  // ---- 图例点击筛选关系类型 ----
+  document.querySelectorAll(".lg[data-type]").forEach(function (el) {
+    el.addEventListener("click", function () {
+      var ty = el.getAttribute("data-type");
+      visibleTypes[ty] = !visibleTypes[ty];
+      el.classList.toggle("off", !visibleTypes[ty]);
+      buildGraph();
+      startSim();
+      updateStats();
+    });
+  });
+  function updateStats() {
+    document.getElementById("stats").textContent =
+      "节点 " + Object.keys(nodes).length + " · 关系边 " + edges.length + " · 共演边 " + coWork.length;
+  }
+
+  // ---- 侧边面板（作品 / 团体；演员已改为独立详情页） ----
   var panel = document.getElementById("panel");
   function hidePanel() { panel.classList.add("hidden"); }
-  function showPanel(id) {
-    document.getElementById("p-cast-title").classList.add("hidden");
-    document.getElementById("p-cast").classList.add("hidden");
-    document.getElementById("p-rel-title").classList.remove("hidden");
-    document.getElementById("p-mus-title").classList.remove("hidden");
-    document.getElementById("p-cw-title").classList.remove("hidden");
-    // 所属团体
-    var ug = document.getElementById("p-groups"), ugTitle = document.getElementById("p-gr-title");
-    ug.innerHTML = ""; ug.classList.add("hidden"); ugTitle.classList.add("hidden");
-    var myGroups = groups.filter(function (g) { return (g.members || []).indexOf(id) >= 0; });
-    if (myGroups.length) {
-      ugTitle.classList.remove("hidden"); ug.classList.remove("hidden");
-      myGroups.forEach(function (g) {
-        var li = document.createElement("li");
-        li.textContent = g.name;
-        li.style.cursor = "pointer"; li.style.color = "#3f7fd6";
-        li.addEventListener("click", function () { showGroupPanel(g.id); });
-        ug.appendChild(li);
-      });
-    }
-    var a = actors[id];
+  document.getElementById("panel-close").addEventListener("click", hidePanel);
+  function showGroupPanel(gid) {
+    var g = groups.filter(function (x) { return x.id === gid; })[0];
+    if (!g) return;
+    search.value = g.name;
+    dropdown.classList.add("hidden");
+    document.getElementById("p-name").textContent = "👥 " + g.name;
+    document.getElementById("p-nickname").textContent = "团体" + (g.type ? "（" + g.type + "）" : "");
+    document.getElementById("p-fields").innerHTML = "";
+    document.getElementById("p-relations").innerHTML = "";
+    document.getElementById("p-musicals").innerHTML = "";
+    document.getElementById("p-cowork").innerHTML = "";
+    document.getElementById("p-groups").innerHTML = "";
+    document.getElementById("p-rel-title").classList.add("hidden");
+    document.getElementById("p-mus-title").classList.add("hidden");
+    document.getElementById("p-cw-title").classList.add("hidden");
+    document.getElementById("p-gr-title").classList.add("hidden");
+    document.getElementById("p-cast-title").classList.remove("hidden");
+    document.getElementById("p-cast-title").textContent = "成员（" + (g.members || []).length + " 人）";
+    var ul = document.getElementById("p-cast");
+    ul.innerHTML = ""; ul.classList.remove("hidden");
+    (g.members || []).forEach(function (aid) {
+      var li = document.createElement("li");
+      li.textContent = actorLabel(aid);
+      li.style.cursor = "pointer"; li.style.color = "#3f7fd6";
+      li.addEventListener("click", function () { goActor(aid); });
+      ul.appendChild(li);
+    });
     panel.classList.remove("hidden");
-    document.getElementById("p-name").textContent = a ? a.name : actorName(id);
-    document.getElementById("p-nickname").textContent = a && a.nickname ? a.nickname : "";
-    var dl = document.getElementById("p-fields"); dl.innerHTML = "";
-    var fields = [
-      ["学校", "school"], ["入学", "enrollment_year"], ["专业", "major"],
-      ["籍贯", "hometown"], ["身高", "height"], ["生日", "birth_date"], ["备注", "note"]
-    ];
-    fields.forEach(function (f) {
-      if (a && a[f[1]]) {
-        var dt = document.createElement("dt"); dt.textContent = f[0];
-        var dd = document.createElement("dd"); dd.textContent = a[f[1]];
-        dl.appendChild(dt); dl.appendChild(dd);
+  }
+  function showMusicalPanel(mid) {
+    var m = musicals[mid];
+    if (!m) return;
+    search.value = m.name;
+    dropdown.classList.add("hidden");
+    document.getElementById("p-name").textContent = "🎭 " + m.name;
+    document.getElementById("p-nickname").textContent = "作品";
+    document.getElementById("p-fields").innerHTML = "";
+    document.getElementById("p-relations").innerHTML = "";
+    document.getElementById("p-musicals").innerHTML = "";
+    document.getElementById("p-cowork").innerHTML = "";
+    document.getElementById("p-groups").innerHTML = "";
+    document.getElementById("p-rel-title").classList.add("hidden");
+    document.getElementById("p-mus-title").classList.add("hidden");
+    document.getElementById("p-cw-title").classList.add("hidden");
+    document.getElementById("p-gr-title").classList.add("hidden");
+    document.getElementById("p-cast-title").classList.remove("hidden");
+    document.getElementById("p-cast-title").textContent = "演员表（" + (m.cast || []).length + " 人）";
+    var ul = document.getElementById("p-cast");
+    ul.innerHTML = ""; ul.classList.remove("hidden");
+    var castRoles = m.roles || {};
+    (m.cast || []).slice(0, 100).forEach(function (aid) {
+      var li = document.createElement("li");
+      li.textContent = actorLabel(aid);
+      var rs = castRoles[aid] || [];
+      if (rs.length) {
+        var span = document.createElement("span");
+        span.className = "rel-detail";
+        span.textContent = "（" + rs.join(" / ") + "）";
+        li.appendChild(span);
+      }
+      li.style.cursor = "pointer"; li.style.color = "#3f7fd6";
+      li.addEventListener("click", function () { goActor(aid); });
+      ul.appendChild(li);
+    });
+    panel.classList.remove("hidden");
+  }
+
+  // ============ 演员独立详情页 ============
+  var apCanvas = document.getElementById("ap-graph"), apCtx = apCanvas.getContext("2d");
+  var apNodes = {}, apEdges = [], apCenterId = null;
+  var apAnimating = false, apAnimStart = 0, apRadius = 230;
+
+  function apResize() {
+    var wrap = document.getElementById("ap-graph-wrap");
+    var dpr = window.devicePixelRatio || 1;
+    var w = Math.max(120, wrap.clientWidth), h = Math.max(120, wrap.clientHeight);
+    apCanvas.width = Math.round(w * dpr);
+    apCanvas.height = Math.round(h * dpr);
+    apCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    apRadius = Math.max(140, Math.min(w, h) / 2 - 80);
+  }
+  window.addEventListener("resize", function () { if (!actorView.classList.contains("hidden")) apResize(); });
+
+  function buildActorGraph(id) {
+    apNodes = {}; apEdges = [];
+    apCenterId = id;
+    apNodes[id] = { id: id, x: 0, y: 0, r: 16, color: "#e8604c", label: actorName(id), fixed: true };
+
+    // 直接相关的人：id -> {rel:[], cw:0, group:null}
+    var nbr = {};
+    function addRel(oid, r) {
+      if (oid === id) return;                       // 防御：绝不连"自己"
+      if (!nbr[oid]) nbr[oid] = { rel: [], cw: 0, group: null };
+      nbr[oid].rel.push(r);
+    }
+    relations.forEach(function (r) {
+      if (r.a === id) addRel(r.b, r);
+      else if (r.b === id) addRel(r.a, r);
+    });
+    // 常共演（按场次取前 20）
+    (coWorkByActor[id] || []).filter(function (e) { return e.a !== e.b; })
+      .slice().sort(function (x, y) { return y.count - x.count; }).slice(0, 20)
+      .forEach(function (e) {
+        var o = e.a === id ? e.b : e.a;
+        if (o === id) return;
+        if (!nbr[o]) nbr[o] = { rel: [], cw: 0, group: null };
+        nbr[o].cw = e.count;
+      });
+    // 团体成员
+    groups.forEach(function (g) {
+      var members = g.members || [];
+      if (!members.length || members.indexOf(id) < 0) return;
+      members.forEach(function (m) {
+        if (m === id) return;
+        if (!nbr[m]) nbr[m] = { rel: [], cw: 0, group: null };
+        nbr[m].group = g.name;
+      });
+    });
+
+    var order = Object.keys(nbr).sort(function (x, y) {
+      return (nbr[y].rel.length - nbr[x].rel.length) || (nbr[y].cw - nbr[x].cw);
+    });
+    order.forEach(function (oid, i) {
+      var info = nbr[oid];
+      var hasRel = info.rel.length > 0;
+      var color = hasRel ? "#5b8def" : (info.group ? "#3aa57a" : "#aab3c5");
+      var r = hasRel ? 12 : (info.group ? 10 : 8);
+      var angle = (i / Math.max(1, order.length)) * Math.PI * 2 - Math.PI / 2;
+      apNodes[oid] = {
+        id: oid, x: Math.cos(angle) * apRadius, y: Math.sin(angle) * apRadius,
+        r: r, color: color, label: actorLabel(oid), fixed: false
+      };
+      info.rel.forEach(function (r_) {
+        apEdges.push({ a: id, b: oid, color: TYPE_COLOR[r_.type] || "#999", dashed: false, width: 2, label: TYPE_LABEL[r_.type] || r_.typeName });
+      });
+      if (info.cw > 0) apEdges.push({ a: id, b: oid, color: TYPE_COLOR["co_work"], dashed: true, width: 1, label: "" });
+      if (info.group) apEdges.push({ a: id, b: oid, color: "#2f9e6e", dashed: true, width: 1, label: "" });
+    });
+    window.__apNodeCount = Object.keys(apNodes).length;
+
+    apAnimating = true;
+    apAnimStart = performance.now();
+    apCtx.clearRect(0, 0, apCanvas.clientWidth, apCanvas.clientHeight);
+    requestAnimationFrame(apDrawFrame);
+  }
+
+  function apDrawFrame(ts) {
+    if (!apAnimating) return;
+    var t = Math.min(1, (ts - apAnimStart) / 650);
+    var e = 1 - Math.pow(1 - t, 3);                 // easeOutCubic 进入动效，随后静止
+    apCtx.clearRect(0, 0, apCanvas.clientWidth, apCanvas.clientHeight);
+    var cx = apCanvas.clientWidth / 2, cy = apCanvas.clientHeight / 2;
+    apEdges.forEach(function (ed) {
+      var ax = cx, ay = cy, bx = cx + apNodes[ed.b].x * e, by = cy + apNodes[ed.b].y * e;
+      apCtx.strokeStyle = ed.color; apCtx.globalAlpha = ed.dashed ? 0.55 : 0.7;
+      apCtx.lineWidth = ed.width;
+      apCtx.setLineDash(ed.dashed ? [6, 5] : []);
+      apCtx.beginPath(); apCtx.moveTo(ax, ay); apCtx.lineTo(bx, by); apCtx.stroke();
+      apCtx.setLineDash([]);
+      if (ed.label && t > 0.7) {
+        apCtx.fillStyle = "#777"; apCtx.font = "11px sans-serif"; apCtx.textAlign = "center";
+        apCtx.fillText(ed.label, (ax + bx) / 2, (ay + by) / 2 - 4);
       }
     });
-    // 关系（同一对 + 同类型合并，多个 CP 名用顿号连接）
-    var ul = document.getElementById("p-relations"); ul.innerHTML = "";
-    var grouped = {};  // key: other_type -> {other, type, typeName, details: []}
+    apCtx.globalAlpha = 1;
+    Object.keys(apNodes).forEach(function (k) {
+      var n = apNodes[k];
+      var x = cx + n.x * e, y = cy + n.y * e;
+      apCtx.beginPath(); apCtx.arc(x, y, n.r, 0, Math.PI * 2);
+      apCtx.fillStyle = n.color; apCtx.fill();
+      apCtx.strokeStyle = (k === apCenterId) ? "#222" : "#fff"; apCtx.lineWidth = 2;
+      apCtx.stroke();
+      apCtx.fillStyle = "#333"; apCtx.font = "12px sans-serif"; apCtx.textAlign = "center";
+      apCtx.fillText(n.label, x, y + n.r + 14);
+    });
+    if (t < 1) requestAnimationFrame(apDrawFrame); else apAnimating = false;
+  }
+
+  apCanvas.addEventListener("click", function (e) {
+    if (!apCenterId || !apNodes[apCenterId]) return;
+    var rect = apCanvas.getBoundingClientRect();
+    var px = e.clientX - rect.left, py = e.clientY - rect.top;
+    var best = null, bd = 1e9;
+    Object.keys(apNodes).forEach(function (k) {
+      var n = apNodes[k];
+      var x = apCanvas.clientWidth / 2 + n.x, y = apCanvas.clientHeight / 2 + n.y;
+      var d = (x - px) * (x - px) + (y - py) * (y - py);
+      if (d < (n.r + 6) * (n.r + 6) && d < bd) { bd = d; best = k; }
+    });
+    if (best && best !== apCenterId) goActor(best);
+  });
+
+  // 演员页图例（静态颜色说明）
+  (function buildApLegend() {
+    var box = document.getElementById("ap-legend");
+    box.innerHTML = "";
+    [
+      ["情侣(待补充)", TYPE_COLOR.couple], ["CP", TYPE_COLOR.cp], ["同学", TYPE_COLOR.classmate],
+      ["好友", TYPE_COLOR.friend], ["师生", TYPE_COLOR.teacher_student], ["同公司", TYPE_COLOR.same_company],
+      ["共演", TYPE_COLOR.co_work], ["团体", "#2f9e6e"]
+    ].forEach(function (pair) {
+      var span = document.createElement("span");
+      span.className = "lg";
+      span.style.background = pair[1];
+      span.textContent = pair[0];
+      box.appendChild(span);
+    });
+  })();
+
+  // ---- 演员页内容 ----
+  function renderRelations(id) {
+    var ul = document.getElementById("ap-relations"); ul.innerHTML = "";
+    var grouped = {};
     relations.forEach(function (r) {
       if (r.a !== id && r.b !== id) return;
       var other = r.a === id ? r.b : r.a;
@@ -482,10 +636,12 @@
       tag.textContent = g.typeName;
       li.appendChild(tag);
       var txt = document.createElement("span");
+      txt.className = "c";
       var uniq = g.details.filter(function (v, i, arr) { return arr.indexOf(v) === i; });
-      txt.innerHTML = actorLabel(g.other) + (uniq.length ? " <span class='rel-detail'>(" + uniq.join(" / ") + ")</span>" : "");
+      txt.textContent = actorLabel(g.other) + (uniq.length ? "（" + uniq.join(" / ") + "）" : "");
+      txt.title = "查看 " + actorName(g.other) + " 的关系页";
+      txt.addEventListener("click", function () { goActor(g.other); });
       li.appendChild(txt);
-      // 共同作品（含各自角色）
       var myMusObj = actorMusicals[id] || {}, otherMusObj = actorMusicals[g.other] || {};
       var common = Object.keys(myMusObj).filter(function (m) { return otherMusObj.hasOwnProperty(m); });
       if (common.length) {
@@ -500,43 +656,122 @@
       var li = document.createElement("li"); li.textContent = "暂无手动关系记录";
       ul.appendChild(li);
     }
-    // 参演剧目（含角色）
-    var um = document.getElementById("p-musicals"); um.innerHTML = "";
-    var myMusObj = actorMusicals[id] || {};
-    var myMusList = Object.keys(myMusObj);
-    if (myMusList.length) {
-      myMusList.slice(0, 12).forEach(function (m) {
-        var li = document.createElement("li");
-        var rolesArr = myMusObj[m] || [];
-        li.innerHTML = m + (rolesArr.length ? " <span class='rel-detail'>（" + rolesArr.join(" / ") + "）</span>" : "");
-        um.appendChild(li);
-      });
-      if (myMusList.length > 12) {
-        var li = document.createElement("li");
-        li.className = "rel-detail";
-        li.textContent = "… 共 " + myMusList.length + " 部";
-        um.appendChild(li);
-      }
-    } else {
-      var li = document.createElement("li"); li.textContent = "暂无参演记录";
-      um.appendChild(li);
-    }
-    // 共演
-    var uc = document.getElementById("p-cowork"); uc.innerHTML = "";
-    var list = (coWorkByActor[id] || []).filter(function (e) { return e.a !== e.b; }).slice(0, 10);
+  }
+  function renderCowork(id) {
+    var ul = document.getElementById("ap-cowork"); ul.innerHTML = "";
+    var list = (coWorkByActor[id] || []).filter(function (e) { return e.a !== e.b; })
+      .slice().sort(function (x, y) { return y.count - x.count; }).slice(0, 30);
     list.forEach(function (e) {
       var other = e.a === id ? e.b : e.a;
-      if (other === id) return;  // 防御：绝不显示"自己"
+      if (other === id) return;                     // 防御：绝不显示"自己"
       var li = document.createElement("li");
-      li.textContent = actorLabel(other) + "（共演 " + e.count + " 场）";
-      uc.appendChild(li);
+      var span = document.createElement("span");
+      span.className = "c";
+      span.textContent = actorLabel(other);
+      span.title = "查看 " + actorName(other) + " 的关系页";
+      span.addEventListener("click", function () { goActor(other); });
+      li.appendChild(span);
+      var cnt = document.createElement("span");
+      cnt.className = "rel-detail";
+      cnt.textContent = "共演 " + e.count + " 场";
+      li.appendChild(cnt);
+      ul.appendChild(li);
     });
     if (!list.length) {
       var li = document.createElement("li"); li.textContent = "暂无共演数据";
-      uc.appendChild(li);
+      ul.appendChild(li);
     }
   }
-  document.getElementById("panel-close").addEventListener("click", function () { selected = null; hidePanel(); });
+  function renderMusicals(id) {
+    var ul = document.getElementById("ap-musicals"); ul.innerHTML = "";
+    var myMusObj = actorMusicals[id] || {};
+    var myMusList = Object.keys(myMusObj);
+    if (myMusList.length) {
+      myMusList.slice(0, 30).forEach(function (m) {
+        var li = document.createElement("li");
+        var rolesArr = myMusObj[m] || [];
+        var span = document.createElement("span");
+        span.className = "c";
+        span.textContent = m;
+        span.title = "查看作品演员表";
+        span.addEventListener("click", function () {
+          var mid = Object.keys(musicals).filter(function (k) { return musicals[k].name === m; })[0];
+          if (mid) goMusical(mid);
+        });
+        li.appendChild(span);
+        if (rolesArr.length) {
+          var sub = document.createElement("span");
+          sub.className = "rel-detail";
+          sub.textContent = "（" + rolesArr.join(" / ") + "）";
+          li.appendChild(sub);
+        }
+        ul.appendChild(li);
+      });
+      if (myMusList.length > 30) {
+        var li = document.createElement("li");
+        li.className = "rel-detail";
+        li.textContent = "… 共 " + myMusList.length + " 部";
+        ul.appendChild(li);
+      }
+    } else {
+      var li = document.createElement("li"); li.textContent = "暂无参演记录";
+      ul.appendChild(li);
+    }
+  }
+  function renderGroups(id) {
+    var ul = document.getElementById("ap-groups"); ul.innerHTML = "";
+    var myGroups = groups.filter(function (g) { return (g.members || []).indexOf(id) >= 0; });
+    myGroups.forEach(function (g) {
+      var li = document.createElement("li");
+      var span = document.createElement("span");
+      span.className = "c";
+      span.textContent = g.name;
+      span.title = "查看团体成员";
+      span.addEventListener("click", function () { goGroup(g.id); });
+      li.appendChild(span);
+      if (g.type) {
+        var sub = document.createElement("span");
+        sub.className = "rel-detail";
+        sub.textContent = g.type;
+        li.appendChild(sub);
+      }
+      ul.appendChild(li);
+    });
+    if (!ul.children.length) {
+      var li = document.createElement("li"); li.textContent = "暂无团体记录";
+      ul.appendChild(li);
+    }
+  }
+
+  function renderActorPage(id) {
+    var a = actors[id];
+    document.getElementById("ap-name").textContent = a ? a.name : "演员 " + id;
+    document.getElementById("ap-nickname").textContent = (a && a.nickname) ? a.nickname : "";
+    var dl = document.getElementById("ap-fields"); dl.innerHTML = "";
+    var fields = [
+      ["学校", "school"], ["入学", "enrollment_year"], ["专业", "major"],
+      ["籍贯", "hometown"], ["身高", "height"], ["生日", "birth_date"], ["备注", "note"]
+    ];
+    fields.forEach(function (f) {
+      if (a && a[f[1]]) {
+        var dt = document.createElement("dt"); dt.textContent = f[0];
+        var dd = document.createElement("dd"); dd.textContent = a[f[1]];
+        dl.appendChild(dt); dl.appendChild(dd);
+      }
+    });
+    if (!dl.children.length) {
+      var dt = document.createElement("dt"); dt.textContent = "资料";
+      var dd = document.createElement("dd"); dd.textContent = "暂无补充资料";
+      dl.appendChild(dt); dl.appendChild(dd);
+    }
+    renderRelations(id);
+    renderCowork(id);
+    renderMusicals(id);
+    renderGroups(id);
+    apResize();
+    buildActorGraph(id);
+  }
+  document.getElementById("ap-back").addEventListener("click", goHome);
 
   // ---- 搜索 ----
   var search = document.getElementById("search"), dropdown = document.getElementById("dropdown");
@@ -582,98 +817,19 @@
       }
       div.addEventListener("mousedown", function (ev) {
         ev.preventDefault();
-        if (hit.type === "actor") focusActor(hit.data.id);
-        else if (hit.type === "musical") showMusicalPanel(hit.id);
-        else showGroupPanel(hit.id);
+        if (hit.type === "actor") goActor(hit.data.id);
+        else if (hit.type === "musical") goMusical(hit.id);
+        else goGroup(hit.id);
       });
       dropdown.appendChild(div);
     });
     dropdown.classList.remove("hidden");
   }
-  function showGroupPanel(gid) {
-    var g = groups.filter(function (x) { return x.id === gid; })[0];
-    if (!g) return;
-    selected = null;
-    search.value = g.name;
-    dropdown.classList.add("hidden");
-    document.getElementById("p-name").textContent = "👥 " + g.name;
-    document.getElementById("p-nickname").textContent = "团体" + (g.type ? "（" + g.type + "）" : "");
-    document.getElementById("p-fields").innerHTML = "";
-    document.getElementById("p-relations").innerHTML = "";
-    document.getElementById("p-musicals").innerHTML = "";
-    document.getElementById("p-cowork").innerHTML = "";
-    document.getElementById("p-groups").innerHTML = "";
-    document.getElementById("p-rel-title").classList.add("hidden");
-    document.getElementById("p-mus-title").classList.add("hidden");
-    document.getElementById("p-cw-title").classList.add("hidden");
-    document.getElementById("p-gr-title").classList.add("hidden");
-    document.getElementById("p-cast-title").classList.remove("hidden");
-    document.getElementById("p-cast-title").textContent = "成员（" + (g.members || []).length + " 人）";
-    var ul = document.getElementById("p-cast");
-    ul.innerHTML = ""; ul.classList.remove("hidden");
-    (g.members || []).forEach(function (aid) {
-      var li = document.createElement("li");
-      li.textContent = actorLabel(aid);
-      li.style.cursor = "pointer"; li.style.color = "#3f7fd6";
-      li.addEventListener("click", function () { focusActor(aid); });
-      ul.appendChild(li);
-    });
-    panel.classList.remove("hidden");
-  }
-  function showMusicalPanel(mid) {
-    var m = musicals[mid];
-    if (!m) return;
-    selected = null;
-    search.value = m.name;
-    dropdown.classList.add("hidden");
-    document.getElementById("p-name").textContent = "🎭 " + m.name;
-    document.getElementById("p-nickname").textContent = "作品";
-    document.getElementById("p-fields").innerHTML = "";
-    document.getElementById("p-relations").innerHTML = "";
-    document.getElementById("p-musicals").innerHTML = "";
-    document.getElementById("p-cowork").innerHTML = "";
-    document.getElementById("p-rel-title").classList.add("hidden");
-    document.getElementById("p-mus-title").classList.add("hidden");
-    document.getElementById("p-cw-title").classList.add("hidden");
-    document.getElementById("p-cast-title").classList.remove("hidden");
-    document.getElementById("p-cast-title").textContent = "演员表（" + (m.cast || []).length + " 人）";
-    var ul = document.getElementById("p-cast");
-    ul.innerHTML = "";
-    ul.classList.remove("hidden");
-    var castRoles = m.roles || {};
-    (m.cast || []).slice(0, 100).forEach(function (aid) {
-      var li = document.createElement("li");
-      li.textContent = actorLabel(aid);
-      var rs = castRoles[aid] || [];
-      if (rs.length) {
-        var span = document.createElement("span");
-        span.className = "rel-detail";
-        span.textContent = "（" + rs.join(" / ") + "）";
-        li.appendChild(span);
-      }
-      li.style.cursor = "pointer";
-      li.style.color = "#3f7fd6";
-      li.addEventListener("click", function () { focusActor(aid); });
-      ul.appendChild(li);
-    });
-    panel.classList.remove("hidden");
-  }
-  function focusActor(id) {
-    search.value = actorName(id);
-    dropdown.classList.add("hidden");
-    if (!nodes[id]) {
-      var rels = relations.filter(function (r) { return r.a === id || r.b === id; });
-      if (!rels.length) { selected = null; showPanel(id); return; }  // 无关系但搜到：仅显示档案
-    }
-    selectNode(id);
-    var n = nodes[id];
-    if (n) { view.x = -n.x * view.zoom; view.y = -n.y * view.zoom; view.zoom = Math.max(view.zoom, 1.2); }
-  }
   search.addEventListener("input", doSearch);
   search.addEventListener("keydown", function (e) { if (e.key === "Enter") { var first = dropdown.querySelector(".item"); if (first) first.dispatchEvent(new MouseEvent("mousedown")); } });
   document.addEventListener("click", function (e) { if (!e.target.closest(".search-box")) dropdown.classList.add("hidden"); });
 
-  // ---- 热门演员标签 + 初始聚焦 ----
+  // ---- 热门演员标签 ----
   function degreeOf(id) {
     return relations.reduce(function (n, r) { return n + ((r.a === id || r.b === id) ? 1 : 0); }, 0);
   }
@@ -687,17 +843,19 @@
       var span = document.createElement("span");
       span.className = "chip";
       span.textContent = actorName(d.id);
-      span.addEventListener("click", function () { focusActor(d.id); });
+      span.addEventListener("click", function () { goActor(d.id); });
       chips.appendChild(span);
     });
   }
 
   // ---- 启动 ----
   buildGraph();
-  resize();
+  resizeHome();
   startSim();
   requestAnimationFrame(draw);
   buildHotChips();
-  document.getElementById("stats").textContent = "节点 " + Object.keys(nodes).length + " · 关系边 " + edges.length + " · 共演边 " + coWork.length;
-  // 初始聚焦：不再用定时器——模拟收敛后由 centerOnCentralNode 自动定位到最中心的人
+  updateStats();
+  // 初始路由：允许直接通过 #/actor/ID 打开详情页
+  var initId = currentActorId();
+  if (initId) showActorView(initId); else showHomeView();
 })();

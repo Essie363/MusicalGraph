@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -20,26 +20,55 @@
 </header>
 
 <main>
-  <div id="graph-wrap">
-    <canvas id="graph"></canvas>
-    <div id="hint">拖拽空白平移 · 滚轮缩放 · 点击节点查看档案 · 点击空白取消选择</div>
+  <!-- 首页：全局关系图谱（人名 + 关系连线，不显示共演场次） -->
+  <div id="home-view">
+    <div id="graph-wrap">
+      <canvas id="graph"></canvas>
+      <div id="hint">拖拽空白平移 · 滚轮缩放 · 点击人物进入他的关系详情页</div>
+    </div>
+    <aside id="panel" class="hidden">
+      <button id="panel-close" title="关闭">×</button>
+      <h2 id="p-name"></h2>
+      <div id="p-nickname" class="sub"></div>
+      <dl id="p-fields"></dl>
+      <h3 id="p-cast-title" class="hidden">演员表</h3>
+      <ul id="p-cast" class="hidden"></ul>
+      <h3 id="p-rel-title" class="hidden">关系</h3>
+      <ul id="p-relations"></ul>
+      <h3 id="p-mus-title" class="hidden">参演剧目</h3>
+      <ul id="p-musicals"></ul>
+      <h3 id="p-cw-title" class="hidden">常共演搭档</h3>
+      <ul id="p-cowork"></ul>
+      <h3 id="p-gr-title" class="hidden">所属团体</h3>
+      <ul id="p-groups" class="hidden"></ul>
+    </aside>
   </div>
-  <aside id="panel" class="hidden">
-    <button id="panel-close" title="关闭">×</button>
-    <h2 id="p-name"></h2>
-    <div id="p-nickname" class="sub"></div>
-    <dl id="p-fields"></dl>
-    <h3 id="p-cast-title" class="hidden">演员表</h3>
-    <ul id="p-cast" class="hidden"></ul>
-    <h3 id="p-rel-title">关系</h3>
-    <ul id="p-relations"></ul>
-    <h3 id="p-mus-title">参演剧目</h3>
-    <ul id="p-musicals"></ul>
-    <h3 id="p-cw-title">常共演搭档</h3>
-    <ul id="p-cowork"></ul>
-    <h3 id="p-gr-title" class="hidden">所属团体</h3>
-    <ul id="p-groups" class="hidden"></ul>
-  </aside>
+
+  <!-- 演员独立详情页：个人资料 + 关系网络 + 关系明细 -->
+  <div id="actor-view" class="hidden">
+    <div class="ap-head">
+      <button id="ap-back" title="返回首页图谱">← 返回图谱</button>
+      <div>
+        <h2 id="ap-name"></h2>
+        <div id="ap-nickname" class="sub"></div>
+      </div>
+    </div>
+    <dl id="ap-fields"></dl>
+    <div class="ap-grid">
+      <section class="ap-left">
+        <h3>关系网络</h3>
+        <div id="ap-graph-wrap"><canvas id="ap-graph"></canvas></div>
+        <div class="ap-hint">点击图中任意人物，进入他的关系详情页</div>
+        <div id="ap-legend" class="ap-legend"></div>
+      </section>
+      <section class="ap-right">
+        <h3>关系</h3><ul id="ap-relations"></ul>
+        <h3>常共演搭档</h3><ul id="ap-cowork"></ul>
+        <h3>参演剧目</h3><ul id="ap-musicals"></ul>
+        <h3>所属团体</h3><ul id="ap-groups"></ul>
+      </section>
+    </div>
+  </div>
 </main>
 
 <footer>
@@ -51,8 +80,7 @@
   <span class="lg lg-teacher" data-type="teacher_student" title="点击显示/隐藏">师生</span>
   <span class="lg lg-company" data-type="same_company" title="点击显示/隐藏">同公司</span>
   <span class="lg lg-cowork" data-type="co_work" title="点击显示/隐藏">共演</span>
-  <span id="filter-tip" class="filter-tip">点击图例可筛选关系类型</span>
-  <label><input type="checkbox" id="expand-cowork"> 点击节点时展开共演搭档</label>
+  <span id="filter-tip" class="filter-tip">点击图例可筛选首页关系类型</span>
   <span id="stats"></span>
 </footer>
 <script src="data.js"></script>

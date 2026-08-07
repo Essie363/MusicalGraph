@@ -65,6 +65,7 @@ E:\AI VibeCoding Project\MusicGraph\
 ├── check_gaps.py           ← 查询档案缺口
 ├── fix_note.py             ← note 字段拆分（专业/别名）
 ├── fix_cp.py               ← CP 关系补修脚本
+├── fix_major.py            ← major 字段语义清理（专业/学校/年级/备注各归各位）
 ├── import_cp.py            ← 导入 CP 关系到 relations 表
 ├── merge_baike.py          ← 合并百科 JSON 到 DB
 ├── snapshot_export.py       ← 导出 data/snapshot_*.csv 快照
@@ -185,11 +186,14 @@ python sync.py
 - [x] 前端角色展示（2026-08-07：演员参演剧目带角色名，作品演员表带角色，如郑棋元在《哈姆雷特》饰克劳狄斯）
 - [x] 前端团体视图（2026-08-07：搜索团体 → 成员列表 → 点击跳转演员，档案显示所属团体）
 - [x] 数据质量审计（2026-08-07：确认无脏数据；同名演员 15 组为合理多义；前端合并同对多名 CP）
+- [x] 前端架构调整（2026-08-07：首页图谱只显示人名与关系连线，去掉"共演N场"标签；点击人物打开独立详情页 #/actor/ID——个人资料 + 关系网络 + 关系/共演/剧目/团体明细；hash 路由支持浏览器后退与直达链接）
+- [x] 常共演列表不再出现"自己"（2026-08-07：根因是 coWork/relations 的 id 为数字而前端 key 为字符串，=== 比较失败导致取错端；已统一字符串化 + 双重防御，8 位演员抽样验证通过）
+- [x] 专业/备注字段语义清理（2026-08-07：42 人 major 只保留专业；学校/年级/备注各归各位；出生日期误填学校 6 条已修复；脚本 fix_major.py）
 - [x] 百科档案合并（2026-08-07：merge_baike.py 合并 19 条百科数据，uncovered_actors.csv 已更新）
 - [x] 快照导出脚本（2026-08-07：snapshot_export.py 统一导出 data/snapshot_*.csv，relations 含同学/情侣分类）
 - [ ] 将 SQLite 数据迁移到 Supabase
-- [ ] Next.js 前端搭建（搜索 + 演员页 + 关系详情页）
-- [ ] Cytoscape.js 关系图谱可视化
+- [ ] Next.js 前端搭建（可选升级路线；当前 web/ 零依赖 MVP 已实现搜索 + 演员详情页）
+- [ ] Cytoscape.js 关系图谱可视化（可选升级路线；当前为零依赖 Canvas 实现）
 - [ ] 用户系统 + 审核工作流（用户提交 → 管理员审核 → 入库）
 - [ ] Vercel 部署上线
 

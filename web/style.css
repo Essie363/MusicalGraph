@@ -1,4 +1,4 @@
-* { box-sizing: border-box; margin: 0; padding: 0; }
+﻿* { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; font-family: "Microsoft YaHei", "PingFang SC", sans-serif; background: #f6f7fb; color: #222; }
 header { display: flex; align-items: center; gap: 24px; padding: 12px 20px; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.08); position: relative; z-index: 10; }
 header h1 { font-size: 18px; color: #333; white-space: nowrap; }
@@ -11,7 +11,10 @@ header h1 { font-size: 18px; color: #333; white-space: nowrap; }
 .dropdown .item small { color: #888; margin-left: 8px; }
 .hidden { display: none !important; }
 
-main { display: flex; height: calc(100% - 110px); }
+main { height: calc(100% - 110px); }
+
+/* ---- 首页视图 ---- */
+#home-view { display: flex; height: 100%; min-height: 0; }
 #graph-wrap { position: relative; flex: 1; }
 canvas { display: block; width: 100%; height: 100%; background: #fff; }
 #hint { position: absolute; left: 12px; bottom: 10px; font-size: 12px; color: #999; background: rgba(255,255,255,.85); padding: 4px 8px; border-radius: 4px; }
@@ -41,13 +44,38 @@ footer { display: flex; align-items: center; gap: 12px; padding: 8px 20px; backg
 footer label { margin-left: auto; cursor: pointer; user-select: none; }
 #stats { color: #999; font-size: 12px; }
 
+/* ---- 演员详情页视图 ---- */
+#actor-view { height: 100%; overflow-y: auto; background: #fff; padding: 14px 20px 24px; }
+.ap-head { display: flex; align-items: center; gap: 16px; margin-bottom: 6px; }
+#ap-back { border: 1px solid #d5dae6; background: #fff; border-radius: 8px; padding: 7px 14px; cursor: pointer; font-size: 13px; color: #555; white-space: nowrap; }
+#ap-back:hover { background: #eef3ff; border-color: #5b8def; color: #3f7fd6; }
+#ap-name { font-size: 22px; color: #222; }
+#ap-nickname { color: #888; margin-top: 2px; }
+#ap-fields { display: grid; grid-template-columns: auto 1fr; gap: 5px 14px; font-size: 14px; margin: 8px 0 14px; max-width: 780px; }
+#ap-fields dt { color: #888; white-space: nowrap; }
+#ap-fields dd { word-break: break-all; }
+.ap-grid { display: grid; grid-template-columns: 1fr 400px; gap: 18px; align-items: start; }
+.ap-left h3, .ap-right h3 { font-size: 14px; color: #555; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 8px; }
+#ap-graph-wrap { position: relative; height: 540px; border: 1px solid #e3e6ef; border-radius: 10px; overflow: hidden; background: #fbfcfe; }
+#ap-graph { display: block; width: 100%; height: 100%; }
+.ap-hint { font-size: 12px; color: #999; margin-top: 8px; }
+.ap-legend { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.ap-legend .lg { cursor: default; }
+.ap-right ul { list-style: none; font-size: 14px; }
+.ap-right li { padding: 5px 0; border-bottom: 1px dashed #eff1f6; display: flex; gap: 6px; align-items: baseline; flex-wrap: wrap; }
+.ap-right li .tag { flex-shrink: 0; font-size: 12px; color: #fff; border-radius: 3px; padding: 1px 6px; }
+.ap-right li .rel-detail { color: #888; font-size: 12px; }
+.ap-right li .c { color: #3f7fd6; cursor: pointer; }
+.ap-right li .c:hover { text-decoration: underline; }
+body.actor-mode footer { display: none; }
 
 /* ---- 移动端响应式 ---- */
 @media (max-width: 860px) {
   header { flex-wrap: wrap; gap: 8px; padding: 10px 12px; }
   header h1 { font-size: 16px; }
   .search-box { max-width: none; }
-  main { flex-direction: column; height: calc(100% - 132px); }
+  main { height: calc(100% - 132px); }
+  #home-view { flex-direction: column; }
   #graph-wrap { order: 1; flex: 1; }
   #panel {
     order: 2; width: 100%; height: 42%; max-height: 42%;
@@ -56,9 +84,11 @@ footer label { margin-left: auto; cursor: pointer; user-select: none; }
     position: absolute; left: 0; right: 0; bottom: 0; z-index: 30;
     box-shadow: 0 -4px 16px rgba(0,0,0,.12);
   }
+  #actor-view { padding: 12px; }
+  .ap-grid { grid-template-columns: 1fr; }
+  #ap-graph-wrap { height: 420px; }
   #hint { display: none; }
   footer { font-size: 12px; gap: 8px; padding: 8px 12px; }
-  footer label { margin-left: 0; width: 100%; }
 }
 @media (max-width: 480px) {
   header h1 { font-size: 14px; }

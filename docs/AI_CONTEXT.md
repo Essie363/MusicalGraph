@@ -30,6 +30,7 @@ V1 核心功能：
 | 部署 | Vercel |
 
 架构：`网页 → Next.js → Cytoscape.js（关系图）→ Supabase（数据库）`
+> 现状（2026-08-07）：前端已落地为零依赖 Canvas MVP（`web/`，无需构建、双击/本地服务即开即用）；Next.js / Cytoscape 为后续可选升级路线。
 
 ## 4. 已完成 / 进行中 / 下一步
 
@@ -50,6 +51,9 @@ V1 核心功能：
 - [x] 前端角色展示（参演剧目/作品演员表带角色名）
 - [x] 前端团体视图（搜索团体/成员列表/所属团体）
 - [x] 数据质量审计（无脏数据；前端合并同对多名 CP）
+- [x] 前端架构调整（首页图谱只显示人名与关系连线，去掉"共演N场"标签；点击人物打开独立详情页 `#/actor/ID`，含个人资料 + 关系网络 + 关系/共演/剧目/团体明细；hash 路由支持后退与直达链接）
+- [x] 常共演列表不再出现"自己"（id 数字/字符串 === 比较失败根因修复 + 双重防御，8 位演员抽样验证通过）
+- [x] 专业/备注字段语义清理（major 只存专业；学校/年级/备注各归各位；出生日期误填学校 6 条修复）
 - [x] 百科档案合并（merge_baike.py，19 条；uncovered_actors.csv 已更新为 883 人）
 - [x] 快照导出脚本（snapshot_export.py → data/snapshot_*.csv）
 
@@ -61,8 +65,8 @@ V1 核心功能：
 - 继续补演员档案（覆盖率约 9%；`data/uncovered_actors.csv` 已更新，最活跃缺口：牛博为/周波/温升宝）
 - ~~同学关系自动推导~~（已完成，70 对入库）
 - SQLite → Supabase 迁移
-- Next.js 前端搭建（在 `web/` MVP 基础上升级：搜索 + 演员页 + 关系详情页）
-- Cytoscape.js 图谱可视化
+- Next.js 前端搭建（可选升级路线；`web/` 零依赖 MVP 已实现搜索 + 演员详情页）
+- Cytoscape.js 图谱可视化（可选升级路线；当前为零依赖 Canvas）
 - 用户系统 + 审核工作流（relations.status: pending → approved/rejected）
 - Vercel 部署上线
 
@@ -107,7 +111,8 @@ V1 核心功能：
 - `make_profile_template.py` — 生成档案补齐模板
 - `fetch_baike.py` — 百度百科抓取（当前被反爬拦截）
 - `refresh_all.py` — 一键刷新：快照 + 网页数据
-- `fix_note.py` / `fix_cp.py` — 数据修正脚本
+- `fix_note.py` / `fix_cp.py` / `fix_major.py` — 数据修正脚本（fix_major：专业/学校/年级/备注语义清理）
+- `web/` — 前端（index.html + app.js + style.css + data.js + verify.js，verify 为一键回归验证）
 
 ## 7. 注意事项
 
