@@ -8,6 +8,33 @@
 
 ---
 
+## ⚡ 快速通道：先上线静态版（今天就能拿到公网链接）
+
+> 你不需要等 Supabase/Next.js，`web/` 里的静态网页（HTML/CSS/JS，零依赖）可以**直接部署**，
+> 几分钟后就能得到公开链接，先让朋友看到效果。
+
+### 方式 A：Netlify Drop（最简单，无需命令行）
+
+1. 打开 <https://app.netlify.com/drop>（用邮箱或 GitHub 免费注册/登录）
+2. 把 **`E:\AI VibeCoding Project\MusicGraph\web` 文件夹** 直接拖进浏览器页面
+3. 几秒后部署完成，你会得到类似 `https://xxx.netlify.app` 的链接
+4. 数据更新后：重新运行 `python refresh_all.py`，再次拖入 `web` 文件夹即可（或以后接 Git 自动部署）
+
+### 方式 B：Vercel（推荐，以后正式版也用这个平台）
+
+1. 注册 <https://vercel.com>（用 GitHub 登录最方便）
+2. 安装 CLI 后执行：
+   ```bash
+   cd E:/AI VibeCoding Project/MusicGraph
+   npx vercel deploy web --prod
+   ```
+3. 得到 `https://xxx.vercel.app` 链接
+
+> 说明：静态版数据是"打包"在网页里的（`web/data.js`），数据库更新后要重新 `refresh_all.py` 再部署；
+> 正式版（第 3-5 步）接上 Supabase 后数据实时同步，就不需要重新部署了。
+
+---
+
 ## 第 0 步：准备工作（需要你做）
 
 1. 注册 Supabase → 创建一个新项目（记下 **Project URL** 和 **anon public key**，在 Settings → API）
