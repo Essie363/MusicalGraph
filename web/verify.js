@@ -1,6 +1,6 @@
 // MusicGraph 前端一键回归验证（需本机 Chrome + playwright 本地模块）
 // 用法：node web/verify.js
-// 自动检查：数据加载 / 首页统计 / 搜索演员 / 作品 / 团体 / 共演展开 / 类型筛选 / 无JS错误
+// 自动检查：数据加载 / 首页统计 / 搜索演员 / 角色展示 / 作品 / 团体 / 共演展开 / 类型筛选 / 无JS错误
 // playwright 优先用项目 node_modules，找不到则回退到 Codex 运行时内置路径
 let chromium;
 try { chromium = require("playwright").chromium; }
@@ -53,6 +53,9 @@ function check(name, cond, extra) {
   check("常共演有内容", await page.$$eval("#p-cowork li", els => els.length) >= 1);
   const hasSelf = await page.$$eval("#p-cowork li", els => els.some(e => e.textContent.includes("郑云龙（共演")));
   check("常共演无自己", !hasSelf);
+  // 角色展示：演员参演剧目应显示角色名
+  const rolesInMusicals = await page.$$eval("#p-musicals li", els => els.filter(e => /（/.test(e.textContent)).length);
+  check("参演剧目带角色", rolesInMusicals >= 1, "含角色条目数=" + rolesInMusicals);
 
   console.log("== 作品 ==");
   await page.fill("#search", "哈姆雷特");
@@ -60,6 +63,8 @@ function check(name, cond, extra) {
   await page.click("#dropdown .item:first-child");
   await page.waitForTimeout(500);
   check("作品演员表", await page.$$eval("#p-cast li", els => els.length) >= 5);
+  const castWithRole = await page.$$eval("#p-cast li", els => els.filter(e => /（/.test(e.textContent)).length);
+  check("作品演员表带角色", castWithRole >= 3, "带角色条目数=" + castWithRole);
 
   console.log("== 团体 ==");
   await page.fill("#search", "中戏17");
