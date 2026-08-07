@@ -132,7 +132,7 @@
     if (visibleTypes["co_work"]) {
       coWork.forEach(function (e) {
         if (!nodes[e.a] || !nodes[e.b]) return;
-        edges.push({ a: e.a, b: e.b, type: "co_work", color: TYPE_COLOR["co_work"], dashed: true, width: 1, label: "" });
+        edges.push({ a: e.a, b: e.b, type: "co_work", color: TYPE_COLOR["co_work"], dashed: true, width: 0.6, label: "" });
       });
     }
 
@@ -140,7 +140,7 @@
     relations.forEach(function (r) {
       if (!visibleTypes[r.type]) return;
       if (!nodes[r.a] || !nodes[r.b]) return;
-      edges.push({ a: r.a, b: r.b, type: r.type, color: TYPE_COLOR[r.type] || "#999", dashed: false, width: 2, label: r.typeName + (r.detail ? " · " + r.detail : "") });
+      edges.push({ a: r.a, b: r.b, type: r.type, color: TYPE_COLOR[r.type] || "#999", dashed: false, width: 1.4, label: r.typeName + (r.detail ? " · " + r.detail : "") });
       nodes[r.a].deg++; nodes[r.b].deg++;
     });
 
@@ -148,7 +148,7 @@
     Object.keys(nodes).forEach(function (id) {
       var n = nodes[id];
       var rels = relations.filter(function (r) { return (r.a === id || r.b === id); });
-      n.r = 7 + Math.min(10, rels.length);
+      n.r = 5 + Math.min(8, rels.length);
     });
   }
 
@@ -157,7 +157,7 @@
 
   function physicsStep() {
     var list = Object.keys(nodes).map(function (k) { return nodes[k]; });
-    var ks = 0.02, kr = 1200, kd = 0.85, dt = 0.3;
+    var ks = 0.02, kr = 1400, kd = 0.85, dt = 0.3;
     for (var i = 0; i < list.length; i++) {
       var a = list[i];
       for (var j = i + 1; j < list.length; j++) {
@@ -174,7 +174,7 @@
       if (!a || !b) return;
       var dx = b.x - a.x, dy = b.y - a.y;
       var d = Math.sqrt(dx * dx + dy * dy) + 1e-6;
-      var f = (d - 90) * ks;
+      var f = (d - 130) * ks;
       var fx = dx / d * f, fy = dy / d * f;
       a.vx += fx; a.vy += fy; b.vx -= fx; b.vy -= fy;
     });
@@ -185,10 +185,11 @@
     });
   }
 
-  // 同步快速收敛（几十毫秒）得到稳定的"网络形状"，并把"连接最多的人"放到画布中心
+  // 同步快速收敛得到稳定的"网络形状"，做归一化 + 重叠消除，保证排版松弛、不遮挡
   function layoutAndCenter() {
-    for (var i = 0; i < 300; i++) physicsStep();
+    for (var i = 0; i < 320; i++) physicsStep();
     Object.keys(nodes).forEach(function (k) { var n = nodes[k]; n.vx = 0; n.vy = 0; });
+    // 把"连接最多的人"放到画布中心
     var deg = {};
     edges.forEach(function (e) { deg[e.a] = (deg[e.a] || 0) + 1; deg[e.b] = (deg[e.b] || 0) + 1; });
     var best = null, bestDeg = -1;
@@ -197,15 +198,40 @@
       var cx = nodes[best].x, cy = nodes[best].y;
       Object.keys(nodes).forEach(function (k) { nodes[k].x -= cx; nodes[k].y -= cy; });
     }
-    // 软边界：让图谱整体落在屏幕范围内（宽 650 / 高 370 的椭圆）
-    var RX = 650, RY = 370;
-    Object.keys(nodes).forEach(function (k) {
+    // 归一化：把整张图缩放到恰好落在画布内（四周留边距），保证排版统一、松弛
+    var KEYS = Object.keys(nodes);
+    var minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
+    KEYS.forEach(function (k) {
       var n = nodes[k];
-      var r = Math.sqrt(Math.pow(n.x / RX, 2) + Math.pow(n.y / RY, 2));
-      if (r > 1) { n.x /= r; n.y /= r; }
+      if (n.x < minX) minX = n.x; if (n.x > maxX) maxX = n.x;
+      if (n.y < minY) minY = n.y; if (n.y > maxY) maxY = n.y;
     });
+    var w = Math.max(1, maxX - minX), h = Math.max(1, maxY - minY);
+    var TW = canvas.clientWidth - 160, TH = canvas.clientHeight - 160;
+    var s = Math.min(1, TW / w, TH / h);
+    KEYS.forEach(function (k) { nodes[k].x *= s; nodes[k].y *= s; });
+    // 重叠消除：把靠得太近的人推开，保证任意两人之间至少 40px、互不遮挡
+    var MIN_D = 44;
+    for (var it = 0; it < 80; it++) {
+      var moved = false;
+      for (var i = 0; i < KEYS.length; i++) {
+        for (var j = i + 1; j < KEYS.length; j++) {
+          var a = nodes[KEYS[i]], b = nodes[KEYS[j]];
+          var dx = b.x - a.x, dy = b.y - a.y;
+          var d = Math.sqrt(dx * dx + dy * dy) + 1e-6;
+          if (d < MIN_D) {
+            var push = (MIN_D - d) / 2;
+            var ux = dx / d, uy = dy / d;
+            a.x -= ux * push; a.y -= uy * push;
+            b.x += ux * push; b.y += uy * push;
+            moved = true;
+          }
+        }
+      }
+      if (!moved) break;
+    }
+    view.zoom = 0.92;
     view.x = 0; view.y = 0;
-    if (view.zoom < 1) view.zoom = 1;
   }
 
   // 0.8 秒入场动效：节点从中心平滑展开到各自位置
@@ -253,7 +279,7 @@
     edges.forEach(function (ed) {
       var a = nodes[ed.a], b = nodes[ed.b];
       if (!a || !b) return;
-      ctx.strokeStyle = ed.color; ctx.globalAlpha = (ed.dashed ? 0.45 : 0.65) * (0.25 + 0.75 * pe);
+      ctx.strokeStyle = ed.color; ctx.globalAlpha = (ed.dashed ? 0.25 : 0.5) * (0.25 + 0.75 * pe);
       ctx.lineWidth = (ed.width || 1) / view.zoom;
       ctx.setLineDash(ed.dashed ? [6, 5] : []);
       ctx.beginPath(); ctx.moveTo(a.x * pe, a.y * pe); ctx.lineTo(b.x * pe, b.y * pe); ctx.stroke();
@@ -264,7 +290,7 @@
       var x = n.x * pe, y = n.y * pe;
       ctx.beginPath(); ctx.arc(x, y, n.r, 0, Math.PI * 2);
       ctx.fillStyle = n.color; ctx.fill();
-      ctx.strokeStyle = "#fff"; ctx.lineWidth = 1.5;
+      ctx.strokeStyle = "#fff"; ctx.lineWidth = 1;
       ctx.stroke();
       if (view.zoom > 0.5) {
         ctx.fillStyle = "#333"; ctx.font = "12px sans-serif"; ctx.textAlign = "center";
@@ -563,10 +589,10 @@
         r: r, color: color, label: actorLabel(oid), fixed: false
       };
       info.rel.forEach(function (r_) {
-        apEdges.push({ a: id, b: oid, color: TYPE_COLOR[r_.type] || "#999", dashed: false, width: 2, label: TYPE_LABEL[r_.type] || r_.typeName });
+        apEdges.push({ a: id, b: oid, color: TYPE_COLOR[r_.type] || "#999", dashed: false, width: 1.6, label: TYPE_LABEL[r_.type] || r_.typeName });
       });
-      if (info.cw > 0) apEdges.push({ a: id, b: oid, color: TYPE_COLOR["co_work"], dashed: true, width: 1, label: "" });
-      if (info.group) apEdges.push({ a: id, b: oid, color: "#2f9e6e", dashed: true, width: 1, label: "" });
+      if (info.cw > 0) apEdges.push({ a: id, b: oid, color: TYPE_COLOR["co_work"], dashed: true, width: 0.8, label: "" });
+      if (info.group) apEdges.push({ a: id, b: oid, color: "#2f9e6e", dashed: true, width: 0.8, label: "" });
     });
     window.__apNodeCount = Object.keys(apNodes).length;
 
@@ -584,7 +610,7 @@
     var cx = apCanvas.clientWidth / 2, cy = apCanvas.clientHeight / 2;
     apEdges.forEach(function (ed) {
       var ax = cx, ay = cy, bx = cx + apNodes[ed.b].x * e, by = cy + apNodes[ed.b].y * e;
-      apCtx.strokeStyle = ed.color; apCtx.globalAlpha = ed.dashed ? 0.55 : 0.7;
+      apCtx.strokeStyle = ed.color; apCtx.globalAlpha = ed.dashed ? 0.35 : 0.55;
       apCtx.lineWidth = ed.width;
       apCtx.setLineDash(ed.dashed ? [6, 5] : []);
       apCtx.beginPath(); apCtx.moveTo(ax, ay); apCtx.lineTo(bx, by); apCtx.stroke();
@@ -882,6 +908,7 @@
 
   // ---- 供自动化验证读取的调试接口（对日常使用无影响）----
   window.__entranceT = function () { return entranceT; };
+  window.__homeZoom = function () { return view.zoom; };
   window.__homeNodeIds = function () { return Object.keys(nodes); };
   window.__homeNodeScreen = function (id) {
     var n = nodes[id]; if (!n) return null;
