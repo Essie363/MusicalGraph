@@ -132,6 +132,21 @@
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
   window.addEventListener("resize", resize);
+  // 面板开关会改变 main 布局（flex），导致画布宽高变化——用 ResizeObserver 自动同步，
+  // 避免 clearRect 只清部分画布留下残影
+  if (typeof ResizeObserver !== "undefined") {
+    var graphWrap = document.getElementById("graph-wrap");
+    var ro = new ResizeObserver(function () {
+      var w = Math.max(100, canvas.clientWidth), h = Math.max(100, canvas.clientHeight);
+      var dpr = window.devicePixelRatio || 1;
+      if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) {
+        canvas.width = Math.round(w * dpr);
+        canvas.height = Math.round(h * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+    });
+    ro.observe(graphWrap);
+  }
 
   function draw() {
     ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
