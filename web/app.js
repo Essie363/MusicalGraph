@@ -90,7 +90,7 @@
   // ---- 力导向模拟 ----
   var simRunning = false;
   function tick() {
-    var ks = 0.02, kc = 6000, damp = 0.85, list = Object.keys(nodes).map(function (k) { return nodes[k]; });
+    var ks = 0.015, kc = 700, damp = 0.85, list = Object.keys(nodes).map(function (k) { return nodes[k]; });
     for (var i = 0; i < list.length; i++) {
       var a = list[i];
       if (a.fixed) continue;
@@ -113,14 +113,40 @@
       var fx = dx / d * f, fy = dy / d * f;
       a.vx += fx; a.vy += fy; b.vx -= fx; b.vy -= fy;
     });
+    // 动能检测：总动能足够低且持续若干帧 -> 停止模拟（不再晃动）
+    var energy = 0;
     list.forEach(function (n) {
       if (n.fixed) return;
-      n.vx *= damp; n.vy *= damp;
-      n.x += n.vx; n.y += n.vy;
+      energy += n.vx * n.vx + n.vy * n.vy;
     });
+    var converged = energy < 2 && ++quietFrames >= 10;
+    simFrame++;
+    if (converged || simFrame >= 240) {   // 收敛或最多约 5 秒后都停下来
+      simRunning = false;
+      // 停止时清零速度，避免惯性漂移
+      list.forEach(function (n) { n.vx = 0; n.vy = 0; });
+      centerOnCentralNode();
+      return;
+    }
+    if (energy >= 2) quietFrames = 0;
     requestAnimationFrame(tick);
   }
-  function startSim() { if (!simRunning) { simRunning = true; requestAnimationFrame(tick); } }
+  var simFrame = 0;
+  var quietFrames = 0;
+  function startSim() { if (!simRunning) { simRunning = true; quietFrames = 0; requestAnimationFrame(tick); } }
+  // 稳定后把"连接数最多的人"放到画布中心
+  function centerOnCentralNode() {
+    var deg = {};
+    edges.forEach(function (e) { deg[e.a] = (deg[e.a] || 0) + 1; deg[e.b] = (deg[e.b] || 0) + 1; });
+    var best = null, bestDeg = -1;
+    Object.keys(deg).forEach(function (id) { if (deg[id] > bestDeg) { bestDeg = deg[id]; best = id; } });
+    if (best && nodes[best]) {
+      var n = nodes[best];
+      view.x = -n.x * view.zoom;
+      view.y = -n.y * view.zoom;
+      selectNode(best);
+    }
+  }
 
   // ---- 渲染 ----
   var canvas = document.getElementById("graph"), ctx = canvas.getContext("2d");
@@ -217,6 +243,7 @@
     if (id && nodes[id]) {
       selected = id;
       // 展开共演
+      var added = 0;
       if (expandCowork && fromExpand !== false) {
         (coWorkByActor[id] || []).filter(function (e) { return e.a !== e.b; }).slice(0, 12).forEach(function (e) {
           var other = e.a === id ? e.b : e.a;
@@ -225,9 +252,11 @@
             var n = ensureNode(other, { color: "#b7bcc8" });
             n.r = 7;
             edges.push({ a: id, b: other, type: "co_work", color: "#9aa3b2", dashed: true, width: 1, label: "共演" + e.count + "场" });
+            added++;
           }
         });
       }
+      if (added) startSim();   // 有新节点加入 -> 重新收敛布局
       showPanel(id);
     } else {
       selected = null;
@@ -636,16 +665,5 @@
   requestAnimationFrame(draw);
   buildHotChips();
   document.getElementById("stats").textContent = "节点 " + Object.keys(nodes).length + " · 关系边 " + edges.length + " · 共演边 " + coWork.length;
-  // 初始聚焦：度数最高的节点（2.5 秒后视图稳定再聚焦）
-  setTimeout(function () {
-    var degs = [];
-    Object.keys(nodes).forEach(function (id) { degs.push({ id: id, deg: degreeOf(id) }); });
-    degs.sort(function (x, y) { return y.deg - x.deg; });
-    if (degs.length) {
-      var top = degs[0].id;
-      var n = nodes[top];
-      if (n) { view.x = -n.x * view.zoom; view.y = -n.y * view.zoom; }
-      selectNode(top);
-    }
-  }, 2500);
+  // 初始聚焦：不再用定时器——模拟收敛后由 centerOnCentralNode 自动定位到最中心的人
 })();
