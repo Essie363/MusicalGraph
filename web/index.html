@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -7,84 +7,308 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header>
-  <h1>MusicGraph 音乐剧演员关系图谱</h1>
-  <div class="search-box">
-    <input id="search" type="text" placeholder="搜索演员 / 作品…" autocomplete="off">
-    <div id="dropdown" class="dropdown hidden"></div>
-    <div id="hot" class="hot">
-      <span class="hot-label">热门：</span>
-      <span id="hot-chips"></span>
-    </div>
+<a class="skip-link" href="#main">跳转到主要内容</a>
+<!-- 顶部导航 -->
+<nav class="topnav">
+  <span class="brand">MusicGraph</span>
+  <div class="nav-links">
+    <a href="#/home" data-nav="home">Home</a>
+    <a href="#/graph" data-nav="graph">Graph</a>
+    <a href="#/contribute" data-nav="contribute">Contribute</a>
   </div>
-</header>
+</nav>
 
-<main>
-  <!-- 首页：全局关系图谱（人名 + 关系连线，不显示共演场次） -->
-  <div id="home-view">
-    <div id="graph-wrap">
-      <canvas id="graph"></canvas>
-      <div id="hint">拖拽空白平移 · 滚轮缩放 · 点击人物进入他的关系详情页</div>
+<main id="main">
+<!-- ============ Home 首页 ============ -->
+<div id="view-home" class="view hidden">
+  <section id="hero">
+    <div class="hero-inner">
+      <div class="hero-eyebrow">MusicGraph · 音乐剧演员关系图谱</div>
+      <h1 class="hero-title">Where Stories<br>Meet on Stage</h1>
+      <p class="hero-sub">探索演员、角色、剧目与创作之间那些尚未被看见的连接。</p>
+      <a class="hero-btn" href="#/graph">探索图谱</a>
     </div>
+  </section>
+
+  <section id="intro">
+    <h2>关于 MusicGraph</h2>
+    <p>一张由社区共同维护的音乐剧演员关系图谱。<br>在这里，演员、角色、剧目与创作信息被连接成可以持续探索的网络。</p>
+    <h3>你可以探索</h3>
+    <div class="explore-grid">
+      <a class="explore-card" href="#/graph">
+        <h4>看两位演员如何相遇</h4>
+        <p>查看同台次数、共同出演剧目与角色轨迹</p>
+        <svg class="ec-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="explore-card" href="#/graph">
+        <h4>找到隐藏的连接</h4>
+        <p>沿共演、同学、同公司等线索发现关系</p>
+        <svg class="ec-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="explore-card" href="#/graph">
+        <h4>追踪一位演员的舞台足迹</h4>
+        <p>浏览参演剧目、角色和合作阵容</p>
+        <svg class="ec-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="explore-card" href="#/graph">
+        <h4>从一个名字出发</h4>
+        <p>沿关系网络继续探索整个演员圈</p>
+        <svg class="ec-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+    </div>
+    <h3>和我们一起</h3>
+    <a class="join-card" href="#/contribute" aria-label="去 Contribute 补充信息">
+      <p><strong>社区共建</strong> · 发现缺失或错误信息，欢迎提交补充；内容经审核后更新到图谱，让这份资料越来越完整。</p>
+      <svg class="join-arrow" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </a>
+  </section>
+
+  <div class="home-foot">
+    <a href="#intro">Help</a>
+    <a href="#/contribute">Contribute</a>
+    <a href="#" id="contact-link">Contact</a>
+  </div>
+</div>
+
+<!-- ============ Graph 关系图谱页 ============ -->
+<div id="view-graph" class="view hidden">
+  <h1 class="visually-hidden">关系图谱</h1>
+  <div id="home-view">
+    <div id="graph-main">
+      <button id="tools-toggle" class="tools-toggle" title="展开/收起工具面板">工具</button>
+      <div id="graph-wrap">
+        <canvas id="graph"></canvas>
+        <div id="hover-card" class="hover-card hidden"></div>
+        <div id="hint">光点即演员 · 悬停查看姓名与关系 · 单击聚焦展开 · 双击进详情 · 双指滑动平移 · 捏合缩放 · Esc 返回全局图谱</div>
+      </div>
     <aside id="panel" class="hidden">
-      <button id="panel-close" title="关闭">×</button>
-      <h2 id="p-name"></h2>
-      <div id="p-nickname" class="sub"></div>
-      <dl id="p-fields"></dl>
-      <h3 id="p-cast-title" class="hidden">演员表</h3>
-      <ul id="p-cast" class="hidden"></ul>
-      <h3 id="p-rel-title" class="hidden">关系</h3>
-      <ul id="p-relations"></ul>
-      <h3 id="p-mus-title" class="hidden">参演剧目</h3>
-      <ul id="p-musicals"></ul>
-      <h3 id="p-cw-title" class="hidden">常共演搭档</h3>
-      <ul id="p-cowork"></ul>
-      <h3 id="p-gr-title" class="hidden">所属团体</h3>
-      <ul id="p-groups" class="hidden"></ul>
+      <div id="panel-box">
+        <button id="panel-close" title="关闭">×</button>
+        <h2 id="p-name"></h2>
+        <div id="p-nickname" class="sub"></div>
+        <dl id="p-fields"></dl>
+        <h3 id="p-cast-title" class="hidden">演员表</h3>
+        <ul id="p-cast" class="hidden"></ul>
+        <h3 id="p-rel-title" class="hidden">关系</h3>
+        <ul id="p-relations"></ul>
+        <h3 id="p-mus-title" class="hidden">参演剧目</h3>
+        <ul id="p-musicals"></ul>
+        <h3 id="p-cw-title" class="hidden">常共演搭档</h3>
+        <ul id="p-cowork"></ul>
+        <h3 id="p-gr-title" class="hidden">所属团体</h3>
+        <ul id="p-groups" class="hidden"></ul>
+      </div>
+    </aside>
+    </div>
+    <aside id="graph-tools">
+      <section class="gt-block">
+        <div class="search-box">
+          <input id="search" type="text" placeholder="搜索演员 / 作品 / 团体…" autocomplete="off" aria-label="搜索演员 / 作品 / 团体">
+          <div id="dropdown" class="dropdown hidden"></div>
+        </div>
+      </section>
+      <section id="focus-card" class="gt-block gt-focus hidden">
+        <div class="fc-head"><span id="fc-name"></span><button id="fc-close" title="返回全局图谱">×</button></div>
+        <div id="fc-stats" class="fc-stats"></div>
+        <div id="fc-tags" class="fc-tags"></div>
+        <div class="fc-actions">
+          <button id="fc-detail" class="fc-btn primary">查看详情</button>
+          <button id="fc-global" class="fc-btn">返回全局</button>
+        </div>
+      </section>
+      <section id="legend" class="gt-block">
+        <div class="legend-title"><span>关系类型</span><span id="stats"></span></div>
+        <div class="legend-items">
+          <span class="lg lg-married" data-type="married" title="点击显示/隐藏">伴侣</span>
+          <span class="lg lg-couple" data-type="couple" title="点击显示/隐藏">情侣</span>
+          <span class="lg lg-ex" data-type="ex" title="点击显示/隐藏">前任</span>
+          <span class="lg lg-cp" data-type="cp" title="点击显示/隐藏">CP</span>
+          <span class="lg lg-classmate" data-type="classmate" title="点击显示/隐藏">同学</span>
+          <span class="lg lg-cowork" data-type="co_work" title="点击显示/隐藏">共演</span>
+        </div>
+        <div class="legend-actions">
+          <button id="legend-all" type="button">全部显示</button>
+          <button id="legend-none" type="button">全部隐藏</button>
+        </div>
+      </section>
     </aside>
   </div>
+</div>
 
-  <!-- 演员独立详情页：个人资料 + 关系网络 + 关系明细 -->
-  <div id="actor-view" class="hidden">
-    <div class="ap-head">
-      <button id="ap-back" title="返回首页图谱">← 返回图谱</button>
-      <div>
-        <h2 id="ap-name"></h2>
-        <div id="ap-nickname" class="sub"></div>
-      </div>
-    </div>
-    <dl id="ap-fields"></dl>
-    <div class="ap-grid">
-      <section class="ap-left">
-        <h3>关系网络</h3>
-        <div id="ap-graph-wrap"><canvas id="ap-graph"></canvas></div>
-        <div class="ap-hint">点击图中任意人物，进入他的关系详情页</div>
-        <div id="ap-legend" class="ap-legend"></div>
-      </section>
-      <section class="ap-right">
-        <h3>关系</h3><ul id="ap-relations"></ul>
-        <h3>常共演搭档</h3><ul id="ap-cowork"></ul>
-        <h3>参演剧目</h3><ul id="ap-musicals"></ul>
-        <h3>所属团体</h3><ul id="ap-groups"></ul>
-      </section>
-    </div>
+<!-- ============ Contribute 信息补充页 ============ -->
+<div id="view-contribute" class="view hidden">
+  <div class="page-head">
+    <h1>Contribute</h1>
+    <p class="page-sub">Found missing information? Help us improve the musical theater database.</p>
   </div>
-</main>
 
-<footer>
-  <span>图例：</span>
-  <span class="lg lg-married" data-type="married" title="点击显示/隐藏">伴侣</span>
-  <span class="lg lg-couple" data-type="couple" title="点击显示/隐藏">情侣</span>
-  <span class="lg lg-ex" data-type="ex" title="点击显示/隐藏">前任</span>
-  <span class="lg lg-couple" data-type="cp" title="点击显示/隐藏">CP</span>
-  <span class="lg lg-classmate" data-type="classmate" title="点击显示/隐藏">同学</span>
-  <span class="lg lg-friend" data-type="friend" title="点击显示/隐藏">好友</span>
-  <span class="lg lg-teacher" data-type="teacher_student" title="点击显示/隐藏">师生</span>
-  <span class="lg lg-company" data-type="same_company" title="点击显示/隐藏">同公司</span>
-  <span class="lg lg-cowork" data-type="co_work" title="点击显示/隐藏">共演</span>
-  <span id="filter-tip" class="filter-tip">点击图例可筛选首页关系类型</span>
-  <span id="stats"></span>
-</footer>
+  <form id="contribute-form" class="c-form" novalidate>
+    <div class="c-row">
+      <label>信息类别
+        <select id="c-mode">
+          <option value="supplement">补充信息</option>
+          <option value="fix">勘误（修正错误）</option>
+        </select>
+      </label>
+      <label>对象类型
+        <select id="c-category">
+          <option value="actor">演员</option>
+          <option value="musical">剧目</option>
+          <option value="relation">关系</option>
+        </select>
+      </label>
+    </div>
+
+    <!-- 补充 · 演员 -->
+    <div class="c-group" id="c-supplement-actor">
+      <label>演员姓名 *<input type="text" name="name" data-label="演员姓名" required placeholder="必填" autocomplete="off"></label>
+      <label>昵称 / 别名<input type="text" name="nickname" data-label="昵称/别名" placeholder="可选" autocomplete="off"></label>
+      <label>生日<input type="text" name="birth" data-label="生日" placeholder="如 1990/1/1（可选）" autocomplete="off"></label>
+      <label>毕业院校<input type="text" name="school" data-label="毕业院校" placeholder="可选" autocomplete="off"></label>
+      <label>入学年份 / 年级<input type="text" name="grade" data-label="入学年份/年级" placeholder="如 2015级（可选）" autocomplete="off"></label>
+      <label>专业<input type="text" name="major" data-label="专业" placeholder="可选" autocomplete="off"></label>
+      <label>籍贯<input type="text" name="hometown" data-label="籍贯" placeholder="可选" autocomplete="off"></label>
+      <label>身高（cm）<input type="text" name="height" data-label="身高(cm)" placeholder="可选" autocomplete="off"></label>
+      <label>备注（公司 / 职务 / 个人描述）<textarea name="note" data-label="备注" rows="3" placeholder="可选"></textarea></label>
+      <label>所属团体<input type="text" name="groupName" data-label="所属团体" placeholder="可选" autocomplete="off"></label>
+    </div>
+
+    <!-- 勘误 · 演员 -->
+    <div class="c-group hidden" id="c-fix-actor">
+      <label>演员姓名 *<input type="text" name="name" data-label="演员姓名" required placeholder="必填" autocomplete="off"></label>
+      <label>要修正的字段
+        <select name="field" data-label="要修正的字段">
+          <option value="name">姓名</option><option value="nickname">昵称/别名</option>
+          <option value="birth">生日</option><option value="school">毕业院校</option>
+          <option value="grade">入学年份/年级</option><option value="major">专业</option>
+          <option value="hometown">籍贯</option><option value="height">身高</option>
+          <option value="note">备注</option><option value="other">其他</option>
+        </select>
+      </label>
+      <label>当前内容（如已知）<input type="text" name="wrong" data-label="当前内容" placeholder="可选" autocomplete="off"></label>
+      <label>正确内容 *<input type="text" name="correct" data-label="正确内容" required placeholder="必填" autocomplete="off"></label>
+    </div>
+
+    <!-- 补充 · 剧目 -->
+    <div class="c-group hidden" id="c-supplement-musical">
+      <label>剧目名称 *<input type="text" name="name" data-label="剧目名称" required placeholder="必填" autocomplete="off"></label>
+      <label>演出日期<input type="text" name="date" data-label="演出日期" placeholder="如 2026/8/7（可选）" autocomplete="off"></label>
+      <label>城市<input type="text" name="city" data-label="城市" placeholder="可选" autocomplete="off"></label>
+      <label>剧院<input type="text" name="theatre" data-label="剧院" placeholder="可选" autocomplete="off"></label>
+      <label>参演演员与角色<textarea name="cast" data-label="参演演员与角色" rows="4" placeholder="每行一个：演员名：角色名（可选）"></textarea></label>
+      <label>备注<textarea name="note" data-label="备注" rows="3" placeholder="可选"></textarea></label>
+    </div>
+
+    <!-- 勘误 · 剧目 -->
+    <div class="c-group hidden" id="c-fix-musical">
+      <label>剧目名称 *<input type="text" name="name" data-label="剧目名称" required placeholder="必填" autocomplete="off"></label>
+      <label>要修正的字段
+        <select name="field" data-label="要修正的字段">
+          <option value="name">剧目名称</option><option value="date">演出日期</option>
+          <option value="city">城市</option><option value="theatre">剧院</option>
+          <option value="role">角色</option><option value="cast">演员表</option>
+          <option value="other">其他</option>
+        </select>
+      </label>
+      <label>当前内容（如已知）<input type="text" name="wrong" data-label="当前内容" placeholder="可选" autocomplete="off"></label>
+      <label>正确内容 *<input type="text" name="correct" data-label="正确内容" required placeholder="必填" autocomplete="off"></label>
+    </div>
+
+    <!-- 补充 · 关系 -->
+    <div class="c-group hidden" id="c-supplement-relation">
+      <label>人物 A *<input type="text" name="actorA" data-label="人物 A" required placeholder="必填" autocomplete="off"></label>
+      <label>人物 B *<input type="text" name="actorB" data-label="人物 B" required placeholder="必填" autocomplete="off"></label>
+      <label>关系类型
+        <select name="relType" data-label="关系类型">
+          <option value="married">伴侣</option><option value="couple">情侣</option>
+          <option value="ex">前任</option><option value="cp">CP（粉丝组合）</option>
+          <option value="classmate">同学</option><option value="friend">好友</option>
+          <option value="teacher_student">师生</option><option value="same_company">同公司</option>
+          <option value="other">其他</option>
+        </select>
+      </label>
+      <label>关系详情 / 备注<textarea name="detail" data-label="关系详情/备注" rows="3" placeholder="可选"></textarea></label>
+    </div>
+
+    <!-- 勘误 · 关系 -->
+    <div class="c-group hidden" id="c-fix-relation">
+      <label>人物 A *<input type="text" name="actorA" data-label="人物 A" required placeholder="必填" autocomplete="off"></label>
+      <label>人物 B *<input type="text" name="actorB" data-label="人物 B" required placeholder="必填" autocomplete="off"></label>
+      <label>当前关系 / 描述（如已知）<input type="text" name="wrong" data-label="当前关系/描述" placeholder="可选" autocomplete="off"></label>
+      <label>正确关系 / 说明 *<input type="text" name="correct" data-label="正确关系/说明" required placeholder="必填" autocomplete="off"></label>
+    </div>
+
+    <label>Reference（来源链接，可选）<input id="c-ref" type="text" placeholder="https://…" autocomplete="off"></label>
+    <label>Email（可选，用于反馈）<input id="c-email" type="email" placeholder="your@email.com" autocomplete="off"></label>
+
+    <button type="submit" class="c-submit">Submit Contribution</button>
+    <div id="c-success" class="c-success hidden">提交成功！已进入待审核列表，感谢你的补充。</div>
+  </form>
+
+  <!-- 开发者审核列表（本地 MVP：存于浏览器 localStorage，可导出 JSON / 复制成 GitHub Issue 文本） -->
+  <details id="c-review" class="c-review">
+    <summary>待审核列表（开发者）</summary>
+    <ul id="c-review-list" class="c-review-list"></ul>
+    <div class="c-review-actions">
+      <button id="c-export" type="button">导出 JSON</button>
+      <button id="c-copy-all" type="button">复制全部为 Issue 文本</button>
+      <button id="c-clear" type="button">清空</button>
+    </div>
+    <p class="c-review-tip">审核通过后：开发者将信息录入数据库 → 运行 <code>python refresh_all.py</code> 刷新网页数据，图谱自动同步。</p>
+  </details>
+</div>
+
+<!-- ============ 演员独立详情页 ============ -->
+<div id="actor-view" class="hidden">
+  <div class="ap-head">
+    <button id="ap-back" title="返回图谱" aria-label="返回图谱">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="ap-crumbs">Graph / 演员 / <span id="ap-crumb"></span></div>
+    <a id="ap-graph-link" class="ap-graph-link" href="#/graph">在图谱中查看</a>
+  </div>
+
+  <div class="ap-title">
+    <h1 id="ap-name"></h1>
+    <div id="ap-nickname" class="sub"></div>
+    <div id="ap-identity" class="ap-identity"></div>
+  </div>
+
+  <div id="ap-overview" class="ap-overview"></div>
+
+  <dl id="ap-fields"></dl>
+
+  <section class="ap-net">
+    <h3>关系网络</h3>
+    <div id="ap-graph-wrap"><canvas id="ap-graph"></canvas></div>
+    <div class="ap-hint">点击图中任意人物，进入他的关系详情页</div>
+  </section>
+
+  <div class="ap-sections">
+    <section class="ap-card ap-lite">
+      <h3>关系</h3><ul id="ap-relations"></ul>
+    </section>
+    <section class="ap-card ap-lite">
+      <h3>所属团体</h3><ul id="ap-groups"></ul>
+    </section>
+    <section class="ap-card ap-wide">
+      <h3>参演剧目</h3><ul id="ap-musicals" class="cols-2"></ul>
+    </section>
+    <section class="ap-card ap-wide">
+      <h3>常共演搭档</h3>
+      <div class="cw-query">
+        <input id="cw-q" type="text" placeholder="输入另一位演员姓名，查合作（含低频合作）" autocomplete="off" list="cw-list">
+        <datalist id="cw-list"></datalist>
+        <button id="cw-go" type="button">查合作</button>
+      </div>
+      <div id="cw-result" class="cw-result hidden"></div>
+      <ul id="ap-cowork" class="cols-2"></ul>
+    </section>
+  </div>
+</div>
+
+</main>
+<div id="toast" class="toast hidden"></div>
 <script src="data.js"></script>
 <script src="app.js"></script>
 </body>

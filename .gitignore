@@ -15,3 +15,11 @@ data/show_cast.csv
 # 本地环境文件
 .DS_Store
 Thumbs.db
+
+# 前端临时截图（可删除）
+.shots/
+
+# 浏览器测试残留（不入库）
+.playwright-cli/
+# 数据库备份（Git 本身就是版本管理，备份不入库）
+music_graph_backup_*.db

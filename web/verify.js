@@ -35,6 +35,9 @@ function check(name, cond, extra) {
   await page.waitForTimeout(3000);
 
   async function openActor(name) {
+    // 搜索框在 Graph 页：若不在则先切到 Graph
+    await page.evaluate(() => { if (location.hash !== "#/graph") location.hash = "#/graph"; });
+    await page.waitForTimeout(600);
     await page.fill("#search", name);
     await page.waitForTimeout(400);
     await page.click("#dropdown .item:first-child");
@@ -44,12 +47,21 @@ function check(name, cond, extra) {
   console.log("== 数据加载 ==");
   check("数据已加载", await page.evaluate(() => !!window.MUSIC_GRAPH && Object.keys(window.MUSIC_GRAPH.actors).length > 1000));
 
-  console.log("== 首页 ==");
+  console.log("== 页面导航 ==");
+  check("默认落地 Home", await page.$eval("#view-home", el => !el.classList.contains("hidden")));
+  check("导航三入口", (await page.$$eval(".nav-links a", els => els.length)) === 3);
+  await page.click('.nav-links a[data-nav="graph"]');
+  await page.waitForTimeout(900);
+  check("进入关系图谱", await page.$eval("#view-graph", el => !el.classList.contains("hidden")));
+
+  console.log("== 图谱 ==");
   const stats = await page.textContent("#stats");
   check("图谱统计显示", /节点/.test(stats), stats);
-  check("热门演员入口", await page.$$eval("#hot-chips .chip", els => els.length) >= 5);
   const legendTexts = await page.$$eval(".lg[data-type]", els => els.map(e => e.textContent));
   check("伴侣/情侣/前任三标签图例", ["伴侣", "情侣", "前任"].every(x => legendTexts.includes(x)), legendTexts.join(","));
+  const cpC = await page.$eval('.lg[data-type="cp"]', el => getComputedStyle(el).getPropertyValue("--c").trim());
+  const coupleC = await page.$eval('.lg[data-type="couple"]', el => getComputedStyle(el).getPropertyValue("--c").trim());
+  check("CP 与情侣颜色区分", !!cpC && cpC !== coupleC, cpC + " vs " + coupleC);
 
   console.log("== 搜索演员 -> 详情页 ==");
   await openActor("郑云龙");
@@ -84,15 +96,26 @@ function check(name, cond, extra) {
   console.log("== 演员页关系图节点点击 ==");
   {
     const prevHash = await page.evaluate(() => location.hash);
+    // 上一用例可能把详情页滚到底部，先把关系网络图滚回视口内
+    await page.evaluate(() => {
+      const v = document.getElementById("actor-view");
+      if (v) v.scrollTop = 0;
+      const g = document.getElementById("ap-graph");
+      if (g) g.scrollIntoView({ block: "center" });
+    });
+    await page.waitForTimeout(400);
     const apIds = await page.evaluate(() => {
       const ns = window.__apNodes ? window.__apNodes() : {};
       const cid = window.__apCenterId ? window.__apCenterId() : null;
       return Object.keys(ns).filter(k => k !== cid);
     });
     let apClicked = false;
-    for (const aid of apIds.slice(0, 25)) {
+    for (const aid of apIds.slice(0, 40)) {
       const pos = await page.evaluate((i) => window.__apNodeScreen(i), aid);
       if (!pos) continue;
+      // 仅点击画布范围内的节点（随机散落布局可能靠近边缘）
+      const rect = await page.evaluate(() => { const r = document.getElementById("ap-graph").getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom }; });
+      if (pos.x < rect.l + 5 || pos.x > rect.r - 5 || pos.y < rect.t + 5 || pos.y > rect.b - 5) continue;
       await page.mouse.click(pos.x, pos.y);
       await page.waitForTimeout(700);
       const hash = await page.evaluate(() => location.hash);
@@ -100,34 +123,256 @@ function check(name, cond, extra) {
       await page.evaluate((h) => { location.hash = h; }, prevHash);
       await page.waitForTimeout(600);
     }
-    check("演员页关系图点击人物跳转", apClicked, "前25个节点均未跳转");
+    check("演员页关系图点击人物跳转", apClicked, "前40个节点均未跳转");
+  }
+
+  console.log("== 查合作 ==");
+  {
+    const target = await page.$eval("#ap-cowork li:first-child span.c", el => el.textContent).catch(() => null);
+    if (target) {
+      await page.fill("#cw-q", target);
+      await page.click("#cw-go");
+      await page.waitForTimeout(1800);   // 首次按需加载全部共演对数据
+      const res = await page.textContent("#cw-result");
+      check("查合作显示共演次数", /共演/.test(res), res.slice(0, 80));
+    } else {
+      check("查合作显示共演次数", false, "无共演目标");
+    }
   }
 
   console.log("== 返回首页 ==");
   await page.click("#ap-back");
   await page.waitForTimeout(600);
-  check("返回图谱首页", await page.$eval("#home-view", el => !el.classList.contains("hidden")));
+  check("返回关系图谱", await page.$eval("#home-view", el => !el.classList.contains("hidden")));
 
-  console.log("== 首页节点点击跳转 ==");
+  console.log("== 首页单击聚焦 ==");
+  let focusedActorId = null, focusedMus = 0;
   {
     const rect = await page.evaluate(() => {
       const r = document.getElementById("graph").getBoundingClientRect();
       return { l: r.left, t: r.top, r: r.right, b: r.bottom };
     });
-    const ids = await page.evaluate(() => (window.__homeNodeIds ? window.__homeNodeIds() : []).slice(0, 40));
-    let homeClicked = false;
+    const ids = await page.evaluate(() => (window.__homeNodeIds ? window.__homeNodeIds() : []).slice(0, 30));
+    let focused = false;
     for (const id of ids) {
       const pos = await page.evaluate((i) => window.__homeNodeScreen(i), id);
       if (!pos) continue;
       if (pos.x < rect.l + 5 || pos.x > rect.r - 5 || pos.y < rect.t + 5 || pos.y > rect.b - 5) continue;
       await page.mouse.click(pos.x, pos.y);
+      await page.waitForTimeout(1100);
+      const cardVisible = await page.evaluate(() => window.__homeFocusCardVisible());
+      const name = await page.textContent("#fc-name");
+      const musNodes = await page.evaluate(() => (window.__homeNodeIds() || []).filter(k => (window.__homeNodeType(k) === "musical")).length);
+      if (cardVisible && name) { focused = true; focusedActorId = id; focusedMus = musNodes; break; }
+      await page.keyboard.press("Escape");
       await page.waitForTimeout(700);
+    }
+    check("单击聚焦出现信息卡", focused, "focusId=" + focusedActorId);
+    check("聚焦展开剧目节点", focusedMus >= 1, "剧目节点数=" + focusedMus);
+  }
+
+  console.log("== 首页双击进详情 ==");
+  if (focusedActorId) {
+    const pos = await page.evaluate((i) => window.__homeNodeScreen(i), focusedActorId);
+    if (pos) {
+      await page.mouse.dblclick(pos.x, pos.y);
+      await page.waitForTimeout(800);
       const hash = await page.evaluate(() => location.hash);
-      if (hash === "#/actor/" + id) { homeClicked = true; break; }
-      await page.evaluate(() => { location.hash = "#/"; });
+      check("双击进入演员详情页", hash === "#/actor/" + focusedActorId, hash);
+    } else {
+      check("双击进入演员详情页", false, "节点无屏幕坐标");
+    }
+  } else {
+    check("双击进入演员详情页", false, "未获取聚焦节点");
+  }
+
+  console.log("== 返回首页 + Esc 返回全局 ==");
+  await page.click("#ap-back");
+  await page.waitForTimeout(600);
+  {
+    const ids = await page.evaluate(() => (window.__homeNodeIds() || []).slice(0, 5));
+    let focused = false;
+    for (const id of ids) {
+      const pos = await page.evaluate((i) => window.__homeNodeScreen(i), id);
+      if (!pos) continue;
+      await page.mouse.click(pos.x, pos.y);
+      await page.waitForTimeout(900);
+      if (await page.evaluate(() => window.__homeFocusCardVisible())) { focused = true; break; }
+      await page.keyboard.press("Escape");
       await page.waitForTimeout(600);
     }
-    check("首页点击人物进入详情页", homeClicked);
+    check("重新聚焦可再次进入聚焦态", focused);
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(800);
+    const focusId = await page.evaluate(() => window.__homeFocusId());
+    const musLeft = await page.evaluate(() => (window.__homeNodeIds() || []).filter(k => window.__homeNodeType(k) === "musical").length);
+    check("Esc 返回全局图谱", focusId === null && musLeft === 0, "focusId=" + focusId + " mus=" + musLeft);
+  }
+
+  console.log("== 共演线强弱 ==");
+  {
+    const edges = await page.evaluate(() => (window.__homeEdges() || []).filter(e => e.count > 0));
+    if (edges.length >= 2) {
+      edges.sort((a, b) => a.count - b.count);
+      const minW = edges[0].width, maxW = edges[edges.length - 1].width;
+      check("共演线宽随场次递增", maxW > minW, "count " + edges[0].count + "->w" + minW.toFixed(2) + " / count " + edges[edges.length - 1].count + "->w" + maxW.toFixed(2));
+    } else {
+      check("共演线宽随场次递增", false, "无共演边可抽样");
+    }
+  }
+
+  console.log("== hover 追光 ==");
+  {
+    const ids = await page.evaluate(() => (window.__homeNodeIds() || []).slice(0, 30));
+    let hoverOk = false;
+    for (const id of ids) {
+      const pos = await page.evaluate((i) => window.__homeNodeScreen(i), id);
+      if (!pos) continue;
+      await page.mouse.move(pos.x, pos.y);
+      await page.waitForTimeout(600);
+      const r = await page.evaluate((i) => {
+        const ids = window.__homeNodeIds();
+        const alphas = ids.map(k => ({ id: k, a: window.__homeNodeAlpha(k) }));
+        alphas.sort((x, y) => y.a - x.a);
+        return { hover: window.__homeNodeAlpha(i), bottom: alphas[alphas.length - 1].a, card: window.__homeHoverCardVisible() };
+      }, id);
+      if (r.hover > 0.8 && r.bottom < 0.5 && r.card) { hoverOk = true; break; }
+      await page.mouse.move(0, 0);
+      await page.waitForTimeout(400);
+    }
+    check("hover 追光效果", hoverOk);
+    await page.mouse.move(0, 0);
+    await page.waitForTimeout(500);
+  }
+
+  console.log("== 光点：关系线显示逻辑 ==");
+  {
+    const visible = await page.evaluate(() => (window.__homeEdgeAlpha() || []).filter(e => e.alpha > 0.02).length);
+    check("默认状态无关系线", visible === 0, "可见边数=" + visible);
+  }
+  {
+    const ids = await page.evaluate(() => (window.__homeNodeIds() || []).slice(0, 30));
+    let hoverEdgeOk = false;
+    for (const id of ids) {
+      const pos = await page.evaluate((i) => window.__homeNodeScreen(i), id);
+      if (!pos) continue;
+      await page.mouse.move(pos.x, pos.y);
+      await page.waitForTimeout(600);
+      const r = await page.evaluate((i) => {
+        const es = window.__homeEdgeAlpha();
+        const vis = es.filter(e => e.alpha > 0.02);
+        const connected = vis.filter(e => e.a === i || e.b === i).length;
+        const other = vis.length ? (vis[0].a === i ? vis[0].b : vis[0].a) : null;
+        return { connected, total: vis.length, label: window.__homeLabelVisible(i), neighborLabel: other ? window.__homeLabelVisible(other) : false };
+      }, id);
+      if (r.connected >= 1 && r.total === r.connected && r.label && r.neighborLabel) { hoverEdgeOk = true; break; }
+      await page.mouse.move(0, 0);
+      await page.waitForTimeout(400);
+    }
+    check("hover 只显示焦点关联线+姓名", hoverEdgeOk);
+    await page.mouse.move(0, 0);
+    await page.waitForTimeout(500);
+  }
+  {
+    const ids = await page.evaluate(() => (window.__homeNodeIds() || []).slice(0, 30));
+    let focusEdgeOk = false;
+    for (const id of ids) {
+      const pos = await page.evaluate((i) => window.__homeNodeScreen(i), id);
+      if (!pos) continue;
+      await page.mouse.click(pos.x, pos.y);
+      await page.waitForTimeout(1100);
+      const r = await page.evaluate((i) => {
+        const es = window.__homeEdgeAlpha();
+        const centerEdges = es.filter(e => (e.a === i || e.b === i) && e.alpha > 0.02).length;
+        return { centerEdges, label: window.__homeLabelVisible(i), card: window.__homeFocusCardVisible() };
+      }, id);
+      if (r.centerEdges >= 1 && r.label && r.card) { focusEdgeOk = true; break; }
+      await page.keyboard.press("Escape");
+      await page.waitForTimeout(700);
+    }
+    check("聚焦模式显示中心网络+姓名", focusEdgeOk);
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(700);
+  }
+
+  console.log("== 聚焦点亮：相关点亮/无关暗淡/关系色 ==");
+  {
+    const ids = await page.evaluate(() => (window.__homeNodeIds() || []).slice(0, 40));
+    let lightOk = false;
+    for (const id of ids) {
+      const pos = await page.evaluate((i) => window.__homeNodeScreen(i), id);
+      if (!pos) continue;
+      await page.mouse.click(pos.x, pos.y);
+      await page.waitForTimeout(1100);
+      const r = await page.evaluate((i) => {
+        const relCol = window.__homeRelColorCache() || {};
+        const nbKeys = Object.keys(relCol);
+        if (!nbKeys.length) return null;
+        const nb = nbKeys[0];
+        const nbSet = window.__homeFocusNeighbors() || [];
+        const unrelated = window.__homeNodeIds().find(k =>
+          k !== i && nbSet.indexOf(k) < 0 && window.__homeNodeType(k) === "actor"
+        );
+        return {
+          hasRel: !!relCol[nb],
+          nbAlpha: window.__homeNodeAlpha(nb),
+          nbLabel: window.__homeLabelVisible(nb),
+          nbColor: window.__homeNodeColor(nb),
+          unAlpha: unrelated ? window.__homeNodeAlpha(unrelated) : 1,
+        };
+      }, id);
+      if (r && r.hasRel && r.nbAlpha > 0.5 && r.nbLabel && r.unAlpha < 0.2 && r.nbColor !== "#d9a441") {
+        lightOk = true; break;
+      }
+      await page.keyboard.press("Escape");
+      await page.waitForTimeout(700);
+    }
+    check("聚焦点亮：关系演员亮/无关暗淡/关系色", lightOk);
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(700);
+  }
+
+  console.log("== 放大显示全部姓名 ==");
+  {
+    const rect = await page.evaluate(() => {
+      const r = document.getElementById("graph").getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    });
+    await page.mouse.move(rect.x, rect.y);
+    await page.keyboard.down("Control");          // Ctrl+滚轮（触控板捏合同源）→ 缩放
+    for (let i = 0; i < 16; i++) {
+      await page.mouse.wheel(0, -120);
+      await page.waitForTimeout(50);
+    }
+    await page.keyboard.up("Control");
+    await page.waitForTimeout(400);
+    const z = await page.evaluate(() => window.__homeZoom());
+    const all = await page.evaluate(() => {
+      const ids = window.__homeNodeIds().slice(0, 50);
+      return ids.length > 0 && ids.every(k => window.__homeLabelVisible(k));
+    });
+    check("放大后显示全部姓名", z >= 2.4 && all, "zoom=" + z.toFixed(2));
+  }
+
+  console.log("== 触控板：滑动平移 / 捏合缩放 ==");
+  {
+    const rect = await page.evaluate(() => { const r = document.getElementById("graph").getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+    await page.evaluate(() => { location.hash = "#/graph"; });
+    await page.waitForTimeout(600);
+    await page.evaluate(() => window.__homeResetView());
+    await page.waitForTimeout(200);
+    const before = await page.evaluate(() => window.__homeView());
+    await page.mouse.move(rect.x, rect.y);
+    await page.mouse.wheel(0, -240);              // 普通滚轮/双指滑动 → 平移
+    await page.waitForTimeout(250);
+    const afterPan = await page.evaluate(() => window.__homeView());
+    check("双指滑动=平移（不缩放）", Math.abs(afterPan.zoom - before.zoom) < 1e-9 && Math.abs(afterPan.y - before.y) > 1e-6, JSON.stringify(before) + " -> " + JSON.stringify(afterPan));
+    await page.keyboard.down("Control");
+    await page.mouse.wheel(0, -240);              // Ctrl+滚轮（捏合）→ 缩放
+    await page.keyboard.up("Control");
+    await page.waitForTimeout(250);
+    const afterZoom = await page.evaluate(() => window.__homeView());
+    check("捏合/Ctrl+滚轮=缩放", afterZoom.zoom > afterPan.zoom, JSON.stringify(afterPan) + " -> " + JSON.stringify(afterZoom));
   }
 
   console.log("== 作品 ==");
@@ -135,9 +380,12 @@ function check(name, cond, extra) {
   await page.waitForTimeout(400);
   await page.click("#dropdown .item:first-child");
   await page.waitForTimeout(500);
-  check("作品演员表", await page.$$eval("#p-cast li", els => els.length) >= 5);
-  const castWithRole = await page.$$eval("#p-cast li", els => els.filter(e => /（/.test(e.textContent)).length);
-  check("作品演员表带角色", castWithRole >= 3, "带角色条目数=" + castWithRole);
+  check("作品演员表", await page.$$eval("#p-cast .role-group .c", els => els.length) >= 5);
+  const roleGroups = await page.$$eval("#p-cast .role-group", els => els.length);
+  check("作品演员表按角色分组", roleGroups >= 2, "角色组数=" + roleGroups);
+
+  await page.keyboard.press("Escape");   // 关闭作品弹窗
+  await page.waitForTimeout(300);
 
   console.log("== 团体 ==");
   await page.fill("#search", "中戏17");
@@ -146,11 +394,32 @@ function check(name, cond, extra) {
   await page.waitForTimeout(500);
   check("团体成员", await page.$$eval("#p-cast li", els => els.length) >= 3);
 
+  await page.keyboard.press("Escape");   // 关闭团体弹窗
+  await page.waitForTimeout(300);
+
   console.log("== 类型筛选 ==");
   await page.click('.lg[data-type="cp"]');
   await page.waitForTimeout(500);
   const stats2 = await page.textContent("#stats");
   check("类型筛选生效", stats2 !== stats, stats2);
+
+  console.log("== Contribute 页 ==");
+  await page.click('.nav-links a[data-nav="contribute"]');
+  await page.waitForTimeout(600);
+  check("进入贡献页", await page.$eval("#view-contribute", el => !el.classList.contains("hidden")));
+  await page.selectOption("#c-mode", "supplement");
+  await page.selectOption("#c-category", "actor");
+  await page.fill("#c-supplement-actor input[name=name]", "测试演员甲");
+  await page.fill("#c-supplement-actor input[name=school]", "测试学院");
+  await page.fill("#c-ref", "https://example.com");
+  await page.click("#contribute-form button[type=submit]");
+  await page.waitForTimeout(400);
+  const savedN = await page.evaluate(() => JSON.parse(localStorage.getItem("mg_contributions") || "[]").length);
+  check("提交内容已保存", savedN >= 1, "条数=" + savedN);
+  check("待审核列表展示", await page.$$eval("#c-review-list li", els => els.length) >= 1);
+  await page.evaluate(() => localStorage.removeItem("mg_contributions"));
+  await page.click('.nav-links a[data-nav="graph"]');
+  await page.waitForTimeout(600);
 
   console.log("== hash 直达详情页 ==");
   const zlyId = await page.evaluate(() => {

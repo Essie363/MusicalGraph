@@ -31,13 +31,13 @@ def main():
     actors = {}
     rows = cur.execute("""
         SELECT id, name, nickname, birth_date, major, school, hometown,
-               enrollment_year, height, note, is_actor
+               enrollment_year, height, note, role, is_actor
         FROM artists
     """).fetchall()
     for r in rows:
         a = {"id": r["id"], "name": r["name"]}
         for k in ("nickname", "birth_date", "major", "school", "hometown",
-                  "enrollment_year", "height", "note"):
+                  "enrollment_year", "height", "note", "role"):
             if r[k] not in (None, ""):
                 a[k] = str(r[k])
         actors[r["id"]] = a
@@ -117,6 +117,28 @@ def main():
         if mid is not None:
             g["members"].append(mid)
 
+    # --- 演员影响力统计（作品数/合作人数）与参演剧目 id 列表，供首页节点权重与聚焦展开 ---
+    actor_musical_ids = {}
+    for r in cur.execute("SELECT artist_id, musical_id FROM actor_roles"):
+        if r["musical_id"] not in musicals:
+            continue
+        lst = actor_musical_ids.setdefault(r["artist_id"], [])
+        if r["musical_id"] not in lst:
+            lst.append(r["musical_id"])
+
+    actor_counts = {}
+
+    def _bump(aid, key, val):
+        d = actor_counts.setdefault(aid, {})
+        d[key] = max(d.get(key, 0), val)
+
+    for r in cur.execute("SELECT artist_id, COUNT(DISTINCT musical_id) AS n FROM actor_roles GROUP BY artist_id"):
+        _bump(r["artist_id"], "musicals", r["n"])
+    for r in cur.execute("SELECT actor_a, COUNT(DISTINCT actor_b) AS n FROM co_work_edges GROUP BY actor_a"):
+        _bump(r["actor_a"], "partners", r["n"])
+    for r in cur.execute("SELECT actor_b, COUNT(DISTINCT actor_a) AS n FROM co_work_edges GROUP BY actor_b"):
+        _bump(r["actor_b"], "partners", r["n"])
+
     # --- co-work top N per actor ---
     rows = cur.execute("""
         SELECT actor_a, actor_b, co_show_count FROM co_work_edges
@@ -139,6 +161,22 @@ def main():
             co_work.append({"a": aid, "b": bid, "count": cnt})
     co_work.sort(key=lambda x: -x["count"])
 
+    # --- 全部共演对（供演员页「查合作」按需加载，含低频合作） ---
+    cowork_all = []
+    for r in cur.execute(
+        "SELECT actor_a, actor_b, co_show_count, co_musical_count, first_co_date, last_co_date FROM co_work_edges"
+    ):
+        cowork_all.append({
+            "a": r["actor_a"], "b": r["actor_b"],
+            "c": r["co_show_count"], "m": r["co_musical_count"],
+            "f": r["first_co_date"], "l": r["last_co_date"],
+        })
+    OUT2 = BASE / "web" / "data_cowork.js"
+    js2 = "// 由 export_graph.py 自动生成（全部共演对，供演员页「查合作」按需加载）\nwindow.MUSIC_GRAPH_COWORK = " + \
+        json.dumps(cowork_all, ensure_ascii=False, separators=(",", ":")) + ";\n"
+    OUT2.write_text(js2, encoding="utf-8")
+    print("已导出:", OUT2, "| 全部共演对:", len(cowork_all))
+
     data = {
         "generatedAt": __import__("datetime").datetime.now().isoformat(timespec="seconds"),
         "counts": {
@@ -151,6 +189,8 @@ def main():
         "coWork": co_work,
         "actorMusicals": actor_musicals,
         "musicals": musical_cast,
+        "actorMusicalIds": actor_musical_ids,
+        "actorCounts": actor_counts,
         "groups": group_list,
     }
 

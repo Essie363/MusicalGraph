@@ -1,0 +1,43 @@
+name: Daily Data Sync
+
+# 每日自动同步：抓取 y.saoju.net 演出排期 → 重算共演边 → 刷新网页数据（data.js / 快照 CSV）
+# 北京时间每日 06:00 运行（UTC 22:00）；也可在 Actions 页手动 Run workflow
+on:
+  schedule:
+    - cron: "0 22 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install requests networkx
+
+      # music_graph.db 已入库：checkout 后做增量同步（同步逻辑见 sync.py）
+      - name: Sync schedules & refresh web data
+        run: |
+          python sync.py
+          python export_graph.py
+          python refresh_all.py
+
+      - name: Commit & push updates
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "自动同步：排期数据与网页快照（$(date -u +'%Y-%m-%dT%H:%MZ')）"
+            git push
+          fi

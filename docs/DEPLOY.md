@@ -268,6 +268,12 @@ Vercel → Settings → Domains，绑定你自己的域名（如 `musicgraph.fan
 
 ---
 
+## GitHub 自动同步（2026-08-07）
+
+- `.github/workflows/sync.yml`：每日北京时间 06:00 在 GitHub Actions 运行 `sync.py`（增量抓取 y.saoju.net 排期）+ `export_graph.py` + `refresh_all.py`，自动提交数据与网页文件；也可手动 Run workflow。
+- 前置：将本仓库推送到 GitHub（`music_graph.db` 与 `web/data.js` 均已入库，可增量同步）。
+- 用户提交闭环：Contribute 页提交 → 本地待审核列表（可导出 JSON / 复制为 Issue 文本，配置 `MG_GITHUB_REPO` 后可一键开 Issue）→ 开发者确认录入 → `python refresh_all.py` → 图谱自动同步。
+
 ## 附录：常见问题
 
 - **Q：为什么不用 SQLite 直接部署？** Vercel 是无服务器环境，文件系统只读，SQLite 无法持久化；用户共建需要真正的数据库服务。Supabase 免费额度（500MB 数据库 + 5 万月活用户）对本项目绰绰有余。

@@ -36,7 +36,7 @@ def main():
                "enrollment_year", "height", "note", "is_actor"],
               cur.execute("""
                 SELECT id, name, nickname, birth_date, major, school, hometown,
-                       enrollment_year, height, note, is_actor
+                       enrollment_year, height, note, role, is_actor
                 FROM artists ORDER BY id
               """).fetchall())
 
