@@ -34,10 +34,16 @@ function check(name, cond, extra) {
   await page.goto(FILE_URL + "?v=" + Date.now(), { waitUntil: "load" });
   await page.waitForTimeout(3000);
 
+  async function ensureSearch() {
+    // 搜索框在顶部 Header（平时只显示放大镜图标），需要时先点击展开
+    const hidden = await page.$eval("#top-search-box", el => el.classList.contains("hidden"));
+    if (hidden) { await page.click("#search-toggle"); await page.waitForTimeout(200); }
+  }
   async function openActor(name) {
-    // 搜索框在 Graph 页：若不在则先切到 Graph
+    // 搜索框在顶部 Header：若不在 Graph 页先切过去
     await page.evaluate(() => { if (location.hash !== "#/graph") location.hash = "#/graph"; });
     await page.waitForTimeout(600);
+    await ensureSearch();
     await page.fill("#search", name);
     await page.waitForTimeout(400);
     await page.click("#dropdown .item:first-child");
@@ -55,13 +61,7 @@ function check(name, cond, extra) {
   check("进入关系图谱", await page.$eval("#view-graph", el => !el.classList.contains("hidden")));
 
   console.log("== 图谱 ==");
-  const stats = await page.textContent("#stats");
-  check("图谱统计显示", /节点/.test(stats), stats);
-  const legendTexts = await page.$$eval(".lg[data-type]", els => els.map(e => e.textContent));
-  check("伴侣/情侣/前任三标签图例", ["伴侣", "情侣", "前任"].every(x => legendTexts.includes(x)), legendTexts.join(","));
-  const cpC = await page.$eval('.lg[data-type="cp"]', el => getComputedStyle(el).getPropertyValue("--c").trim());
-  const coupleC = await page.$eval('.lg[data-type="couple"]', el => getComputedStyle(el).getPropertyValue("--c").trim());
-  check("CP 与情侣颜色区分", !!cpC && cpC !== coupleC, cpC + " vs " + coupleC);
+  check("关系类型筛选已移除", await page.evaluate(() => !document.getElementById("legend")), "legend still exists");
 
   console.log("== 搜索演员 -> 详情页 ==");
   await openActor("郑云龙");
@@ -207,6 +207,49 @@ function check(name, cond, extra) {
     const focusId = await page.evaluate(() => window.__homeFocusId());
     const musLeft = await page.evaluate(() => (window.__homeNodeIds() || []).filter(k => window.__homeNodeType(k) === "musical").length);
     check("Esc 返回全局图谱", focusId === null && musLeft === 0, "focusId=" + focusId + " mus=" + musLeft);
+  }
+
+  console.log("== 点击空白返回全局 ==");
+  {
+    const ids = await page.evaluate(() => (window.__homeNodeIds() || []).slice(0, 30));
+    let focused = false;
+    for (const id of ids) {
+      const pos = await page.evaluate((i) => window.__homeNodeScreen(i), id);
+      if (!pos) continue;
+      await page.mouse.click(pos.x, pos.y);
+      await page.waitForTimeout(1100);
+      if (await page.evaluate(() => window.__homeFocusId() !== null)) { focused = true; break; }
+      await page.keyboard.press("Escape");
+      await page.waitForTimeout(700);
+    }
+    check("先进入聚焦态", focused);
+    check("右侧面板随聚焦滑出", await page.evaluate(() => document.body.classList.contains("side-open")));
+    const pt = await page.evaluate(() => {
+      const c = document.getElementById("graph");
+      const r = c.getBoundingClientRect();
+      const ids = window.__homeNodeIds();
+      let best = null, bestD = -1;
+      for (let x = r.left + 24; x <= r.right - 24; x += 48) {
+        for (let y = r.top + 24; y <= r.bottom - 24; y += 48) {
+          let minD = 1e18;
+          ids.forEach(id => {
+            const p = window.__homeNodeScreen(id);
+            if (p) minD = Math.min(minD, (p.x - x) * (p.x - x) + (p.y - y) * (p.y - y));
+          });
+          if (minD > bestD) { bestD = minD; best = { x: x, y: y }; }
+        }
+      }
+      return best;
+    });
+    if (pt) {
+      await page.mouse.click(pt.x, pt.y);
+      await page.waitForTimeout(900);
+      const focusAfter = await page.evaluate(() => window.__homeFocusId());
+      check("点击空白返回全局", focusAfter === null, "focusId=" + focusAfter);
+      check("点击空白后面板收起", await page.evaluate(() => !document.body.classList.contains("side-open")));
+    } else {
+      check("点击空白返回全局", false, "找不到空白点");
+    }
   }
 
   console.log("== 共演线强弱 ==");
@@ -376,6 +419,7 @@ function check(name, cond, extra) {
   }
 
   console.log("== 作品 ==");
+  await ensureSearch();
   await page.fill("#search", "哈姆雷特");
   await page.waitForTimeout(400);
   await page.click("#dropdown .item:first-child");
@@ -388,6 +432,7 @@ function check(name, cond, extra) {
   await page.waitForTimeout(300);
 
   console.log("== 团体 ==");
+  await ensureSearch();
   await page.fill("#search", "中戏17");
   await page.waitForTimeout(400);
   await page.click("#dropdown .item:first-child");
@@ -396,12 +441,6 @@ function check(name, cond, extra) {
 
   await page.keyboard.press("Escape");   // 关闭团体弹窗
   await page.waitForTimeout(300);
-
-  console.log("== 类型筛选 ==");
-  await page.click('.lg[data-type="cp"]');
-  await page.waitForTimeout(500);
-  const stats2 = await page.textContent("#stats");
-  check("类型筛选生效", stats2 !== stats, stats2);
 
   console.log("== Contribute 页 ==");
   await page.click('.nav-links a[data-nav="contribute"]');
@@ -436,6 +475,54 @@ function check(name, cond, extra) {
   } else {
     check("直达详情页", false, "未找到郑云龙 id");
   }
+
+  console.log("== 首页场景跳转 ==");
+  await page.goto(FILE_URL + "#/home", { waitUntil: "load" });
+  await page.waitForTimeout(1200);
+
+  // 作品场景：点「03 作品」→ 图谱只显示全部剧目
+  await page.click('.chapter-card[href="#/graph?scene=musicals"]');
+  await page.waitForTimeout(2000);
+  check("作品场景: 场景卡显示", await page.$eval("#scene-card", el => !el.classList.contains("hidden")));
+  check("作品场景: 热门剧目 Top30", await page.evaluate(() => {
+    const ids = window.__homeNodeIds();
+    const hl = window.__homeSceneHighlight();
+    return ids.length === 30 && hl.length === 30 && ids.every(k => window.__homeNodeType(k) === "musical");
+  }));
+  await page.click("#scene-exit");
+  await page.waitForTimeout(1200);
+  check("退出作品场景回全局", await page.evaluate(() => window.__homeScene() === null && window.__homeFocusId() === null));
+
+  // 演员场景：点「02 演员」→ 点亮热门 Top20
+  await page.evaluate(() => { location.hash = "#/home"; });
+  await page.waitForTimeout(600);
+  await page.click('.chapter-card[href="#/graph?scene=actors"]');
+  await page.waitForTimeout(2000);
+  check("演员场景: Top20 点亮", await page.evaluate(() => {
+    const hl = window.__homeSceneHighlight();
+    return hl.length === 20 && hl.every(k => window.__homeNodeType(k) === "actor");
+  }));
+  await page.evaluate(() => { location.hash = "#/home"; });
+  await page.waitForTimeout(600);
+
+  // 团体场景：点「04 团体」→ 出现团体节点
+  await page.click('.chapter-card[href="#/graph?scene=groups"]');
+  await page.waitForTimeout(2000);
+  check("团体场景: 团体节点", await page.evaluate(() => {
+    const ids = window.__homeNodeIds();
+    return ids.some(k => window.__homeNodeType(k) === "group");
+  }));
+  await page.evaluate(() => { location.hash = "#/home"; });
+  await page.waitForTimeout(600);
+
+  // 搜索场景：hero 搜索 → 图谱聚焦搜索框并出结果
+  await page.evaluate(() => { location.hash = "#/graph?scene=search&q=" + encodeURIComponent("刘令飞"); });
+  await page.waitForTimeout(1500);
+  check("搜索场景: 聚焦搜索框", await page.evaluate(() => {
+    const el = document.getElementById("search");
+    return document.activeElement === el && el.value === "刘令飞";
+  }));
+  check("搜索场景: 下拉有结果", await page.evaluate(() => !document.getElementById("dropdown").classList.contains("hidden")));
 
   console.log("== JS 错误 ==");
   check("无 JS 错误", errors.length === 0, errors.slice(0, 3).join("; "));

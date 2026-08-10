@@ -10,7 +10,16 @@
 <a class="skip-link" href="#main">跳转到主要内容</a>
 <!-- 顶部导航 -->
 <nav class="topnav">
-  <span class="brand">MusicGraph</span>
+  <span class="brand">MUSICAL GRAPH</span>
+  <div class="top-search" id="top-search">
+    <button id="search-toggle" class="search-toggle" type="button" title="搜索" aria-label="搜索">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M10.5 3a7.5 7.5 0 1 0 4.55 13.4l4.3 4.3 1.42-1.42-4.3-4.3A7.5 7.5 0 0 0 10.5 3zm0 2a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11z" fill="currentColor"/></svg>
+    </button>
+    <div class="top-search-box search-box hidden" id="top-search-box">
+      <input id="search" type="text" placeholder="搜索演员 / 作品 / 团体…" autocomplete="off" aria-label="搜索演员 / 作品 / 团体">
+      <div id="dropdown" class="dropdown hidden"></div>
+    </div>
+  </div>
   <div class="nav-links">
     <a href="#/home" data-nav="home">Home</a>
     <a href="#/graph" data-nav="graph">Graph</a>
@@ -22,41 +31,68 @@
 <!-- ============ Home 首页 ============ -->
 <div id="view-home" class="view hidden">
   <section id="hero">
+    <div class="hero-bg" aria-hidden="true"></div>
+    <div class="hero-dots" aria-hidden="true"></div>
     <div class="hero-inner">
-      <div class="hero-eyebrow">MusicGraph · 音乐剧演员关系图谱</div>
-      <h1 class="hero-title">Where Stories<br>Meet on Stage</h1>
-      <p class="hero-sub">探索演员、角色、剧目与创作之间那些尚未被看见的连接。</p>
-      <a class="hero-btn" href="#/graph">探索图谱</a>
+      <div class="hero-eyebrow"><span class="eyebrow-dot" aria-hidden="true"></span>MUSICAL GRAPH · 中国音乐剧演员关系图谱</div>
+      <h1 class="hero-title">
+        <span class="mask-line"><span>CAST</span></span>
+        <span class="mask-line"><span>LIGHT</span></span>
+      </h1>
+      <span class="hero-rule" aria-hidden="true"></span>
+      <p class="hero-sub">Where Every Performer Finds Their Spotlight</p>
+      <div class="hero-actions">
+        <a class="hero-btn" href="#/graph">进入图谱</a>
+      </div>
     </div>
+    <div class="hero-side" aria-hidden="true">演员关系图谱</div>
+    <div class="hero-scroll" aria-hidden="true"><span>向下探索</span><i></i></div>
+    <span class="hero-stats" aria-hidden="true"></span>
+    <svg class="hero-curtain" viewBox="0 0 1440 120" preserveAspectRatio="none" aria-hidden="true">
+      <defs>
+        <linearGradient id="curtain-grad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#0a0a0a" stop-opacity="0"></stop>
+          <stop offset="0.55" stop-color="#0a0a0a" stop-opacity="0.85"></stop>
+          <stop offset="1" stop-color="#0a0a0a" stop-opacity="1"></stop>
+        </linearGradient>
+      </defs>
+      <path d="M0,30 C72,14 132,4 204,14 C276,24 336,44 408,34 C480,24 540,8 612,16 C684,24 744,44 816,34 C888,24 948,10 1020,18 C1092,26 1152,40 1224,32 C1296,24 1356,12 1428,18 L1440,18 L1440,120 L0,120 Z" fill="url(#curtain-grad)"></path>
+      <path d="M240,0 V120 M480,0 V120 M720,0 V120 M960,0 V120 M1200,0 V120" stroke="rgba(255,255,255,0.045)" stroke-width="1"></path>
+    </svg>
   </section>
 
   <section id="intro">
-    <h2>关于 MusicGraph</h2>
-    <p>一张由社区共同维护的音乐剧演员关系图谱。<br>在这里，演员、角色、剧目与创作信息被连接成可以持续探索的网络。</p>
-    <h3>你可以探索</h3>
-    <div class="explore-grid">
-      <a class="explore-card" href="#/graph">
-        <h4>看两位演员如何相遇</h4>
-        <p>查看同台次数、共同出演剧目与角色轨迹</p>
-        <svg class="ec-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div class="sec-head">
+      <span class="sec-k">探索</span><span class="sec-rule" aria-hidden="true"></span><span class="sec-k-en">EXPLORE</span>
+    </div>
+    <h2 class="sec-title">从哪里开始？</h2>
+    <div class="chapters">
+      <a class="chapter-card" href="#/graph">
+        <span class="cc-num">01</span>
+        <span class="cc-title"><b>图谱</b><i>Graph</i></span>
+        <span class="cc-desc">光点即演员，连线即缘分——从整张星光网络开始。</span>
+        <svg class="cc-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </a>
-      <a class="explore-card" href="#/graph">
-        <h4>找到隐藏的连接</h4>
-        <p>沿共演、同学、同公司等线索发现关系</p>
-        <svg class="ec-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <a class="chapter-card" href="#/graph?scene=actors">
+        <span class="cc-num">02</span>
+        <span class="cc-title"><b>演员</b><i>Actors</i></span>
+        <span class="cc-desc">从一位演员出发，看 TA 的同台搭档与关系网络。</span>
+        <svg class="cc-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </a>
-      <a class="explore-card" href="#/graph">
-        <h4>追踪一位演员的舞台足迹</h4>
-        <p>浏览参演剧目、角色和合作阵容</p>
-        <svg class="ec-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <a class="chapter-card" href="#/graph?scene=musicals">
+        <span class="cc-num">03</span>
+        <span class="cc-title"><b>作品</b><i>Musicals</i></span>
+        <span class="cc-desc">按剧目浏览演员表、角色与排期足迹。</span>
+        <svg class="cc-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </a>
-      <a class="explore-card" href="#/graph">
-        <h4>从一个名字出发</h4>
-        <p>沿关系网络继续探索整个演员圈</p>
-        <svg class="ec-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <a class="chapter-card" href="#/graph?scene=groups">
+        <span class="cc-num">04</span>
+        <span class="cc-title"><b>团体</b><i>Groups</i></span>
+        <span class="cc-desc">从上音、北舞等院校与剧团切入。</span>
+        <svg class="cc-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </a>
     </div>
-    <h3>和我们一起</h3>
+    <h3 class="sec-sub">和我们一起</h3>
     <a class="join-card" href="#/contribute" aria-label="去 Contribute 补充信息">
       <p><strong>社区共建</strong> · 发现缺失或错误信息，欢迎提交补充；内容经审核后更新到图谱，让这份资料越来越完整。</p>
       <svg class="join-arrow" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -79,7 +115,20 @@
       <div id="graph-wrap">
         <canvas id="graph"></canvas>
         <div id="hover-card" class="hover-card hidden"></div>
-        <div id="hint">光点即演员 · 悬停查看姓名与关系 · 单击聚焦展开 · 双击进详情 · 双指滑动平移 · 捏合缩放 · Esc 返回全局图谱</div>
+        <button id="help-fab" type="button" title="探索指南" aria-label="探索指南">?</button>
+        <div id="help-guide" class="help-guide hidden">
+          <div class="hg-title">探索指南</div>
+          <ul>
+            <li><b>Hover</b><span>悬停查看演员关系</span></li>
+            <li><b>Click</b><span>点击聚焦演员</span></li>
+            <li><b>Drag</b><span>拖动移动图谱</span></li>
+            <li><b>Search</b><span>搜索演员 / 作品 / 团体</span></li>
+          </ul>
+        </div>
+        <div id="first-hint" class="first-hint hidden">
+          <p class="fh-zh">移动鼠标，探索演员之间的连接</p>
+          <p class="fh-en">Move across the stars to explore.</p>
+        </div>
       </div>
     <aside id="panel" class="hidden">
       <div id="panel-box">
@@ -101,34 +150,19 @@
     </aside>
     </div>
     <aside id="graph-tools">
-      <section class="gt-block">
-        <div class="search-box">
-          <input id="search" type="text" placeholder="搜索演员 / 作品 / 团体…" autocomplete="off" aria-label="搜索演员 / 作品 / 团体">
-          <div id="dropdown" class="dropdown hidden"></div>
-        </div>
-      </section>
       <section id="focus-card" class="gt-block gt-focus hidden">
         <div class="fc-head"><span id="fc-name"></span><button id="fc-close" title="返回全局图谱">×</button></div>
         <div id="fc-stats" class="fc-stats"></div>
         <div id="fc-tags" class="fc-tags"></div>
         <div class="fc-actions">
           <button id="fc-detail" class="fc-btn primary">查看详情</button>
-          <button id="fc-global" class="fc-btn">返回全局</button>
         </div>
       </section>
-      <section id="legend" class="gt-block">
-        <div class="legend-title"><span>关系类型</span><span id="stats"></span></div>
-        <div class="legend-items">
-          <span class="lg lg-married" data-type="married" title="点击显示/隐藏">伴侣</span>
-          <span class="lg lg-couple" data-type="couple" title="点击显示/隐藏">情侣</span>
-          <span class="lg lg-ex" data-type="ex" title="点击显示/隐藏">前任</span>
-          <span class="lg lg-cp" data-type="cp" title="点击显示/隐藏">CP</span>
-          <span class="lg lg-classmate" data-type="classmate" title="点击显示/隐藏">同学</span>
-          <span class="lg lg-cowork" data-type="co_work" title="点击显示/隐藏">共演</span>
-        </div>
-        <div class="legend-actions">
-          <button id="legend-all" type="button">全部显示</button>
-          <button id="legend-none" type="button">全部隐藏</button>
+      <section id="scene-card" class="gt-block hidden">
+        <div class="fc-head"><span id="scene-name"></span><button id="scene-close" title="返回全局图谱">×</button></div>
+        <div id="scene-desc" class="fc-stats"></div>
+        <div class="fc-actions">
+          <button id="scene-exit" class="fc-btn">返回全局图谱</button>
         </div>
       </section>
     </aside>

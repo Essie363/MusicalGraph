@@ -10,6 +10,8 @@ Data included:
 - coWork: top N co-work partners per actor (for "expand" interactions)
 """
 import json
+import math
+import re
 import sqlite3
 from collections import defaultdict
 from pathlib import Path
@@ -138,6 +140,75 @@ def main():
         _bump(r["actor_a"], "partners", r["n"])
     for r in cur.execute("SELECT actor_b, COUNT(DISTINCT actor_a) AS n FROM co_work_edges GROUP BY actor_b"):
         _bump(r["actor_b"], "partners", r["n"])
+    # --- 星点重要度 imp：大剧场经历 / 剧目多样性 / 角色深耕 / 总场次 ---
+    # 大剧场判定：名称含 大剧院/大剧场/歌剧厅/主剧场 或知名中大型剧场；小剧场（星空间/新空间等）不计
+    BIG_THEATRE_RE = re.compile(
+        r"(大剧院|大剧场|歌剧厅|主剧场|世纪剧院|保利剧院|人民大舞台|上海共舞台|中国大戏院|美琪大戏院|兰心大戏院|云峰剧院|上剧场|天桥剧场|中央歌剧院)"
+    )
+    show_stat = {}          # aid -> [总场次, 大剧场场次]
+    for aid, theatre in cur.execute(
+        "SELECT sc.artist_id, sh.theatre FROM show_casts sc JOIN shows sh ON sh.id = sc.show_id"
+    ):
+        st = show_stat.setdefault(aid, [0, 0])
+        st[0] += 1
+        if theatre and BIG_THEATRE_RE.search(theatre):
+            st[1] += 1
+
+    # 角色深耕：show_casts.role 全部为空（15万行无角色），改用 actor_roles 的
+    # 去重「剧目×角色」数作为代理指标（参演角色越多 = 角色履历越深）
+    role_deep = {}          # aid -> 去重角色数（剧目×角色）
+    for aid, cnt in cur.execute(
+        "SELECT artist_id, COUNT(DISTINCT musical_id || '-' || role_id) c FROM actor_roles GROUP BY artist_id"
+    ):
+        role_deep[aid] = cnt
+
+    # 只有演出记录、但没有 actor_roles/共演数据的演员也补一条计数
+    for aid in show_stat:
+        actor_counts.setdefault(aid, {})
+
+    def _norm01(vals):
+        if not vals:
+            return {}
+        mn, mx = min(vals.values()), max(vals.values())
+        span = (mx - mn) or 1.0
+        return {k: (v - mn) / span for k, v in vals.items()}
+
+    raw = {}
+    for aid, d in actor_counts.items():
+        st = show_stat.get(aid, [0, 0])
+        d["shows"] = st[0]
+        d["bigShows"] = st[1]
+        d["roleDeep"] = role_deep.get(aid, 0)
+        raw[aid] = (
+            math.log1p(d.get("musicals", 0)),   # 剧目多样性（权重最高：剧目多 > 场次多）
+            math.log1p(st[1] + 1),              # 大剧场经历（大剧场 > 小剧场）
+            math.log1p(role_deep.get(aid, 0)),  # 角色深耕（一个角色场次多 > 少）
+            math.log1p(st[0]),                  # 总场次（辅助）
+        )
+    nM = _norm01({k: v[0] for k, v in raw.items()})
+    nB = _norm01({k: v[1] for k, v in raw.items()})
+    nR = _norm01({k: v[2] for k, v in raw.items()})
+    nS = _norm01({k: v[3] for k, v in raw.items()})
+    scores = {k: 0.40 * nM.get(k, 0) + 0.25 * nB.get(k, 0) + 0.20 * nR.get(k, 0) + 0.15 * nS.get(k, 0)
+              for k in raw}
+    sv = sorted(scores.values())
+    smin, smax = sv[0], sv[-1]
+    sspan = (smax - smin) or 1.0
+    for aid, sc in scores.items():
+        actor_counts[aid]["imp"] = round((sc - smin) / sspan, 3)
+
+
+    # --- 剧目热度统计（演出场次 / 巡演城市数），key = musical id ---
+    name2id = {v: k for k, v in musicals.items()}
+    musical_stats = {}
+    for r in cur.execute("SELECT musical, COUNT(*) AS n FROM shows GROUP BY musical"):
+        mid = name2id.get(r["musical"])
+        if mid is not None:
+            musical_stats[mid] = {"shows": r["n"], "cities": 0}
+    for r in cur.execute("SELECT musical, COUNT(DISTINCT city) AS n FROM shows GROUP BY musical"):
+        mid = name2id.get(r["musical"])
+        if mid is not None and mid in musical_stats:
+            musical_stats[mid]["cities"] = r["n"]
 
     # --- co-work top N per actor ---
     rows = cur.execute("""
@@ -191,6 +262,7 @@ def main():
         "musicals": musical_cast,
         "actorMusicalIds": actor_musical_ids,
         "actorCounts": actor_counts,
+        "musicalStats": musical_stats,
         "groups": group_list,
     }
 
