@@ -35,6 +35,7 @@ V1 核心功能：
 ## 4. 已完成 / 进行中 / 下一步
 
 ### 已完成
+- [x] 演员精彩片段模块（2026-08-11）：新增 moments 表（id/actor_id/title/url/source/created_time，第一阶段 bilibili/xiaohongshu）；import_moments.py 从 data/moments.json 导入；演员详情页新增「✨ 精彩片段」轻量列表（▶标题+来源+查看链接，外链新窗口，无封面/播放窗口）；图谱聚焦卡同步显示前 3 条；snapshot_moments.csv 快照（回归 54 全过）
 - [x] 前端视觉系统改版（2026-08-10，参考 Vercel 设计规范）：黑底白字单色优先、暗红点缀（#6B0F1A，黑底可读亮红 #E5484D；图谱演员光点保持金色 #c9a961）；Geist / Geist Mono 字体本地化到 `web/fonts/`（离线可跑，中文走系统字体回退）；去掉衬线标题、毛玻璃、药丸标签、卡片堆叠；图例改「圆点 + 文字」行、详情页统计条与发丝线分隔；新增跳转链接与可见焦点环等无障碍；动效默认静止（尊重 prefers-reduced-motion）；删除未使用的 `web/bg.png`（回归 42 项 + 设计断言 15 项全过）
 - [x] 图谱页右侧面板简化（2026-08-10）：筛选改为一行紧凑标签（圆点+文字），去掉说明文字；聚焦信息卡移到筛选区上方，点击演员后第一屏完整可见（回归 42 + 专项 5 全过）
 - [x] 关系标签色板调整（2026-08-10）：与暗红主题同一维度的丝绒色板——共演香槟金 / CP 梅子紫 / 好友深海青 / 同公司烟灰蓝 / 伴侣深酒红 / 情侣玫红 / 前任烟灰 / 同学橄榄绿 / 师生灰紫；标签改「小色点 + 中性底」样式（回归 42 全过）
@@ -129,6 +130,11 @@ V1 核心功能：
 - source_type：user | derived | media | official
 - status：pending | approved | rejected（现有 CP 均为 approved）
 
+### moments（精彩片段，8 条示例）
+`id | actor_id | title | url | source | created_time`
+- source：bilibili | xiaohongshu（第一阶段）
+- 维护：编辑 `data/moments.json` → `python import_moments.py`（整体替换；URL 为占位符示例）
+
 ### groups + group_members（33 个 / 69 人次）
 `groups: id | name | type (enrollment/cohort/other)`
 
@@ -141,12 +147,12 @@ V1 核心功能：
 ## 6. 目录与关键文件
 
 - `music_graph.db` — 主数据库（SQLite）
-- `data/` — 快照 CSV、团体/CP 标签、百科抓取 JSON、演出缓存、活跃度排序
+- `data/` — 快照 CSV、团体/CP 标签、百科抓取 JSON、演出缓存、活跃度排序、精彩片段 moments.json
 - `sync.py` — 每日增量同步（基础表全量刷新 + 排期按日期增量拉取 + 共演边重算）
 - `run_sync.bat` — 计划任务入口
 - `graph_utils.py` — 共演边重算模块
 - `check_gaps.py` — 档案缺口查询
-- `import_*.py` — 档案/CP 导入脚本
+- `import_*.py` — 档案/CP 导入脚本（`import_moments.py`：精彩片段导入）
 - `merge_baike.py` — 百科 JSON 合并入库
 - `snapshot_export.py` — 导出 data/snapshot_*.csv 快照
 - `make_profile_template.py` — 生成档案补齐模板

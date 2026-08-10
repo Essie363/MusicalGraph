@@ -8,6 +8,7 @@ Data included:
 - actors: all artists (id+name), plus profile fields when present
 - relations: approved relations with Chinese type name + detail
 - coWork: top N co-work partners per actor (for "expand" interactions)
+- moments: 精彩片段（标题/外链/来源平台）
 """
 import json
 import math
@@ -118,6 +119,17 @@ def main():
             group_list.append(g)
         if mid is not None:
             g["members"].append(mid)
+
+    # --- 精彩片段 moments（标题/外链/来源平台） ---
+    moments = []
+    for r in cur.execute("SELECT id, actor_id, title, url, source FROM moments ORDER BY id"):
+        moments.append({
+            "id": r["id"],
+            "actorId": r["actor_id"],
+            "title": r["title"],
+            "url": r["url"],
+            "source": r["source"],
+        })
 
     # --- 演员影响力统计（作品数/合作人数）与参演剧目 id 列表，供首页节点权重与聚焦展开 ---
     actor_musical_ids = {}
@@ -254,6 +266,7 @@ def main():
             "actors": len(actors),
             "relations": len(relations),
             "coWork": len(co_work),
+            "moments": len(moments),
         },
         "actors": actors,
         "relations": relations,
@@ -264,6 +277,7 @@ def main():
         "actorCounts": actor_counts,
         "musicalStats": musical_stats,
         "groups": group_list,
+        "moments": moments,
     }
 
     OUT.parent.mkdir(parents=True, exist_ok=True)

@@ -1,0 +1,13 @@
+﻿{
+  "_note": "精彩片段示例数据（第一阶段：bilibili / xiaohongshu）。url 为占位符，正式使用前请管理员替换为真实链接。维护方式：编辑本文件后运行 python import_moments.py",
+  "moments": [
+    { "actor": "郑云龙", "title": "《歌剧魅影》- The Music of the Night", "source": "bilibili", "url": "https://example.com/moments/zheng-yunlong-1" },
+    { "actor": "郑云龙", "title": "《我，堂吉诃德》- The Impossible Dream", "source": "xiaohongshu", "url": "https://example.com/moments/zheng-yunlong-2" },
+    { "actor": "阿云嘎", "title": "《在远方》- 我的远方", "source": "bilibili", "url": "https://example.com/moments/a-yunga-1" },
+    { "actor": "郑棋元", "title": "《金沙》- 总有一天", "source": "bilibili", "url": "https://example.com/moments/zheng-qiyuan-1" },
+    { "actor": "刘令飞", "title": "《变身怪医》- This Is the Moment", "source": "xiaohongshu", "url": "https://example.com/moments/liu-lingfei-1" },
+    { "actor": "徐均朔", "title": "《赵氏孤儿》- 片段", "source": "bilibili", "url": "https://example.com/moments/xu-junshuo-1" },
+    { "actor": "张泽", "title": "《火焰》- 现场录音", "source": "bilibili", "url": "https://example.com/moments/zhang-ze-1" },
+    { "actor": "金圣权", "title": "《卡拉马佐夫兄弟》- 片段", "source": "xiaohongshu", "url": "https://example.com/moments/jin-shengquan-1" }
+  ]
+}

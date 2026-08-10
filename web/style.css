@@ -1202,3 +1202,31 @@ body.side-open #graph-main { margin-right: 300px; }
     animation-delay: .3s;
   }
 }
+
+
+/* ============ 精彩片段（Stage Moments）============ */
+.moments-sec .moments-list { list-style: none; }
+.mom-item {
+  display: flex; align-items: center; gap: var(--space-3);
+  padding: var(--space-2) 0; border-bottom: 1px solid var(--border-subtle);
+}
+.mom-item:last-child { border-bottom: none; }
+.mom-play { color: var(--rel-cowork); font-size: 11px; flex: none; }
+.mom-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.mom-title { color: var(--text-primary); font-size: 14px; }
+.mom-src { color: var(--text-tertiary); font-size: 12px; }
+.mom-link {
+  flex: none; padding: 4px 10px; border: 1px solid var(--border-default);
+  border-radius: 2px; font-size: 12px; color: var(--text-secondary);
+  text-decoration: none; transition: border-color .15s ease, color .15s ease;
+}
+.mom-link:hover { border-color: var(--border-strong); color: var(--text-primary); }
+/* 图谱聚焦卡内的精彩片段（紧凑） */
+.fc-moments { border-top: 1px solid var(--border-subtle); padding-top: var(--space-2); margin-bottom: var(--space-2); }
+.fc-mom-title { font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
+.fc-mom-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.fc-mom-list li { display: flex; align-items: baseline; gap: 6px; font-size: 12px; min-width: 0; }
+.fc-mom-list .mom-title { font-size: 12px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-decoration: none; }
+.fc-mom-list a.mom-title:hover { color: var(--text-primary); text-decoration: underline; text-underline-offset: 3px; }
+.fc-mom-list .mom-src { flex: none; }
+.fc-mom-more { color: var(--text-tertiary); font-size: 12px; }

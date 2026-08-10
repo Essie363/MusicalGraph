@@ -58,7 +58,8 @@ E:\AI VibeCoding Project\MusicGraph\
 │   ├── profiles/           ← 百度百科抓取原始 JSON
 │   ├── raw/                ← 演员演出 CSV 缓存
 │   ├── uncovered_actors.csv ← 活跃但无档案的演员列表
-│   └── actor_priority.json ← 演员活跃度排序
+│   ├── actor_priority.json ← 演员活跃度排序
+│   └── moments.json      ← 精彩片段数据（管理员维护，import_moments.py 导入）
 ├── sync.py                 ← 每日自动同步脚本
 ├── run_sync.bat            ← Windows 计划任务调用的批处理
 ├── graph_utils.py          ← 共演边重算模块
@@ -67,6 +68,7 @@ E:\AI VibeCoding Project\MusicGraph\
 ├── fix_cp.py               ← CP 关系补修脚本
 ├── fix_major.py            ← major 字段语义清理（专业/学校/年级/备注各归各位）
 ├── import_cp.py            ← 导入 CP 关系到 relations 表
+├── import_moments.py       ← 导入精彩片段（data/moments.json → moments 表）
 ├── merge_baike.py          ← 合并百科 JSON 到 DB
 ├── snapshot_export.py       ← 导出 data/snapshot_*.csv 快照
 ├── web/verify.js             ← 前端一键回归验证（node web/verify.js）
@@ -119,6 +121,13 @@ type_id | actor_a | actor_b | detail | source_type | status
 - type_id 对应 relation_types（cp=粉丝组合/classmate=同学/friend=好友/teacher_student=师生/same_company=同公司/co_work=共演/couple=情侣/married=伴侣/ex=前任）
 - source_type: user | derived | media | official
 - status: pending | approved | rejected
+
+### moments（精彩片段，8 条示例）
+```
+id | actor_id | title | url | source | created_time
+```
+- source: bilibili | xiaohongshu（第一阶段仅支持这两个平台）
+- 维护方式：编辑 data/moments.json → python import_moments.py（整体替换；当前 URL 为占位符示例，正式使用请替换为真实链接）
 
 ### groups + group_members（团体，33 个 / 69 人次）
 ```
@@ -196,6 +205,7 @@ python sync.py
 - [x] 真实情侣数据分三类入库（2026-08-07：伴侣 16 / 情侣 28 / 前任 25，共 69 对；前端图例独立为 伴侣/情侣/前任 三个标签，可分别筛选）
 - [x] 百科档案合并（2026-08-07：merge_baike.py 合并 19 条百科数据，uncovered_actors.csv 已更新）
 - [x] 快照导出脚本（2026-08-07：snapshot_export.py 统一导出 data/snapshot_*.csv，relations 含同学/情侣分类）
+- [x] 演员精彩片段模块（2026-08-11：moments 表 + import_moments.py + 演员详情页/图谱聚焦卡展示，轻量列表不播视频，外链跳转 Bilibili/小红书；回归 54 项全过）
 - [ ] 将 SQLite 数据迁移到 Supabase
 - [ ] Next.js 前端搭建（可选升级路线；当前 web/ 零依赖 MVP 已实现搜索 + 演员详情页）
 - [ ] Cytoscape.js 关系图谱可视化（可选升级路线；当前为零依赖 Canvas 实现）

@@ -40,6 +40,14 @@
     }
   });
   groups.forEach(function (g) { if (g.members) g.members = g.members.map(s); if (g.id !== undefined) g.id = s(g.id); });
+
+  // ---- 精彩片段 moments（舞台高光片段：标题/外链/来源平台） ----
+  var SOURCE_LABEL = { bilibili: "Bilibili", xiaohongshu: "小红书" };
+  var moments = D.moments || [];
+  var momentsByActor = {};
+  moments.forEach(function (m) { var aid = s(m.actorId); (momentsByActor[aid] = momentsByActor[aid] || []).push(m); });
+  function safeUrl(u) { return /^https?:\/\//i.test(String(u || "")) ? String(u) : ""; }
+  function escAttr(s) { return escHtml(s).replace(/"/g, "&quot;"); }
   var nam2 = {};
   Object.keys(actorMusicals).forEach(function (aid) { nam2[s(aid)] = actorMusicals[aid]; });
   actorMusicals = nam2;
@@ -1089,6 +1097,27 @@
       s.style.setProperty("--tag-c", TYPE_COLOR[ty] || "#999");
       tagsBox.appendChild(s);
     });
+    var fcMom = document.getElementById("fc-moments");
+    if (fcMom) {
+      var mlist = momentsByActor[id] || [];
+      if (mlist.length) {
+        var h = "<div class='fc-mom-title'>精彩片段</div><ul class='fc-mom-list'>";
+        mlist.slice(0, 3).forEach(function (m) {
+          var url = safeUrl(m.url);
+          var titleHtml = url
+            ? "<a class='mom-title' href='" + escAttr(url) + "' target='_blank' rel='noopener noreferrer'>" + escHtml(m.title) + "</a>"
+            : "<span class='mom-title'>" + escHtml(m.title) + "</span>";
+          h += "<li><span class='mom-play'>▶</span>" + titleHtml + "<span class='mom-src'>" + escHtml(SOURCE_LABEL[m.source] || m.source || "") + "</span></li>";
+        });
+        if (mlist.length > 3) h += "<li class='fc-mom-more'>… 共 " + mlist.length + " 条，详情页查看全部</li>";
+        h += "</ul>";
+        fcMom.innerHTML = h;
+        fcMom.classList.remove("hidden");
+      } else {
+        fcMom.classList.add("hidden");
+        fcMom.innerHTML = "";
+      }
+    }
     focusCard.classList.remove("hidden");
     document.body.classList.add("side-open");     // 聚焦演员 -> 右侧面板滑出
     if (gtEmpty) gtEmpty.classList.add("hidden");
@@ -1689,6 +1718,39 @@
     }
   }
 
+  function renderMoments(id) {
+    var sec = document.getElementById("ap-moments-sec");
+    if (!sec) return;
+    var ul = document.getElementById("ap-moments");
+    var list = momentsByActor[id] || [];
+    if (!list.length) { sec.classList.add("hidden"); ul.innerHTML = ""; return; }
+    sec.classList.remove("hidden");
+    ul.innerHTML = "";
+    list.forEach(function (m) {
+      var li = document.createElement("li");
+      li.className = "mom-item";
+      var play = document.createElement("span");
+      play.className = "mom-play"; play.textContent = "▶";
+      li.appendChild(play);
+      var body = document.createElement("span");
+      body.className = "mom-body";
+      var title = document.createElement("span");
+      title.className = "mom-title"; title.textContent = m.title;
+      var src = document.createElement("span");
+      src.className = "mom-src"; src.textContent = SOURCE_LABEL[m.source] || m.source || "";
+      body.appendChild(title); body.appendChild(src);
+      li.appendChild(body);
+      var url = safeUrl(m.url);
+      if (url) {
+        var a = document.createElement("a");
+        a.className = "mom-link"; a.href = url; a.target = "_blank"; a.rel = "noopener noreferrer";
+        a.textContent = "查看链接";
+        li.appendChild(a);
+      }
+      ul.appendChild(li);
+    });
+  }
+
   function renderActorPage(id) {
     var a = actors[id];
     document.getElementById("ap-name").textContent = a ? a.name : "演员 " + id;
@@ -1732,6 +1794,7 @@
     }
     renderRelations(id);
     renderGroups(id);
+    renderMoments(id);
     renderMusicals(id);
     renderCowork(id);
     apResize();

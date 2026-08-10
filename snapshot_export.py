@@ -5,6 +5,7 @@ Mirrors the existing snapshot formats:
 - snapshot_relations.csv     : relations + co-work counts
 - snapshot_groups.csv        : group members
 - snapshot_co_work_top1000.csv : top 1000 co-work pairs by show count
+- snapshot_moments.csv       : 精彩片段
 - snapshot_summary.csv       : row counts
 """
 import csv
@@ -80,6 +81,16 @@ def main():
               ["actor_a", "actor_b", "co_shows", "co_musicals", "first_date", "last_date"],
               rows)
 
+    # 4.5 moments
+    rows = cur.execute("""
+        SELECT m.id, m.actor_id, a.name, m.title, m.url, m.source, m.created_time
+        FROM moments m JOIN artists a ON m.actor_id = a.id
+        ORDER BY m.id
+    """).fetchall()
+    write_csv("snapshot_moments.csv",
+              ["id", "actor_id", "actor", "title", "url", "source", "created_time"],
+              rows)
+
     # 5. summary
     with_profile = cur.execute("""
         SELECT COUNT(*) FROM artists a
@@ -98,6 +109,7 @@ def main():
         ("relations (couple)", cur.execute("SELECT COUNT(*) FROM relations WHERE type_id=(SELECT id FROM relation_types WHERE code='couple')").fetchone()[0]),
         ("groups", cur.execute("SELECT COUNT(*) FROM groups").fetchone()[0]),
         ("group_members", cur.execute("SELECT COUNT(*) FROM group_members").fetchone()[0]),
+        ("moments", cur.execute("SELECT COUNT(*) FROM moments").fetchone()[0]),
     ]
     write_csv("snapshot_summary.csv", ["table", "count"], summary)
 

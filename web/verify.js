@@ -76,6 +76,17 @@ function check(name, cond, extra) {
   const apCount = await page.evaluate(() => window.__apNodeCount || 0);
   check("关系图渲染", apCount > 5, "节点数=" + apCount);
 
+  console.log("== 精彩片段 ==");
+  check("数据含精彩片段", await page.evaluate(() => Array.isArray(window.MUSIC_GRAPH.moments) && window.MUSIC_GRAPH.moments.length > 0));
+  const momSecVisible = await page.evaluate(() => {
+    const el = document.getElementById("ap-moments-sec");
+    return el && !el.classList.contains("hidden");
+  });
+  const momCount = await page.$$eval("#ap-moments li", els => els.length);
+  check("详情页显示精彩片段", momSecVisible && momCount >= 1, "条目数=" + momCount);
+  const momLinkOk = await page.$$eval("#ap-moments a", els => els.length >= 1 && els.every(a => a.target === "_blank" && /^https?:/.test(a.href)));
+  check("片段链接外跳新窗口", momLinkOk);
+
   console.log("== 多人常共演无自己 ==");
   const names = ["许昌泰", "郑棋元", "金圣权", "毛二", "张泽", "汤佳明", "阿云嘎", "刘令飞"];
   const selfBad = [];
@@ -207,6 +218,32 @@ function check(name, cond, extra) {
     const focusId = await page.evaluate(() => window.__homeFocusId());
     const musLeft = await page.evaluate(() => (window.__homeNodeIds() || []).filter(k => window.__homeNodeType(k) === "musical").length);
     check("Esc 返回全局图谱", focusId === null && musLeft === 0, "focusId=" + focusId + " mus=" + musLeft);
+
+  console.log("== 聚焦卡精彩片段 ==");
+  {
+    const momIds = await page.evaluate(() => {
+      const byActor = {};
+      (window.MUSIC_GRAPH.moments || []).forEach(m => { byActor[String(m.actorId)] = true; });
+      const ids = window.__homeNodeIds() || [];
+      return ids.filter(id => byActor[id]);
+    });
+    let ok = false;
+    for (const momId of momIds.slice(0, 30)) {
+      const rect = await page.evaluate(() => { const r = document.getElementById("graph").getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom }; });
+      const pos = await page.evaluate((i) => window.__homeNodeScreen(i), momId);
+      if (!pos || pos.x < rect.l + 5 || pos.x > rect.r - 5 || pos.y < rect.t + 5 || pos.y > rect.b - 5) continue;
+      await page.mouse.click(pos.x, pos.y);
+      await page.waitForTimeout(1100);
+      ok = await page.evaluate(() => {
+        const el = document.getElementById("fc-moments");
+        return el && !el.classList.contains("hidden") && el.querySelectorAll("a.mom-title").length >= 1;
+      });
+      await page.keyboard.press("Escape");
+      await page.waitForTimeout(700);
+      if (ok) break;
+    }
+    check("聚焦卡显示精彩片段", ok, "含片段节点数=" + momIds.length);
+  }
   }
 
   console.log("== 点击空白返回全局 ==");
