@@ -1219,3 +1219,10 @@ a.mom-title:hover { text-decoration: underline; text-underline-offset: 3px; }
 .fc-mom-list a.mom-title:hover { color: var(--text-primary); text-decoration: underline; text-underline-offset: 3px; }
 .fc-mom-list .mom-src { flex: none; }
 .fc-mom-more { color: var(--text-tertiary); font-size: 12px; }
+/* 剧目信息卡：演员表（复用角色分组样式，作用域改为信息卡） */
+#focus-card .fc-cast { list-style: none; margin-top: 6px; max-height: 44vh; overflow-y: auto; }
+#focus-card .fc-cast .role-group { display: block; padding: 9px 2px; border-bottom: 1px solid var(--border-subtle); }
+#focus-card .fc-cast .role-group:last-child { border-bottom: none; }
+#focus-card .fc-cast .role-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px; }
+#focus-card .fc-cast .c { display: inline-block; margin: 2px 10px 2px 0; color: var(--text-secondary); cursor: pointer; font-size: 13px; }
+#focus-card .fc-cast .c:hover { color: var(--text-primary); text-decoration: underline; text-underline-offset: 3px; }

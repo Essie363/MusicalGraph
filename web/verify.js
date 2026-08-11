@@ -15,7 +15,7 @@ const CHROME_CANDIDATES = [
   "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
   "C:/Program Files/Microsoft/Edge/Application/msedge.exe",
 ];
-const FILE_URL = "file:///E:/AI%20VibeCoding%20Project/MusicGraph/web/index.html";
+const FILE_URL = "file:///E:/AI%20VibeCoding%20Project/MusicGraph/web/index.html?mode=static";   // force offline snapshot for deterministic regression
 
 let passed = 0, failed = 0;
 function check(name, cond, extra) {
@@ -31,7 +31,7 @@ function check(name, cond, extra) {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   const errors = [];
   page.on("pageerror", e => errors.push(e.message));
-  await page.goto(FILE_URL + "?v=" + Date.now(), { waitUntil: "load" });
+  await page.goto(FILE_URL + "&v=" + Date.now(), { waitUntil: "load" });
   await page.waitForTimeout(3000);
 
   async function ensureSearch() {
@@ -64,6 +64,18 @@ function check(name, cond, extra) {
 
   console.log("== 图谱 ==");
   check("关系类型筛选已移除", await page.evaluate(() => !document.getElementById("legend")), "legend still exists");
+  check("首页双层布局：含作品节点", await page.evaluate(() => (window.__homeWorkNodeCount ? window.__homeWorkNodeCount() : 0) > 0));
+  check("首页双层布局：含演员节点", await page.evaluate(() => (window.__homeNodeIds ? window.__homeNodeIds() : []).length > 100));
+  check("节点 4 层级：核心节点存在", await page.evaluate(() => (window.__homeCoreCount ? window.__homeCoreCount() : 0) > 0));
+  check("节点 4 层级：四档齐全", await page.evaluate(() => {
+    const c = window.__homeTierCounts ? window.__homeTierCounts() : null;
+    return !!c && c.core > 0 && c.star > 0 && c.active > 0 && c.normal > 0;
+  }));
+  check("首页全局视图非聚焦态", await page.evaluate(() => (window.__homeFocusId ? window.__homeFocusId() : null) === null));
+  check("首页团体维度：含团体节点", await page.evaluate(() => {
+    const ids = window.__homeNodeIds ? window.__homeNodeIds() : [];
+    return ids.filter(id => window.__homeNodeType && window.__homeNodeType(id) === "group").length > 0;
+  }));
 
   console.log("== 搜索演员 -> 图谱定位 ==");
   await ensureSearch();
@@ -249,7 +261,7 @@ function check(name, cond, extra) {
     await page.waitForTimeout(800);
     const focusId = await page.evaluate(() => window.__homeFocusId());
     const musLeft = await page.evaluate(() => (window.__homeNodeIds() || []).filter(k => window.__homeNodeType(k) === "musical").length);
-    check("Esc 返回全局图谱", focusId === null && musLeft === 0, "focusId=" + focusId + " mus=" + musLeft);
+    check("Esc 返回全局图谱", focusId === null && musLeft > 0, "focusId=" + focusId + " mus=" + musLeft);   // 全局视图含作品节点（双层布局）
 
   console.log("== 聚焦卡精彩片段 ==");
   {
@@ -359,8 +371,9 @@ function check(name, cond, extra) {
 
   console.log("== 光点：关系线显示逻辑 ==");
   {
-    const visible = await page.evaluate(() => (window.__homeEdgeAlpha() || []).filter(e => e.alpha > 0.02).length);
-    check("默认状态无关系线", visible === 0, "可见边数=" + visible);
+    const vis = await page.evaluate(() => (window.__homeEdgeAlpha() || []).filter(e => e.alpha > 0.02));
+    const nonDim = vis.filter(e => e.a.indexOf("mus:") !== 0 && e.b.indexOf("mus:") !== 0 && e.a.indexOf("grp:") !== 0 && e.b.indexOf("grp:") !== 0);
+    check("默认全局只显示作品/团体维度边", vis.length > 0 && nonDim.length === 0, "可见边数=" + vis.length + " 非维度边=" + nonDim.length);
   }
   {
     const ids = await page.evaluate(() => (window.__homeNodeIds() || []).slice(0, 30));
@@ -493,8 +506,13 @@ function check(name, cond, extra) {
   await page.waitForTimeout(400);
   await page.click("#dropdown .item:first-child");
   await page.waitForTimeout(500);
-  check("作品演员表", await page.$$eval("#p-cast .role-group .c", els => els.length) >= 5);
-  const roleGroups = await page.$$eval("#p-cast .role-group", els => els.length);
+  check("剧目信息卡（非弹窗）", await page.evaluate(() => {
+    return document.getElementById("panel").classList.contains("hidden") &&
+           !document.getElementById("focus-card").classList.contains("hidden") &&
+           document.body.classList.contains("side-open");
+  }));
+  check("作品演员表", await page.$$eval("#fc-moments .role-group .c", els => els.length) >= 5);
+  const roleGroups = await page.$$eval("#fc-moments .role-group", els => els.length);
   check("作品演员表按角色分组", roleGroups >= 2, "角色组数=" + roleGroups);
 
   await page.keyboard.press("Escape");   // 关闭作品弹窗
@@ -505,10 +523,19 @@ function check(name, cond, extra) {
   await page.fill("#search", "中戏17");
   await page.waitForTimeout(400);
   await page.click("#dropdown .item:first-child");
-  await page.waitForTimeout(500);
-  check("团体成员", await page.$$eval("#p-cast li", els => els.length) >= 3);
+  await page.waitForTimeout(900);
+  check("团体信息卡（非弹窗）", await page.evaluate(() => {
+    return document.getElementById("panel").classList.contains("hidden") &&
+           !document.getElementById("focus-card").classList.contains("hidden") &&
+           document.body.classList.contains("side-open");
+  }));
+  check("团体成员在右侧栏", await page.$$eval("#fc-moments .c", els => els.length) >= 3);
+  check("团体聚焦为单层（无共演推断边）", await page.evaluate(() => {
+    const edges = window.__homeEdges ? window.__homeEdges() : [];
+    return edges.filter(e => e.type === "co_work").length === 0;
+  }));
 
-  await page.keyboard.press("Escape");   // 关闭团体弹窗
+  await page.keyboard.press("Escape");   // 返回全局
   await page.waitForTimeout(300);
 
   console.log("== Contribute 页 ==");
@@ -521,7 +548,7 @@ function check(name, cond, extra) {
   await page.fill("#c-supplement-actor input[name=school]", "测试学院");
   await page.fill("#c-ref", "https://example.com");
   await page.click("#contribute-form button[type=submit]");
-  await page.waitForTimeout(400);
+  await page.waitForTimeout(2500);   // wait for offline fallback after backend submit timeout
   const savedN = await page.evaluate(() => JSON.parse(localStorage.getItem("mg_contributions") || "[]").length);
   check("提交内容已保存", savedN >= 1, "条数=" + savedN);
   check("待审核列表展示", await page.$$eval("#c-review-list li", els => els.length) >= 1);
@@ -537,7 +564,7 @@ function check(name, cond, extra) {
   });
   if (zlyId) {
     await page.goto(FILE_URL + "#/actor/" + zlyId, { waitUntil: "load" });
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(3500);   // full reload + data probe takes a while
     const okName = (await page.textContent("#ap-name")) === "郑云龙";
     const okView = await page.$eval("#actor-view", el => !el.classList.contains("hidden"));
     check("直达详情页", okName && okView, "name=" + await page.textContent("#ap-name"));

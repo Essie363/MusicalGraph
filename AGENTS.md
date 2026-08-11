@@ -1,4 +1,4 @@
-# MusicGraph — 音乐剧演员关系图谱
+﻿# MusicGraph — 音乐剧演员关系图谱
 
 ## 项目概述
 
@@ -75,6 +75,14 @@ E:\AI VibeCoding Project\MusicGraph\
 ├── make_profile_template.py  ← 生成档案补齐模板 data/profile_template.csv
 ├── fetch_baike.py            ← 百度百科抓取（2026-08 起被反爬拦截，暂不可用）
 └── refresh_all.py             ← 一键刷新：快照 + 网页数据
+├── pb/                       ← PocketBase 后端（pocketbase.exe 不入库）
+│   ├── pb_migrations/        ← 建表迁移（首次启动自动执行）
+│   └── pb_hooks/             ← 审核自动入库钩子（净转换器）
+├── setup_pocketbase.ps1      ← 安装后端（下载 + 建管理员）
+├── start_all.bat             ← 一键启动：后端 + 网页
+├── backup_pocketbase.ps1     ← 后端数据库备份（保留 30 份）
+├── import_pocketbase.py      ← SQLite → PocketBase 全量导入（幂等）
+└── apply_pocketbase.py       ← 已审核内容回写 SQLite（可选）
 ```
 
 ## 数据库核心表
@@ -162,6 +170,15 @@ python check_gaps.py
 # 手动同步（通常不需要，计划任务每日 6:00 自动跑）
 python sync.py
 
+# 启动后端与网页（首次先跑 setup_pocketbase.ps1）
+start_all.bat
+
+# 导入现有数据到后端（管理员后台 http://127.0.0.1:8090/_/ 审核提交）
+python import_pocketbase.py
+
+# 已审核内容回写本地库（保持离线快照一致，可选）
+python apply_pocketbase.py
+
 # 导入新的一批演员资料（tab 分隔格式）
 # 修改 import_profiles_v3.py 或 import_from_file.py 中的 raw 字符串，然后运行
 ```
@@ -185,6 +202,8 @@ python sync.py
 - [x] CP 关系入库（123 条，type=cp 粉丝组合；couple 真实情侣暂空待补充）
 - [x] 团体表建设（33 个团体，69 人次）
 
+- [x] **PocketBase 后端内容管理系统（2026-08-12）**：正式数据集合 actors/musicals/actor_roles/relations/moments + submissions 提交流程；管理员在 /_/ 后台审核，通过后钩子自动入库（纯转换，不判断内容）；前端数据层 API 优先 + 静态回退；Contribute 四类提交（含精彩片段，来源必填，关系仅限合作/同学/师生/同公司）；备份脚本 backup_pocketbase.ps1；参见 docs/POCKETBASE.md；回归与后端 E2E 全部通过
+
 ### 待完成
 - [ ] 继续补演员档案（覆盖率仅 9%，参见 `uncovered_actors.csv`）
 - [x] 同学关系自动推导（同校 + 同 enrollment_year，2026-08-07 完成，70 对已入库，脚本 classmate_derive.py）
@@ -206,6 +225,9 @@ python sync.py
 - [x] 百科档案合并（2026-08-07：merge_baike.py 合并 19 条百科数据，uncovered_actors.csv 已更新）
 - [x] 快照导出脚本（2026-08-07：snapshot_export.py 统一导出 data/snapshot_*.csv，relations 含同学/情侣分类）
 - [x] 演员精彩片段模块（2026-08-11：moments 表 + import_moments.py + 演员详情页/图谱聚焦卡展示，轻量列表不播视频，外链跳转 Bilibili/小红书；回归 54 项全过）
+- [x] 前端节点 4 层级渲染（2026-08-11：imp 分位 → 普通/活跃/明星/核心，核心=大亮点强光晕，层级由尺寸/光晕/亮度拉开，无圆环）
+- [x] 首页 Actor+Work+Group 维度布局（2026-08-11：作品 Top48 成簇 + 团体 33 个节点，演员环绕作品、成员环绕团体；演员-作品/团体-成员极淡连线常显）
+- [x] 剧目/团体聚焦单层关系 + 右侧栏信息卡（2026-08-11：点剧目/团体 → 只展示参演演员或团体成员的明确关系（不画共演等推断边），右侧栏展示演员表/成员列表，不再弹窗；回归 68 项全过）
 - [ ] 将 SQLite 数据迁移到 Supabase
 - [ ] Next.js 前端搭建（可选升级路线；当前 web/ 零依赖 MVP 已实现搜索 + 演员详情页）
 - [ ] Cytoscape.js 关系图谱可视化（可选升级路线；当前为零依赖 Canvas 实现）

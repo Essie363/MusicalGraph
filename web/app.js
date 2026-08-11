@@ -42,7 +42,7 @@
   groups.forEach(function (g) { if (g.members) g.members = g.members.map(s); if (g.id !== undefined) g.id = s(g.id); });
 
   // ---- 精彩片段 moments（舞台高光片段：标题/外链/来源平台） ----
-  var SOURCE_LABEL = { bilibili: "Bilibili", xiaohongshu: "小红书" };
+  var SOURCE_LABEL = { bilibili: "Bilibili", xiaohongshu: "小红书", netease: "网易云音乐", youtube: "YouTube" };
   var moments = D.moments || [];
   var momentsByActor = {};
   moments.forEach(function (m) { var aid = s(m.actorId); (momentsByActor[aid] = momentsByActor[aid] || []).push(m); });
@@ -136,8 +136,8 @@
     if (!/^#\/graph/.test(location.hash)) location.hash = "#/graph";
     showGraphView();
   }
-  function goGroup(gid) { goHome(); showGroupPanel(gid); }
-  function goMusical(mid) { goHome(); showMusicalPanel(mid); }
+  function goGroup(gid) { goHome(); focusGroup(gid); }   // 点团体：图谱聚焦 + 右侧信息卡（不再弹窗）
+  function goMusical(mid) { goHome(); focusMusical(mid); }   // 点剧目：图谱聚焦 + 右侧信息卡（不再弹窗）
   window.addEventListener("hashchange", applyRoute);
 
   var viewHome = document.getElementById("view-home");
@@ -172,6 +172,7 @@
     document.body.classList.remove("actor-mode");
     setNavActive("graph");
     resizeHome();
+    if (!homeLaidOut) { homeLaidOut = true; buildGraph(); layoutAndCenter(); playEntrance(); }   // 图谱视图首次可见时，用真实画布尺寸正式布局
     requestAnimationFrame(draw);
     maybeShowFirstHint();
     if (pendingGraphFocus) {
@@ -229,6 +230,38 @@
   var NODE_R_MIN = 6, NODE_R_MAX = 18;  // 演员节点半径范围（按影响力）
   var LERP = 0.18;                      // alpha/半径平滑系数（约 300-500ms 收敛）
 
+  // ---- 节点 4 层级（imp 分位）：普通/活跃/明星/核心，用「尺寸 + 光晕 + 亮度」拉开层级 ----
+  var IMP_TIER_P = [0.35, 0.60, 0.85];  // 分位阈值（核心 >= P85 / 明星 P60-85 / 活跃 P35-60 / 普通 < P35）
+  var HOME_WORK_N = 48;                 // 首页全局图谱展示的作品数（Top N）
+  var TIER_SPEC = {
+    core:   { core: 4.6, glow: 38, hitR: 26 },   // 核心：最大最亮的星点（强光晕）
+    star:   { core: 3.6, glow: 22, hitR: 20 },
+    active: { core: 2.8, glow: 14, hitR: 18 },
+    normal: { core: 1.8, glow: 8,  hitR: 15 }
+  };
+  var impTierThresholds = null;         // 缓存：按首页关系演员集合的 imp 分位计算，全站一致
+  function computeImpTierThresholds() {
+    if (impTierThresholds) return impTierThresholds;
+    var vals = [];
+    var active = {};
+    relations.forEach(function (r) { if (visibleTypes[r.type]) { active[r.a] = true; active[r.b] = true; } });
+    Object.keys(active).forEach(function (id) {
+      var c = D.actorCounts && D.actorCounts[id];
+      if (c && typeof c.imp === "number") vals.push(c.imp);
+    });
+    vals.sort(function (a, b) { return a - b; });
+    function pct(p) { return vals.length ? vals[Math.floor(p * (vals.length - 1))] : 0; }
+    impTierThresholds = { p35: pct(IMP_TIER_P[0]), p60: pct(IMP_TIER_P[1]), p85: pct(IMP_TIER_P[2]) };
+    return impTierThresholds;
+  }
+  function tierOf(imp) {
+    var t = computeImpTierThresholds();
+    if (imp >= t.p85) return "core";
+    if (imp >= t.p60) return "star";
+    if (imp >= t.p35) return "active";
+    return "normal";
+  }
+
   var focusId = null;                   // 当前聚焦演员 id（null=全局视图）
   var hoverId = null;                   // 当前悬停节点 key
   var depthCenterId = null;             // 景深中心节点 key
@@ -236,6 +269,7 @@
   var viewTween = null;                 // 视图动画：聚焦时把目标演员送到画面中心
   var scene = null;                     // 场景模式：null=全局 / actors=热门演员Top20 / musicals=全部剧目 / groups=团体一览 / search=聚焦搜索
   var sceneHighlight = {};              // 场景模式下被点亮的节点 key 集合
+  var homeLaidOut = false;               // 图谱是否已用真实画布尺寸完成首次布局（隐藏画布时布局尺寸为 0）
 
   // ---- 演员影响力统计：出演剧目数 / 合作人数 / 关系度 ----
   var actorStats = {};
@@ -280,6 +314,19 @@
     };
     return nodes[key];
   }
+  function ensureGroupNode(g) {
+    var key = "grp:" + g.id;
+    if (nodes[key]) return nodes[key];
+    nodes[key] = {
+      id: g.id, key: key, type: "group",
+      x: Math.random() * 1000 - 500, y: Math.random() * 1000 - 500,
+      vx: 0, vy: 0, r: 4, core: 4, coreBase: 4, glow: 22, glowBase: 22,
+      importance: 0.7, hitR: 18, alpha: 0, targetAlpha: 1,
+      color: "#8a7bb5", label: g.name, fixed: false
+    };
+    return nodes[key];
+  }
+
   // 新节点放在焦点演员周围的随机环带，等待力导向收敛
   function placeNewNode(n) {
     var angle = Math.random() * Math.PI * 2;
@@ -338,6 +385,15 @@
         });
       });
     }
+    // 团体-成员边（团体维度）
+    groups.forEach(function (g) {
+      var gk = "grp:" + g.id;
+      if (!nodes[gk]) return;
+      (g.members || []).forEach(function (aid) {
+        if (!nodes[aid]) return;
+        edges.push({ a: gk, b: aid, type: "group", color: "#8a7bb5", dashed: true, width: 0.6, alphaBase: 0.22, alpha: 0, count: 0 });
+      });
+    });
   }
 
   // 影响力由光效表达：核心亮点与光晕半径随 importance 递增（不再用大尺寸区分）
@@ -346,8 +402,8 @@
     Object.keys(nodes).forEach(function (k) {
       var n = nodes[k];
       if (n.type === "musical") {
-        n.coreBase = 3; n.glowBase = 20; n.importance = 0.6; n.hitR = 16;
-        n.core = 3; n.glow = 20;
+        n.coreBase = 4; n.glowBase = 20; n.importance = 0.6; n.hitR = 16;
+        n.core = 4; n.glow = 20;
         return;
       }
       if (n.type === "group") return;
@@ -364,12 +420,41 @@
       var c = D.actorCounts && D.actorCounts[n.id];
       var imp = (c && typeof c.imp === "number") ? c.imp : (n.w - minW) / span;
       n.importance = imp;
-      n.coreBase = 1.6 + imp * 3.9;      // 核心亮点 1.6–5.5px：普通=小星 / 重要=稍大 / 核心=最大
-      n.glowBase = 6 + imp * 34;         // 光晕 6–40px：普通几乎无光晕，核心有微弱光晕
-      n.hitR = 15 + imp * 7;             // 命中区域 15–22px，保证小光点易点
+      var tier = tierOf(imp);
+      n.tier = tier;
+      var spec = TIER_SPEC[tier];
+      n.coreBase = spec.core;            // 4 层级：核心=圆环+亮点 / 明星=大亮点 / 活跃=中点 / 普通=小点
+      n.glowBase = spec.glow;
+      n.hitR = spec.hitR;             // 命中区域随层级放大，保证小光点易点
       n.core = n.coreBase;
       n.glow = n.glowBase;
     });
+  }
+
+  // 首页全局图谱：补充作品节点（Top N，按「参演演员数 > 演出场次 > 巡演城市数」排序）
+  function addHomeWorkNodes() {
+    var stat = {};
+    Object.keys(nodes).forEach(function (k) {
+      var n = nodes[k];
+      if (n.type !== "actor") return;
+      var mids = (D.actorMusicalIds && D.actorMusicalIds[n.id]) || [];
+      mids.forEach(function (mid) {
+        if (!stat[mid]) stat[mid] = { actors: 0, shows: 0, cities: 0 };
+        stat[mid].actors++;
+        var ms = (D.musicalStats && D.musicalStats[mid]) || {};
+        stat[mid].shows = ms.shows || 0;
+        stat[mid].cities = ms.cities || 0;
+      });
+    });
+    var ranked = Object.keys(stat).sort(function (a, b) {
+      return (stat[b].actors - stat[a].actors) || (stat[b].shows - stat[a].shows) || (stat[b].cities - stat[a].cities);
+    }).slice(0, HOME_WORK_N);
+    ranked.forEach(function (mid) { ensureMusicalNode(mid); });
+  }
+
+  // 首页全局图谱：补充团体节点（团体维度，进入图谱即展示）
+  function addHomeGroupNodes() {
+    groups.forEach(function (g) { ensureGroupNode(g); });
   }
 
   // 构建图谱：base 为参与可见类型关系的演员；focusId 存在时以其为中心展开
@@ -380,6 +465,7 @@
       if (visibleTypes[r.type]) { active[r.a] = true; active[r.b] = true; }
     });
     Object.keys(active).forEach(function (id) { ensureActorNode(id); });
+    if (!focusId && !scene) { addHomeWorkNodes(); addHomeGroupNodes(); }   // 首页全局图谱：作品维度 + 团体维度
     if (focusId) {
       ensureActorNode(focusId);
       addFocusExpansions(focusId);
@@ -421,12 +507,113 @@
     });
   }
 
+  // ---- 首页 Actor+Work 双层布局：作品层聚簇 → 演员层环绕 → 团体第三层约束 ----
+  function homeWorkLayout() {
+    var KEYS = Object.keys(nodes);
+    var works = [], actors = [], grps = [];
+    KEYS.forEach(function (k) { var n = nodes[k]; if (n.type === "musical") works.push(n); else if (n.type === "actor") actors.push(n); else if (n.type === "group") grps.push(n); });
+    if (!works.length) { for (var i = 0; i < 320; i++) physicsStep(); return; }
+    // 作品 -> 参演演员（仅当前可见的演员）
+    var workActors = {};
+    actors.forEach(function (a) {
+      var mids = (D.actorMusicalIds && D.actorMusicalIds[a.id]) || [];
+      mids.forEach(function (mid) { if (nodes["mus:" + mid]) (workActors[mid] = workActors[mid] || []).push(a.id); });
+    });
+    // 共享演员 -> 作品对互相吸引（作品聚类）
+    var sharePair = {};
+    for (var i = 0; i < works.length; i++) {
+      for (var j = i + 1; j < works.length; j++) {
+        var ai = workActors[works[i].id], aj = workActors[works[j].id];
+        if (!ai || !aj) continue;
+        var shared = false;
+        for (var s = 0; s < ai.length; s++) { if (aj.indexOf(ai[s]) >= 0) { shared = true; break; } }
+        if (shared) sharePair[works[i].id + "|" + works[j].id] = true;
+      }
+    }
+    var KR = 2800, KD = 0.85, DT = 0.3, KS = 0.02, REST_WW = 180, REST_AW = 100, K_CENTER = 0.01, K_ACTOR_WORK = 0.05, K_GROUP_NODE = 0.06, REST_AG = 90, K_ACTOR_GROUP = 0.02;
+    var grpData = {};
+    groups.forEach(function (x) { grpData["grp:" + x.id] = x; });
+    var WORK_LAYOUT_ITERS = 150, ACTOR_LAYOUT_ITERS = 120, GROUP_LAYOUT_ITERS = 60;
+    function applyForces(moveActors) {
+      // 排斥（作品-作品 / 作品-演员 / 演员-演员）
+      var all = moveActors ? actors.concat(works).concat(grps) : works;
+      for (var i = 0; i < all.length; i++) {
+        for (var j = i + 1; j < all.length; j++) {
+          var a = all[i], b = all[j];
+          var dx = b.x - a.x, dy = b.y - a.y;
+          var d = Math.sqrt(dx * dx + dy * dy) + 1e-6;
+          var f = KR / (d * d);
+          var fx = dx / d * f, fy = dy / d * f;
+          a.vx -= fx; a.vy -= fy; b.vx += fx; b.vy += fy;
+        }
+      }
+      // 作品-作品：共享演员的作品互相吸引（聚类）
+      for (var i = 0; i < works.length; i++) {
+        for (var j = i + 1; j < works.length; j++) {
+          if (!sharePair[works[i].id + "|" + works[j].id]) continue;
+          var a = works[i], b = works[j];
+          var dx = b.x - a.x, dy = b.y - a.y;
+          var d = Math.sqrt(dx * dx + dy * dy) + 1e-6;
+          var f = (d - REST_WW) * KS;
+          var fx = dx / d * f, fy = dy / d * f;
+          a.vx += fx; a.vy += fy; b.vx -= fx; b.vy -= fy;
+        }
+      }
+      if (moveActors) {
+        // 演员 -> 自己参演作品的质心（环绕作品；共享演员被多簇拉扯形成桥梁）
+        actors.forEach(function (n) {
+          var mids = (D.actorMusicalIds && D.actorMusicalIds[n.id]) || [];
+          var cx = 0, cy = 0, cnt = 0;
+          mids.forEach(function (mid) { var w = nodes["mus:" + mid]; if (!w) return; cx += w.x; cy += w.y; cnt++; });
+          if (cnt) {
+            var dx = (cx / cnt) - n.x, dy = (cy / cnt) - n.y;
+            var dd = Math.sqrt(dx * dx + dy * dy) + 1e-6;
+            var f = (dd - REST_AW) * K_ACTOR_WORK;   // 保持一定距离环绕，避免贴脸
+            n.vx += dx / dd * f; n.vy += dy / dd * f;
+          } else {    // 无作品：轻微吸向画面中心，防止漂走
+            n.vx -= n.x * K_CENTER; n.vy -= n.y * K_CENTER;
+          }
+        });
+        // 团体维度：团体节点吸向成员质心；成员轻微环绕团体节点
+        grps.forEach(function (g) {
+          var gd = grpData[g.key];
+          var ms = (gd && gd.members || []).filter(function (id) { return nodes[id]; });
+          if (!ms.length) return;
+          var cx = 0, cy = 0;
+          ms.forEach(function (id) { cx += nodes[id].x; cy += nodes[id].y; });
+          cx /= ms.length; cy /= ms.length;
+          g.vx += (cx - g.x) * K_GROUP_NODE; g.vy += (cy - g.y) * K_GROUP_NODE;
+          ms.forEach(function (id) {
+            var n = nodes[id];
+            var dx = g.x - n.x, dy = g.y - n.y;
+            var dd = Math.sqrt(dx * dx + dy * dy) + 1e-6;
+            var f = (dd - REST_AG) * K_ACTOR_GROUP;
+            n.vx += dx / dd * f; n.vy += dy / dd * f;
+          });
+        });
+      }
+      // 积分 + 阻尼
+      var moving = moveActors ? actors.concat(grps) : works;
+      moving.forEach(function (n) { n.vx *= KD; n.vy *= KD; n.x += n.vx * DT; n.y += n.vy * DT; });
+    }
+    // 阶段 1：作品层聚簇（演员不动）；阶段 2：演员层环绕；阶段 3：团体约束加强
+    for (var i = 0; i < WORK_LAYOUT_ITERS; i++) applyForces(false);
+    for (var i = 0; i < ACTOR_LAYOUT_ITERS; i++) applyForces(true);
+    for (var i = 0; i < GROUP_LAYOUT_ITERS; i++) applyForces(true);
+    Object.keys(nodes).forEach(function (k) { var n = nodes[k]; n.vx = 0; n.vy = 0; });
+  }
+
   // 同步快速收敛得到稳定的"网络形状"，做归一化 + 重叠消除；最高关联人物落在中心（景深中心）
   function layoutAndCenter() {
-    for (var i = 0; i < 320; i++) physicsStep();
+    if (!focusId && !scene) homeWorkLayout();   // 首页：Actor+Work 双层布局（作品簇 -> 演员环绕 -> 团体约束）
+    else for (var i = 0; i < 320; i++) physicsStep();
     Object.keys(nodes).forEach(function (k) { var n = nodes[k]; n.vx = 0; n.vy = 0; });
     var deg = {};
-    edges.forEach(function (e) { deg[e.a] = (deg[e.a] || 0) + 1; deg[e.b] = (deg[e.b] || 0) + 1; });
+    // 中心 = 关系度数最高的演员（只统计明确关系，避免落到作品节点上）
+    relations.forEach(function (r) {
+      if (!visibleTypes[r.type]) return;
+      if (nodes[r.a] && nodes[r.b]) { deg[r.a] = (deg[r.a] || 0) + 1; deg[r.b] = (deg[r.b] || 0) + 1; }
+    });
     var best = null, bestDeg = -1;
     Object.keys(deg).forEach(function (id) { if (deg[id] > bestDeg) { bestDeg = deg[id]; best = id; } });
     if (!best && Object.keys(nodes).length) best = Object.keys(nodes)[0];
@@ -542,6 +729,94 @@
     warmUpLayout(140);
     animateViewTo(0, 0, 0.92, 500);
     showFocusCard(id);
+    updateStats();
+  }
+
+  // 单击聚焦剧目：作品成为焦点，右侧信息卡展示演员表（取代旧居中弹窗）
+  function focusMusical(mid) {
+    var mk = "mus:" + mid;
+    if (focusId === mk) { showMusicalFocusCard(mid); return; }   // 幂等：已聚焦同一剧目
+    var oldPos = {};
+    Object.keys(nodes).forEach(function (k) { oldPos[k] = { x: nodes[k].x, y: nodes[k].y }; });
+    if (scene) { scene = null; sceneHighlight = {}; hideSceneCard(); stripSceneFromHash(); }
+    focusId = mk;
+    var m = musicals[mid];
+    if (!m) { resetHome(); return; }
+    // 只保留一层关系：剧目节点 + 出演过该剧目的演员（不再展开全局网络/共演等推断关系）
+    nodes = {}; edges = [];
+    ensureMusicalNode(mid);
+    var cast = (m.cast || []).slice(0, MAX_NODES - 1);
+    cast.forEach(function (aid) { ensureActorNode(aid); });
+    // 一层边：演员 ↔ 本剧目 + 参演演员之间的明确关系（不画共演等机器推断边）
+    cast.forEach(function (aid) {
+      edges.push({ a: aid, b: mk, type: "musical", color: MUS_COLOR, dashed: false, width: 0.45, alphaBase: 0.28, alpha: 0, count: 0 });
+    });
+    var seenRel = {};
+    relations.forEach(function (r) {
+      if (!visibleTypes[r.type]) return;
+      if (!nodes[r.a] || !nodes[r.b]) return;
+      if (r.a === mk || r.b === mk) return;
+      var k = r.a < r.b ? r.a + "|" + r.b : r.b + "|" + r.a;
+      if (seenRel[k]) return;
+      seenRel[k] = true;
+      edges.push({ a: r.a, b: r.b, type: r.type, color: TYPE_COLOR[r.type] || "#999", dashed: false, width: 0.7, alphaBase: 0.34, alpha: 0, count: 0, label: r.typeName + (r.detail ? " · " + r.detail : "") });
+      nodes[r.a].deg++; nodes[r.b].deg++;
+    });
+    applyNodeRadii();
+    Object.keys(oldPos).forEach(function (k) { if (nodes[k]) { nodes[k].x = oldPos[k].x; nodes[k].y = oldPos[k].y; } });
+    var c = nodes[mk];
+    if (!c) { resetHome(); return; }
+    var dx = -c.x, dy = -c.y;
+    Object.keys(nodes).forEach(function (k) { nodes[k].x += dx; nodes[k].y += dy; });
+    depthCenterId = mk;
+    Object.keys(nodes).forEach(function (k) { nodes[k].fixed = !(oldPos[k] !== undefined); });
+    nodes[mk].fixed = true;
+    warmUpLayout(140);
+    animateViewTo(0, 0, 0.92, 500);
+    showMusicalFocusCard(mid);
+    updateStats();
+  }
+
+  // 单击聚焦团体：团体成为焦点，右侧信息卡展示成员（单层：团体 + 成员 + 成员间明确关系）
+  function focusGroup(gid) {
+    var gk = "grp:" + gid;
+    if (focusId === gk) { showGroupFocusCard(gid); return; }   // 幂等：已聚焦同一团体
+    var oldPos = {};
+    Object.keys(nodes).forEach(function (k) { oldPos[k] = { x: nodes[k].x, y: nodes[k].y }; });
+    if (scene) { scene = null; sceneHighlight = {}; hideSceneCard(); stripSceneFromHash(); }
+    focusId = gk;
+    var g = null;
+    groups.forEach(function (x) { if (String(x.id) === String(gid)) g = x; });
+    if (!g) { resetHome(); return; }
+    nodes = {}; edges = [];
+    ensureGroupNode(g);
+    (g.members || []).slice(0, MAX_NODES - 1).forEach(function (aid) { ensureActorNode(aid); });
+    // 一层边：成员 ↔ 团体 + 成员之间的明确关系（不画共演等推断边）
+    (g.members || []).forEach(function (aid) {
+      if (nodes[aid]) edges.push({ a: gk, b: aid, type: "group", color: "#8a7bb5", dashed: true, width: 0.6, alphaBase: 0.22, alpha: 0, count: 0 });
+    });
+    var seenRel = {};
+    relations.forEach(function (r) {
+      if (!visibleTypes[r.type]) return;
+      if (!nodes[r.a] || !nodes[r.b]) return;
+      var k = r.a < r.b ? r.a + "|" + r.b : r.b + "|" + r.a;
+      if (seenRel[k]) return;
+      seenRel[k] = true;
+      edges.push({ a: r.a, b: r.b, type: r.type, color: TYPE_COLOR[r.type] || "#999", dashed: false, width: 0.7, alphaBase: 0.34, alpha: 0, count: 0, label: r.typeName + (r.detail ? " · " + r.detail : "") });
+      nodes[r.a].deg++; nodes[r.b].deg++;
+    });
+    applyNodeRadii();
+    Object.keys(oldPos).forEach(function (k) { if (nodes[k]) { nodes[k].x = oldPos[k].x; nodes[k].y = oldPos[k].y; } });
+    var c = nodes[gk];
+    if (!c) { resetHome(); return; }
+    var dx = -c.x, dy = -c.y;
+    Object.keys(nodes).forEach(function (k) { nodes[k].x += dx; nodes[k].y += dy; });
+    depthCenterId = gk;
+    Object.keys(nodes).forEach(function (k) { nodes[k].fixed = !(oldPos[k] !== undefined); });
+    nodes[gk].fixed = true;
+    warmUpLayout(140);
+    animateViewTo(0, 0, 0.92, 500);
+    showGroupFocusCard(gid);
     updateStats();
   }
 
@@ -827,6 +1102,9 @@
         var aLit = !!sceneHighlight[ed.a], bLit = !!sceneHighlight[ed.b];
         if (aLit && bLit) ea = ed.alphaBase * 0.9;
         else if (aLit || bLit) ea = ed.alphaBase * 0.3;
+      } else {
+        // 纯全局视图：只显示演员-作品边（极淡青绿），让作品簇结构可读；关系/共演边保持隐藏
+        if (ed.type === "musical" || ed.type === "group") ea = ed.alphaBase * 0.36 * (0.35 + 0.65 * Math.min(a.alpha, b.alpha));
       }
       if (ea <= 0.002) {                   // 隐藏：立即熄灭并复位
         ed._gate = undefined;
@@ -1074,6 +1352,7 @@
   function hideFocusCard() {
     focusCard.classList.add("hidden");
     document.body.classList.remove("side-open");   // 无聚焦内容时右侧面板收起
+    var d = document.getElementById("fc-detail"); if (d) d.classList.remove("hidden");
     if (gtEmpty) gtEmpty.classList.remove("hidden");
   }
   function showFocusCard(id) {
@@ -1116,11 +1395,71 @@
         fcMom.innerHTML = "";
       }
     }
+    document.getElementById("fc-detail").classList.remove("hidden");
     focusCard.classList.remove("hidden");
     document.body.classList.add("side-open");     // 聚焦演员 -> 右侧面板滑出
     if (gtEmpty) gtEmpty.classList.add("hidden");
   }
-  document.getElementById("fc-detail").addEventListener("click", function () { if (focusId) goActor(focusId); });
+  // 剧目信息卡（右侧栏，取代旧居中弹窗）：名称 / 统计 / 演员表（按角色分组，点击演员跳转）
+  function showMusicalFocusCard(mid) {
+    var m = musicals[mid];
+    if (!m) return;
+    var ms = (D.musicalStats && D.musicalStats[mid]) || {};
+    document.getElementById("fc-name").textContent = m.name;
+    document.getElementById("fc-stats").textContent =
+      "演出 " + (ms.shows || 0) + " 场 · 巡演 " + (ms.cities || 0) + " 城 · 演员表 " + (m.cast || []).length + " 人";
+    var tagsBox = document.getElementById("fc-tags");
+    tagsBox.innerHTML = "";
+    var s = document.createElement("span");
+    s.textContent = "作品";
+    s.style.setProperty("--tag-c", MUS_COLOR);
+    tagsBox.appendChild(s);
+    var fcMom = document.getElementById("fc-moments");
+    fcMom.classList.remove("hidden");
+    fcMom.innerHTML = "<div class='fc-mom-title'>演员表</div>";
+    var ul = document.createElement("ul");
+    ul.className = "fc-cast";
+    renderMusicalCast(ul, m);
+    fcMom.appendChild(ul);
+    document.getElementById("fc-detail").classList.add("hidden");   // 剧目无独立详情页
+    focusCard.classList.remove("hidden");
+    document.body.classList.add("side-open");     // 剧目信息 -> 右侧面板滑出
+    if (gtEmpty) gtEmpty.classList.add("hidden");
+  }
+  // 团体信息卡（右侧栏）：名称 / 统计 / 成员列表（点击成员跳转）
+  function showGroupFocusCard(gid) {
+    var g = null;
+    groups.forEach(function (x) { if (String(x.id) === String(gid)) g = x; });
+    if (!g) return;
+    document.getElementById("fc-name").textContent = g.name;
+    document.getElementById("fc-stats").textContent = "团体" + (g.type ? "（" + g.type + "）" : "") + " · 成员 " + (g.members || []).length + " 人";
+    var tagsBox = document.getElementById("fc-tags");
+    tagsBox.innerHTML = "";
+    var s = document.createElement("span");
+    s.textContent = "团体";
+    s.style.setProperty("--tag-c", "#8a7bb5");
+    tagsBox.appendChild(s);
+    var fcMom = document.getElementById("fc-moments");
+    fcMom.classList.remove("hidden");
+    fcMom.innerHTML = "<div class='fc-mom-title'>成员（点击查看演员）</div>";
+    var ul = document.createElement("ul");
+    ul.className = "fc-cast";
+    (g.members || []).forEach(function (aid) {
+      var li = document.createElement("li");
+      var span = document.createElement("span");
+      span.className = "c";
+      span.textContent = actorLabel(aid);
+      span.addEventListener("click", function () { goActor(aid); });
+      li.appendChild(span);
+      ul.appendChild(li);
+    });
+    fcMom.appendChild(ul);
+    document.getElementById("fc-detail").classList.add("hidden");   // 团体无独立详情页
+    focusCard.classList.remove("hidden");
+    document.body.classList.add("side-open");     // 团体信息 -> 右侧面板滑出
+    if (gtEmpty) gtEmpty.classList.add("hidden");
+  }
+  document.getElementById("fc-detail").addEventListener("click", function () { if (focusId && focusId.indexOf("mus:") !== 0) goActor(focusId); });
   document.getElementById("fc-close").addEventListener("click", resetHome);
   var sceneExit = document.getElementById("scene-exit");
   var sceneClose = document.getElementById("scene-close");
@@ -1960,6 +2299,24 @@
   window.__homeView = function () { return { x: view.x, y: view.y, zoom: view.zoom }; };
   window.__homeResetView = function () { view.zoom = 0.92; view.x = 0; view.y = 0; viewTween = null; };
   window.__homeNodeIds = function () { return Object.keys(nodes); };
+  window.__homeWorkNodeCount = function () {
+    var n = 0;
+    Object.keys(nodes).forEach(function (k) { if (nodes[k].type === "musical") n++; });
+    return n;
+  };
+  window.__homeCoreCount = function () {
+    var n = 0;
+    Object.keys(nodes).forEach(function (k) { if (nodes[k].tier === "core") n++; });
+    return n;
+  };
+  window.__homeTierCounts = function () {
+    var c = { core: 0, star: 0, active: 0, normal: 0, work: 0 };
+    Object.keys(nodes).forEach(function (k) {
+      var t = nodes[k].tier || (nodes[k].type === "musical" ? "work" : "normal");
+      c[t] = (c[t] || 0) + 1;
+    });
+    return c;
+  };
   window.__homeNodeScreen = function (id) {
     var n = nodes[id]; if (!n) return null;
     var rect = canvas.getBoundingClientRect();
@@ -2016,20 +2373,24 @@
     toastEl._t = setTimeout(function () { toastEl.classList.add("hidden"); }, 2600);
   }
   var MODE_LABELS = { supplement: "补充信息", fix: "勘误" };
-  var CAT_LABELS = { actor: "演员", musical: "剧目", relation: "关系" };
+  var CAT_LABELS = { actor: "演员", musical: "剧目", relation: "关系", moment: "精彩片段" };
   var FIELD_LABELS = {
     name: "名称", nickname: "昵称/别名", birth: "生日", school: "毕业院校", grade: "入学年份/年级",
     major: "专业", hometown: "籍贯", height: "身高(cm)", note: "备注", groupName: "所属团体",
     field: "要修正的字段", wrong: "当前内容", correct: "正确内容",
     date: "演出日期", city: "城市", theatre: "剧院", cast: "参演演员与角色",
-    actorA: "人物 A", actorB: "人物 B", relType: "关系类型", detail: "关系详情/备注"
+    actorA: "人物 A", actorB: "人物 B", relType: "关系类型", detail: "关系详情/备注",
+    actorName: "演员姓名", title: "标题", url: "链接", platform: "平台", desc: "描述"
   };
 
   function activeGroupId() {
     return "c-" + document.getElementById("c-mode").value + "-" + document.getElementById("c-category").value;
   }
   function syncContributeGroups() {
-    var active = activeGroupId();
+    var category = document.getElementById("c-category").value;
+    var modeLabel = document.getElementById("c-mode").closest("label");
+    if (modeLabel) modeLabel.classList.toggle("hidden", category === "moment");
+    var active = category === "moment" ? "c-moment" : activeGroupId();
     document.querySelectorAll(".c-group").forEach(function (g) {
       g.classList.toggle("hidden", g.id !== active);
     });
@@ -2043,7 +2404,7 @@
   function collectContribution() {
     var mode = document.getElementById("c-mode").value;
     var category = document.getElementById("c-category").value;
-    var group = document.getElementById(activeGroupId());
+    var group = document.getElementById(category === "moment" ? "c-moment" : activeGroupId());
     var fields = {};
     group.querySelectorAll("input, textarea, select").forEach(function (el) {
       if (el.name) fields[el.name] = el.value.trim();
@@ -2057,7 +2418,10 @@
       email: document.getElementById("c-email").value.trim(),
       ts: new Date().toISOString()
     };
-    if (!(fields.name || fields.actorA)) { showToast("请填写名称"); return null; }
+    if (!item.ref) { showToast("请填写来源链接（Reference）"); return null; }
+    if (category === "moment") {
+      if (!fields.actorName || !fields.title || !fields.url) { showToast("请填写演员姓名、标题与链接"); return null; }
+    } else if (!(fields.name || fields.actorA)) { showToast("请填写名称"); return null; }
     if (category === "relation" && (!fields.actorA || !fields.actorB)) { showToast("请填写关系双方姓名"); return null; }
     if (mode === "fix" && !fields.correct) { showToast("请填写正确内容"); return null; }
     return item;
@@ -2130,16 +2494,91 @@
       ul.appendChild(li);
     });
   }
+  // ???????? submissions ?????????????????
+  function buildSubmissionPayload(item) {
+    var f = item.fields || {};
+    var p = { source_url: item.ref, status: "pending" };
+    if (item.category === "actor") {
+      p.submission_type = "actor_update";
+      p.actor_a = f.name;
+      var d = {};
+      if (f.nickname) d.nickname = f.nickname;
+      if (f.birth) d.birth_date = f.birth;
+      if (f.school) d.school = f.school;
+      if (f.grade) d.enrollment_year = f.grade;
+      if (f.major) d.major = f.major;
+      if (f.hometown) d.hometown = f.hometown;
+      if (f.height) d.height = f.height;
+      if (f.note) d.note = f.note;
+      if (item.mode === "fix") {
+        var map = { name: "name", nickname: "nickname", birth: "birth_date", school: "school",
+                    grade: "enrollment_year", major: "major", hometown: "hometown",
+                    height: "height", note: "note" };
+        var ff = map[f.field];
+        if (ff) d.fix = { field: ff, wrong: f.wrong, correct: f.correct };
+      }
+      if (Object.keys(d).length) p.details = JSON.stringify(d);
+    } else if (item.category === "musical") {
+      p.submission_type = "musical_update";
+      p.musical_name = f.name;
+      var d = {};
+      if (f.date) d.year = String(f.date).slice(0, 4);
+      if (f.note) d.description = f.note;
+      if (f.cast) {
+        d.cast = String(f.cast).split(/[\n\r]+/).map(function (line) {
+          var parts = line.split(/[?:]/);
+          return { actor: (parts[0] || "").trim(), role: (parts[1] || "").trim() };
+        }).filter(function (x) { return x.actor; });
+      }
+      if (f.date) d.date = f.date;
+      if (f.city) d.city = f.city;
+      if (f.theatre) d.theatre = f.theatre;
+      if (item.mode === "fix" && f.field === "date" && f.correct) d.fix = { field: "year", wrong: f.wrong, correct: f.correct };
+      if (Object.keys(d).length) p.details = JSON.stringify(d);
+    } else if (item.category === "relation") {
+      p.submission_type = "relation_update";
+      p.actor_a = f.actorA;
+      p.actor_b = f.actorB;
+      p.relation_type = f.relType || "co_work";
+      var desc = f.detail || "";
+      if (item.mode === "fix" && f.correct) desc = (desc ? desc + "；" : "") + "勘误：" + f.correct;
+      if (desc) p.description = desc;
+    } else if (item.category === "moment") {
+      p.submission_type = "moment_submission";
+      p.actor_a = f.actorName;
+      p.title = f.title;
+      p.url = f.url;
+      p.platform = f.platform || "bilibili";
+      if (f.desc) p.description = f.desc;
+    }
+    return p;
+  }
+  function submitToBackend(item) {
+    var url = window.MG_PB_CONFIG && window.MG_PB_CONFIG.url;
+    if (!url) return Promise.reject(new Error("no backend"));
+    return fetch(url + "/api/collections/submissions/records", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(buildSubmissionPayload(item)),
+      signal: AbortSignal.timeout(2000)
+    }).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); });
+  }
   document.getElementById("contribute-form").addEventListener("submit", function (e) {
     e.preventDefault();
     var item = collectContribution();
     if (!item) return;
-    var list = getContributions();
-    list.push(item);
-    try { localStorage.setItem("mg_contributions", JSON.stringify(list)); } catch (err) { showToast("保存失败（存储空间不足）"); return; }
-    e.target.reset();
-    showToast("提交成功，已进入待审核列表");
-    renderReviewList();
+    submitToBackend(item).then(function () {
+      e.target.reset();
+      showToast("提交成功，已进入待审核，感谢你的补充");
+      renderReviewList();
+    }).catch(function () {
+      var list = getContributions();
+      list.push(item);
+      try { localStorage.setItem("mg_contributions", JSON.stringify(list)); } catch (err) { showToast("保存失败（存储空间不足）"); return; }
+      e.target.reset();
+      showToast("后端未连接，已保存为本地草稿");
+      renderReviewList();
+    });
   });
   document.getElementById("c-export").addEventListener("click", function () {
     var list = getContributions();
