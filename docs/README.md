@@ -14,12 +14,25 @@
 | 关系图 | Cytoscape.js | ⏳ 规划中 |
 | 数据库 | Supabase（当前 SQLite 单文件） | ⏳ 规划迁移 |
 | 部署 | Vercel | ⏳ 规划中 |
+| 后端（本地） | PocketBase（单文件，自带数据库与管理后台） | ✅ 已集成（2026-08-12） |
 
 ## 如何运行
 
 ### 打开网页（最快体验）
 
 双击 `web/index.html` 即可在浏览器打开关系图谱（无需服务器、无需联网）。
+
+### 后端（PocketBase）
+
+如何使用详见 [POCKETBASE.md](POCKETBASE.md)。简版：
+
+```bash
+powershell -ExecutionPolicy Bypass -File setup_pocketbase.ps1   # 首次安装：下载 + 建管理员
+start_all.bat                                   # 一键启动：后端 8090 + 网页 8080
+python import_pocketbase.py                     # 导入现有数据
+# 管理员后台: http://127.0.0.1:8090/_/  （审核提交）
+python apply_pocketbase.py                     # 已审核内容回写本地库（可选）
+```
 
 ### 数据更新后一键刷新
 
@@ -57,7 +70,7 @@ python import_from_file.py
 
 ## 部署
 
-尚未上线。V1 目标是部署到 Vercel + Supabase，做成可搜索、可看关系图、可提交补充的真实网站。项目已初始化 Git，可在此基础上推送到 GitHub 再接 Vercel。
+尚当前后端为本地 PocketBase（见 POCKETBASE.md）；未上线。V1 目标是部署到 Vercel + Supabase，做成可搜索、可看关系图、可提交补充的真实网站。项目已初始化 Git，可在此基础上推送到 GitHub 再接 Vercel。
 
 ## 文档导航
 
@@ -65,5 +78,6 @@ python import_from_file.py
 - `PROJECT_RULES.md` — 通用工作原则（继承全局版）
 - `docs/AI_CONTEXT.md` — 给 AI 的完整项目上下文
 - `docs/TODO.md` — 待办事项（按优先级）
-- `docs/DEPLOY.md` — 上线部署指南（Supabase + Next.js + Vercel）
+- `docs/DEPLOY.md`
+- `docs/POCKETBASE.md` — 本地后端使用指南 — 上线部署指南（Supabase + Next.js + Vercel）
 - `docs/LESSONS.md` — 经验沉淀

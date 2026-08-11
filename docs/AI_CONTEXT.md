@@ -113,6 +113,16 @@ V1 核心功能：
 - 用户系统 + 审核工作流（relations.status: pending → approved/rejected）
 - Vercel 部署上线
 
+## 4.5 PocketBase 后端（2026-08-12 新增）
+
+技术架构：正式数据由本地 PocketBase（`pb/`，单文件，自带 SQLite 与管理后台）管理；用户提交写入 `submissions`，管理员在 `http://127.0.0.1:8090/_/` 审核，通过后 `pb/pb_hooks/main.pb.js` 钩子自动写入正式集合（纯转换，不判断内容）。
+
+集合：actors / musicals / actor_roles / relations / moments / submissions；submissions 为结构化字段（要求来源链接，关系仅限 合作/同学/师生/同公司）。
+
+前端数据层：`web/data_loader.js` API 优先（含审核通过的新内容），后端不可达时回退静态快照 `web/data.js`；`?mode=static` 强制离线。
+
+常用脚本：`setup_pocketbase.ps1`（安装） / `start_all.bat`（一键启动） / `import_pocketbase.py`（SQLite → PocketBase） / `apply_pocketbase.py`（已审核内容回写） / `backup_pocketbase.ps1`（备份）。详见 `docs/POCKETBASE.md`。
+
 ## 5. 数据库核心表（music_graph.db，约 14MB）
 
 ### artists（演员档案，4,532 行）

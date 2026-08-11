@@ -189,6 +189,7 @@
           <option value="actor">演员</option>
           <option value="musical">剧目</option>
           <option value="relation">关系</option>
+          <option value="moment">精彩片段</option>
         </select>
       </label>
     </div>
@@ -254,11 +255,10 @@
       <label>人物 B *<input type="text" name="actorB" data-label="人物 B" required placeholder="必填" autocomplete="off"></label>
       <label>关系类型
         <select name="relType" data-label="关系类型">
-          <option value="married">伴侣</option><option value="couple">情侣</option>
-          <option value="ex">前任</option><option value="cp">CP（粉丝组合）</option>
-          <option value="classmate">同学</option><option value="friend">好友</option>
-          <option value="teacher_student">师生</option><option value="same_company">同公司</option>
-          <option value="other">其他</option>
+          <option value="co_work">合作演出</option>
+          <option value="classmate">同学</option>
+          <option value="teacher_student">师生</option>
+          <option value="same_company">同公司</option>
         </select>
       </label>
       <label>关系详情 / 备注<textarea name="detail" data-label="关系详情/备注" rows="3" placeholder="可选"></textarea></label>
@@ -272,7 +272,22 @@
       <label>正确关系 / 说明 *<input type="text" name="correct" data-label="正确关系/说明" required placeholder="必填" autocomplete="off"></label>
     </div>
 
-    <label>Reference（来源链接，可选）<input id="c-ref" type="text" placeholder="https://…" autocomplete="off"></label>
+    <!-- 精彩片段（无补充/勘误之分） -->
+    <div class="c-group hidden" id="c-moment">
+      <label>演员姓名 *<input type="text" name="actorName" data-label="演员姓名" required placeholder="必填" autocomplete="off"></label>
+      <label>标题 *<input type="text" name="title" data-label="标题" required placeholder="如：《剧名》现场演唱" autocomplete="off"></label>
+      <label>链接 *<input type="text" name="url" data-label="链接" required placeholder="Bilibili / 网易云 / YouTube 视频链接" autocomplete="off"></label>
+      <label>平台
+        <select name="platform" data-label="平台">
+          <option value="bilibili">Bilibili</option>
+          <option value="netease">网易云音乐</option>
+          <option value="youtube">YouTube</option>
+        </select>
+      </label>
+      <label>描述（可选）<textarea name="desc" data-label="描述" rows="2" placeholder="简短说明，如：某场演出的精彩片段"></textarea></label>
+    </div>
+
+    <label>Reference（来源链接，必填）<input id="c-ref" type="text" placeholder="https://…" required autocomplete="off"></label>
     <label>Email（可选，用于反馈）<input id="c-email" type="email" placeholder="your@email.com" autocomplete="off"></label>
 
     <button type="submit" class="c-submit">Submit Contribution</button>
@@ -281,14 +296,14 @@
 
   <!-- 开发者审核列表（本地 MVP：存于浏览器 localStorage，可导出 JSON / 复制成 GitHub Issue 文本） -->
   <details id="c-review" class="c-review">
-    <summary>待审核列表（开发者）</summary>
+    <summary>本地草稿（后端未连接时）</summary>
     <ul id="c-review-list" class="c-review-list"></ul>
     <div class="c-review-actions">
       <button id="c-export" type="button">导出 JSON</button>
       <button id="c-copy-all" type="button">复制全部为 Issue 文本</button>
       <button id="c-clear" type="button">清空</button>
     </div>
-    <p class="c-review-tip">审核通过后：开发者将信息录入数据库 → 运行 <code>python refresh_all.py</code> 刷新网页数据，图谱自动同步。</p>
+    <p class="c-review-tip">本地草稿仅在后端（PocketBase）未连接时生效；正常时提交会直接写入后端待审核列表，管理员在 http://127.0.0.1:8090/_/ 审核通过后自动入库。</p>
   </details>
 </div>
 
@@ -348,6 +363,7 @@
 </main>
 <div id="toast" class="toast hidden"></div>
 <script src="data.js"></script>
-<script src="app.js"></script>
+<script src="data_loader.js"></script>
+<!-- app.js ? data_loader.js ???????? -->
 </body>
 </html>
