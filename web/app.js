@@ -10,7 +10,7 @@
 
   var TYPE_COLOR = {
     couple: "#c65b76", cp: "#9b6fa0", classmate: "#7e9259", friend: "#268c87",
-    teacher_student: "#8678a3", same_company: "#64748b", co_work: "#c9a227",
+    teacher_student: "#8678a3", same_company: "#64748b", co_work: "#8a8578",
     married: "#8c2f45", ex: "#8f8790"
   };
   // 点亮颜色优先级（数字越小越优先）：伴侣 > 情侣 > 前任 > CP > 同学 > 好友 > 师生 > 同公司
@@ -313,7 +313,7 @@
         var t = Math.min(1, e.count / 350);
         edges.push({
           a: e.a, b: e.b, type: "co_work", color: TYPE_COLOR["co_work"], dashed: true,
-          width: 0.5 + t * 2, alphaBase: 0.2 + t * 0.5, alpha: 0, count: e.count
+          width: 0.35 + t * 0.6, alphaBase: 0.10 + t * 0.22, alpha: 0, count: e.count
         });
       });
     }
@@ -322,7 +322,7 @@
       if (!nodes[r.a] || !nodes[r.b]) return;
       edges.push({
         a: r.a, b: r.b, type: r.type, color: TYPE_COLOR[r.type] || "#999", dashed: false,
-        width: 1.4, alphaBase: 0.55, alpha: 0, count: 0,
+        width: 0.7, alphaBase: 0.34, alpha: 0, count: 0,
         label: r.typeName + (r.detail ? " · " + r.detail : "")
       });
       nodes[r.a].deg++; nodes[r.b].deg++;
@@ -334,7 +334,7 @@
         var mids = D.actorMusicalIds[n.id] || [];
         mids.forEach(function (mid) {
           var mk = "mus:" + mid;
-          if (nodes[mk]) edges.push({ a: k, b: mk, type: "musical", color: MUS_COLOR, dashed: false, width: 0.8, alphaBase: 0.5, alpha: 0, count: 0 });
+          if (nodes[mk]) edges.push({ a: k, b: mk, type: "musical", color: MUS_COLOR, dashed: false, width: 0.45, alphaBase: 0.28, alpha: 0, count: 0 });
         });
       });
     }
@@ -644,7 +644,7 @@
         sceneHighlight[gk] = true;
         (g.members || []).forEach(function (mid) {
           ensureActorNode(mid);
-          edges.push({ a: gk, b: mid, type: "group", color: "#8a7bb5", dashed: true, width: 1, alphaBase: 0.4, alpha: 0, count: 0 });
+          edges.push({ a: gk, b: mid, type: "group", color: "#8a7bb5", dashed: true, width: 0.6, alphaBase: 0.22, alpha: 0, count: 0 });
         });
       });
       applyNodeRadii();
@@ -809,9 +809,9 @@
     });
 
     // 边目标透明度：默认全部隐藏；hover 只显示焦点关联线；聚焦模式显示中心网络
-    // 舞台灯式淡入：帧率无关的指数平滑（时间常数 80ms，约 240ms 亮到 95%）+ 轻微错峰，
+    // 舞台灯式淡入：帧率无关的指数平滑（时间常数 110ms，约 330ms 亮到 95%）+ 轻微错峰，
     // 目标随节点亮度变化也能平滑跟随，不会"瞬间出现一堆线"
-    var EDGE_TC_MS = 80, EDGE_STAGGER_MS = 18;
+    var EDGE_TC_MS = 110, EDGE_STAGGER_MS = 18;
     var _now = performance.now();
     edges.forEach(function (ed, idx) {
       var a = nodes[ed.a], b = nodes[ed.b];
@@ -854,7 +854,7 @@
       ctx.strokeStyle = ed.color;
       ctx.globalAlpha = ed.alpha * (0.25 + 0.75 * pe);
       ctx.lineWidth = (ed.width || 1) / view.zoom;
-      ctx.setLineDash(ed.dashed ? [6, 5] : []);
+      ctx.setLineDash(ed.dashed ? [2, 4] : []);
       ctx.beginPath(); ctx.moveTo(a.x * pe, a.y * pe); ctx.lineTo(b.x * pe, b.y * pe); ctx.stroke();
       ctx.setLineDash([]); ctx.globalAlpha = 1;
     });
@@ -1398,10 +1398,10 @@
       };
       placed.push(oid);
       info.rel.forEach(function (r_) {
-        apEdges.push({ a: id, b: oid, color: TYPE_COLOR[r_.type] || "#999", dashed: false, width: 1.6, label: TYPE_LABEL[r_.type] || r_.typeName });
+        apEdges.push({ a: id, b: oid, color: TYPE_COLOR[r_.type] || "#999", dashed: false, width: 0.9, alpha: 0.38, label: TYPE_LABEL[r_.type] || r_.typeName });
       });
-      if (info.cw > 0) apEdges.push({ a: id, b: oid, color: TYPE_COLOR["co_work"], dashed: true, width: 0.8, label: "" });
-      if (info.group) apEdges.push({ a: id, b: oid, color: "#64748b", dashed: true, width: 0.8, label: "" });
+      if (info.cw > 0) apEdges.push({ a: id, b: oid, color: TYPE_COLOR["co_work"], dashed: true, width: 0.45, alpha: 0.20, label: "" });
+      if (info.group) apEdges.push({ a: id, b: oid, color: "#64748b", dashed: true, width: 0.45, alpha: 0.20, label: "" });
     });
     // 松弛：轻微斥力避免重叠 + 拉回各自目标位置；每轮都钳制在矩形边框内
     for (var it = 0; it < 70; it++) {
@@ -1446,9 +1446,9 @@
     var cx = apCanvas.clientWidth / 2, cy = apCanvas.clientHeight / 2;
     apEdges.forEach(function (ed) {
       var ax = cx, ay = cy, bx = cx + apNodes[ed.b].x * e, by = cy + apNodes[ed.b].y * e;
-      apCtx.strokeStyle = ed.color; apCtx.globalAlpha = ed.dashed ? 0.35 : 0.55;
+      apCtx.strokeStyle = ed.color; apCtx.globalAlpha = ed.alpha != null ? ed.alpha : (ed.dashed ? 0.20 : 0.38);
       apCtx.lineWidth = ed.width;
-      apCtx.setLineDash(ed.dashed ? [6, 5] : []);
+      apCtx.setLineDash(ed.dashed ? [2, 4] : []);
       apCtx.beginPath(); apCtx.moveTo(ax, ay); apCtx.lineTo(bx, by); apCtx.stroke();
       apCtx.setLineDash([]);
       if (ed.label && t > 0.7) {
