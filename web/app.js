@@ -162,7 +162,9 @@
   var pendingGraphFocus = null;   // 详情页「在图谱中查看」→ 返回图谱并聚焦该演员
   function goGraphFocus(id) {
     pendingGraphFocus = id;
-    if (location.hash !== "#/graph") location.hash = "#/graph";
+    // hash 需要变化时交给 hashchange -> applyRoute 处理（避免同步再调一次 showGraphView，
+    // 否则 applyRoute 的 side-open 清理会把刚弹出的信息面板又关掉）
+    if (location.hash !== "#/graph") { location.hash = "#/graph"; return; }
     showGraphView();
   }
   function showGraphView() {
@@ -528,7 +530,7 @@
 
   // 单击聚焦：以该演员为中心重建并展开（幂等：同一人再次单击不重复重排）
   function focusActor(id) {
-    if (focusId === id) return;
+    if (focusId === id) { showFocusCard(id); return; }   // 已聚焦同一人：仅重新拉出信息卡，不重复重排
     var oldPos = {};
     Object.keys(nodes).forEach(function (k) { oldPos[k] = { x: nodes[k].x, y: nodes[k].y }; });
     focusId = id;
@@ -1857,7 +1859,7 @@
       }
       div.addEventListener("mousedown", function (ev) {
         ev.preventDefault();
-        if (hit.type === "actor") goActor(hit.data.id);
+        if (hit.type === "actor") { closeTopSearch(); goGraphFocus(hit.data.id); }
         else if (hit.type === "musical") goMusical(hit.id);
         else goGroup(hit.id);
       });

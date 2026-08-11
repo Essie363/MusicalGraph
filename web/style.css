@@ -190,16 +190,13 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--focus-ring); ou
 }
 .search-toggle:hover { color: var(--text-primary); background: rgba(255, 255, 255, .06); }
 .top-search-box {
+  /* 仅作定位容器：不再画边框/底色，避免与输入框形成双层边框（参考组件库：输入框自带单层边框） */
   position: absolute; top: calc(100% + 10px); right: 0; z-index: 45;
   width: min(320px, calc(100vw - 48px));
-  background: var(--surface-elevated);
-  border: 1px solid var(--border-default); border-radius: var(--radius);
-  padding: 8px;
-  box-shadow: var(--shadow-pop);
 }
-.top-search-box #search { width: 100%; }
+.top-search-box #search { width: 100%; background: var(--surface-raised); }
 .top-search-box .dropdown {
-  top: calc(100% + 6px); left: 8px; right: 8px; margin-top: 0;
+  top: calc(100% + 6px); left: 0; right: 0; margin-top: 0;
 }
 
 .view { min-height: calc(100vh - 52px); }
@@ -745,9 +742,7 @@ body.side-open #graph-main { margin-right: 300px; }
   /* 顶部搜索展开：占满整行，贴在 Header 下方 */
   .top-search-box {
     position: fixed; top: 52px; left: 0; right: 0;
-    width: auto; border-radius: 0;
-    border-left: none; border-right: none;
-    border-top: 1px solid var(--border-subtle);
+    width: auto;
     padding: 8px 12px;
   }
   .top-search-box .dropdown { left: 12px; right: 12px; }

@@ -47,6 +47,8 @@ function check(name, cond, extra) {
     await page.fill("#search", name);
     await page.waitForTimeout(400);
     await page.click("#dropdown .item:first-child");
+    await page.waitForTimeout(900);   // 搜索 = 图谱定位 + 右侧信息卡滑出
+    await page.click("#fc-detail");   // 通过「查看详情」进入独立详情页
     await page.waitForTimeout(800);
   }
 
@@ -62,6 +64,24 @@ function check(name, cond, extra) {
 
   console.log("== 图谱 ==");
   check("关系类型筛选已移除", await page.evaluate(() => !document.getElementById("legend")), "legend still exists");
+
+  console.log("== 搜索演员 -> 图谱定位 ==");
+  await ensureSearch();
+  await page.fill("#search", "郑云龙");
+  await page.waitForTimeout(400);
+  await page.click("#dropdown .item:first-child");
+  await page.waitForTimeout(1100);
+  check("搜索后在图谱中定位（不跳详情页）", await page.evaluate(() => {
+    return !document.getElementById("view-graph").classList.contains("hidden") &&
+           document.getElementById("actor-view").classList.contains("hidden");
+  }));
+  check("右侧信息卡展示该演员", await page.evaluate(() => {
+    return document.body.classList.contains("side-open") &&
+           document.getElementById("fc-name").textContent === "郑云龙";
+  }));
+  await page.click("#fc-detail");
+  await page.waitForTimeout(800);
+  check("点击查看详情进入详情页", await page.$eval("#actor-view", el => !el.classList.contains("hidden")));
 
   console.log("== 搜索演员 -> 详情页 ==");
   await openActor("郑云龙");
@@ -86,6 +106,16 @@ function check(name, cond, extra) {
   check("详情页显示精彩片段", momSecVisible && momCount >= 1, "条目数=" + momCount);
   const momLinkOk = await page.$$eval("#ap-moments a", els => els.length >= 1 && els.every(a => a.target === "_blank" && /^https?:/.test(a.href)));
   check("片段链接外跳新窗口", momLinkOk);
+
+  console.log("== 在图谱中查看 ==");
+  await page.click("#ap-graph-link");
+  await page.waitForTimeout(1100);
+  check("回到图谱并定位该演员", await page.evaluate(() => {
+    return !document.getElementById("view-graph").classList.contains("hidden") &&
+           document.getElementById("actor-view").classList.contains("hidden") &&
+           document.getElementById("fc-name").textContent === "郑云龙" &&
+           document.body.classList.contains("side-open");
+  }));
 
   console.log("== 多人常共演无自己 ==");
   const names = ["许昌泰", "郑棋元", "金圣权", "毛二", "张泽", "汤佳明", "阿云嘎", "刘令飞"];
