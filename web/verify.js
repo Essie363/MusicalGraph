@@ -104,8 +104,10 @@ function check(name, cond, extra) {
   });
   const momCount = await page.$$eval("#ap-moments li", els => els.length);
   check("详情页显示精彩片段", momSecVisible && momCount >= 1, "条目数=" + momCount);
-  const momLinkOk = await page.$$eval("#ap-moments a", els => els.length >= 1 && els.every(a => a.target === "_blank" && /^https?:/.test(a.href)));
-  check("片段链接外跳新窗口", momLinkOk);
+  const momTitleLinkOk = await page.$$eval("#ap-moments a.mom-title", els => els.length >= 1 && els.every(a => a.target === "_blank" && /^https?:/.test(a.href)));
+  check("标题即外链且新窗口打开", momTitleLinkOk);
+  const momNoBtn = await page.$$eval("#ap-moments .mom-link", els => els.length === 0);
+  check("无独立查看链接按钮", momNoBtn);
 
   console.log("== 在图谱中查看 ==");
   await page.click("#ap-graph-link");

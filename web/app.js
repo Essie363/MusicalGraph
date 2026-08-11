@@ -74,13 +74,9 @@
     }
     return a.name;
   }
-  // 画布文字：深色描边 + 暖白填充，照片背景上保持可读
+  // 画布文字：纯色填充、不描边（深色画布上保持干净质感）
   function fillLabel(c, text, x, y) {
     c.save();
-    c.strokeStyle = "rgba(10,10,10,.92)";
-    c.lineWidth = 3;
-    c.lineJoin = "round";
-    c.strokeText(text, x, y);
     c.fillStyle = "#f2f2f2";
     c.fillText(text, x, y);
     c.restore();
@@ -1109,7 +1105,7 @@
           var titleHtml = url
             ? "<a class='mom-title' href='" + escAttr(url) + "' target='_blank' rel='noopener noreferrer'>" + escHtml(m.title) + "</a>"
             : "<span class='mom-title'>" + escHtml(m.title) + "</span>";
-          h += "<li><span class='mom-play'>▶</span>" + titleHtml + "<span class='mom-src'>" + escHtml(SOURCE_LABEL[m.source] || m.source || "") + "</span></li>";
+          h += "<li>" + titleHtml + "<span class='mom-src'>" + escHtml(SOURCE_LABEL[m.source] || m.source || "") + "</span></li>";
         });
         if (mlist.length > 3) h += "<li class='fc-mom-more'>… 共 " + mlist.length + " 条，详情页查看全部</li>";
         h += "</ul>";
@@ -1731,24 +1727,17 @@
     list.forEach(function (m) {
       var li = document.createElement("li");
       li.className = "mom-item";
-      var play = document.createElement("span");
-      play.className = "mom-play"; play.textContent = "▶";
-      li.appendChild(play);
       var body = document.createElement("span");
       body.className = "mom-body";
-      var title = document.createElement("span");
-      title.className = "mom-title"; title.textContent = m.title;
+      var url = safeUrl(m.url);
+      var title = document.createElement(url ? "a" : "span");
+      title.className = "mom-title";
+      title.textContent = m.title;
+      if (url) { title.href = url; title.target = "_blank"; title.rel = "noopener noreferrer"; title.title = "在新窗口打开"; }
       var src = document.createElement("span");
       src.className = "mom-src"; src.textContent = SOURCE_LABEL[m.source] || m.source || "";
       body.appendChild(title); body.appendChild(src);
       li.appendChild(body);
-      var url = safeUrl(m.url);
-      if (url) {
-        var a = document.createElement("a");
-        a.className = "mom-link"; a.href = url; a.target = "_blank"; a.rel = "noopener noreferrer";
-        a.textContent = "查看链接";
-        li.appendChild(a);
-      }
       ul.appendChild(li);
     });
   }

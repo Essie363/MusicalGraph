@@ -1206,16 +1206,10 @@ body.side-open #graph-main { margin-right: 300px; }
   padding: var(--space-2) 0; border-bottom: 1px solid var(--border-subtle);
 }
 .mom-item:last-child { border-bottom: none; }
-.mom-play { color: var(--rel-cowork); font-size: 11px; flex: none; }
 .mom-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
-.mom-title { color: var(--text-primary); font-size: 14px; }
+.mom-title { color: var(--text-primary); font-size: 14px; text-decoration: none; }
+a.mom-title:hover { text-decoration: underline; text-underline-offset: 3px; }
 .mom-src { color: var(--text-tertiary); font-size: 12px; }
-.mom-link {
-  flex: none; padding: 4px 10px; border: 1px solid var(--border-default);
-  border-radius: 2px; font-size: 12px; color: var(--text-secondary);
-  text-decoration: none; transition: border-color .15s ease, color .15s ease;
-}
-.mom-link:hover { border-color: var(--border-strong); color: var(--text-primary); }
 /* 图谱聚焦卡内的精彩片段（紧凑） */
 .fc-moments { border-top: 1px solid var(--border-subtle); padding-top: var(--space-2); margin-bottom: var(--space-2); }
 .fc-mom-title { font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
