@@ -48,7 +48,7 @@
   var TYPE_NAMES = {
     co_work: "\u5171\u6f14", classmate: "\u540c\u5b66", friend: "\u597d\u53cb",
     couple: "\u60c5\u4fa3", teacher_student: "\u5e08\u751f", same_company: "\u540c\u516c\u53f8",
-    cp: "CP", married: "\u4f34\u4fa3", ex: "\u524d\u4efb"
+    cp: "CP", married: "\u4f34\u4fa3", ex: "\u524d\u4efb", roommate: "\u5ba4\u53cb"
   };
   var ACTOR_PROFILE_FIELDS = ["nickname", "birth_date", "major", "school", "hometown", "enrollment_year", "height", "note", "role"];
 

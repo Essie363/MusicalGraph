@@ -1,4 +1,4 @@
-"""Export SQLite data to a static JS file for the front-end MVP.
+﻿"""Export SQLite data to a static JS file for the front-end MVP.
 
 Output: web/data.js  (window.MUSIC_GRAPH = {...})
 The page loads it via <script src>, so it works by double-clicking
@@ -104,18 +104,20 @@ def main():
     # --- 团体（groups + members） ---
     group_list = []
     for r in cur.execute("""
-        SELECT g.id, g.name, g.type, gm.artist_id
-        FROM groups g LEFT JOIN group_members gm ON g.id = gm.group_id
+        SELECT g.id, g.name, g.type, p.name AS parent_name, gm.artist_id
+        FROM groups g
+        LEFT JOIN groups p ON p.id = g.parent_id
+        LEFT JOIN group_members gm ON gm.group_id = g.id
         ORDER BY g.id
     """):
-        gid, gname, gtype, mid = r
+        gid, gname, gtype, parent_name, mid = r
         g = None
         for existing in group_list:
             if existing["id"] == gid:
                 g = existing
                 break
         if g is None:
-            g = {"id": gid, "name": gname, "type": gtype, "members": []}
+            g = {"id": gid, "name": gname, "type": gtype, "parent": parent_name or "", "members": []}
             group_list.append(g)
         if mid is not None:
             g["members"].append(mid)

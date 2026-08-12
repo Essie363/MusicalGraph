@@ -10,7 +10,7 @@
 
   var TYPE_COLOR = {
     couple: "#c65b76", cp: "#9b6fa0", classmate: "#7e9259", friend: "#268c87",
-    teacher_student: "#8678a3", same_company: "#64748b", co_work: "#8a8578",
+    teacher_student: "#8678a3", same_company: "#64748b", co_work: "#8a8578", roommate: "#a08b5c",
     married: "#8c2f45", ex: "#8f8790"
   };
   // 点亮颜色优先级（数字越小越优先）：伴侣 > 情侣 > 前任 > CP > 同学 > 好友 > 师生 > 同公司
@@ -20,9 +20,12 @@
   };
   var TYPE_LABEL = {
     couple: "情侣", cp: "CP", classmate: "同学", friend: "好友",
-    teacher_student: "师生", same_company: "同公司", co_work: "共演",
+    teacher_student: "师生", same_company: "同公司", co_work: "共演", roommate: "室友",
     married: "伴侣", ex: "前任"
   };
+  function groupTypeLabel(t) {
+    return { class: "同班同学", dorm: "室友", enrollment: "届别", cohort: "班/届", other: "其他" }[t] || t || "团体";
+  }
 
   // ---- 数据准备：统一 id 为字符串，避免数字/字符串 === 比较失败导致"自己"错判 ----
   var actors = D.actors, relations = D.relations, coWork = D.coWork,
@@ -853,7 +856,7 @@
     document.getElementById("scene-desc").textContent =
       name === "actors" ? "按影响力（剧目数 / 合作人数 / 关系度）排名的前 20 位演员。点击光点可聚焦或进详情。"
       : name === "musicals" ? "按演出场次与巡演城市数排序的热门剧目 Top 30。点击剧目查看演员表。"
-      : "共 " + groups.length + " 个团体（院校 / 剧团）。点击团体查看成员。";
+      : "共 " + groups.length + " 个团体（同班同学 / 室友 / 其他）。点击团体查看成员。";
     card.classList.remove("hidden");
     document.body.classList.add("side-open");     // 场景卡显示 -> 右侧面板滑出
   }
@@ -866,14 +869,14 @@
     var el = document.getElementById("search");
     var box = document.querySelector(".search-box");
     var topBox = document.getElementById("top-search-box");
-    if (topBox) topBox.classList.remove("hidden");   // 展开顶部搜索框（平时收起）
+    if (topBox) openTopSearch();   // 展开顶部搜索框（平时收起）
     if (el) {
       el.focus();
       if (q) { el.value = q; el.dispatchEvent(new Event("input", { bubbles: true })); }
     }
-    if (box) {
-      box.classList.add("pulse");
-      setTimeout(function () { box.classList.remove("pulse"); }, 1800);
+    if (el) {
+      el.classList.add("pulse");
+      setTimeout(function () { el.classList.remove("pulse"); }, 1800);
     }
   }
   function enterScene(name) {
@@ -1323,10 +1326,6 @@
         });
         hoverCard.appendChild(tdiv);
       }
-      var hint = document.createElement("div");
-      hint.className = "hc-hint";
-      hint.textContent = "单击聚焦展开 · 双击进详情";
-      hoverCard.appendChild(hint);
     } else {
       var mhint = document.createElement("div");
       mhint.className = "hc-hint";
@@ -1432,7 +1431,7 @@
     groups.forEach(function (x) { if (String(x.id) === String(gid)) g = x; });
     if (!g) return;
     document.getElementById("fc-name").textContent = g.name;
-    document.getElementById("fc-stats").textContent = "团体" + (g.type ? "（" + g.type + "）" : "") + " · 成员 " + (g.members || []).length + " 人";
+    document.getElementById("fc-stats").textContent = groupTypeLabel(g.type) + (g.parent ? " · 属于 " + g.parent : "") + " · 成员 " + (g.members || []).length + " 人";
     var tagsBox = document.getElementById("fc-tags");
     tagsBox.innerHTML = "";
     var s = document.createElement("span");
@@ -1441,7 +1440,7 @@
     tagsBox.appendChild(s);
     var fcMom = document.getElementById("fc-moments");
     fcMom.classList.remove("hidden");
-    fcMom.innerHTML = "<div class='fc-mom-title'>成员（点击查看演员）</div>";
+    fcMom.innerHTML = "<div class='fc-mom-title'>成员</div>";
     var ul = document.createElement("ul");
     ul.className = "fc-cast";
     (g.members || []).forEach(function (aid) {
@@ -1566,7 +1565,7 @@
     search.value = g.name;
     dropdown.classList.add("hidden");
     document.getElementById("p-name").textContent = g.name;
-    document.getElementById("p-nickname").textContent = "团体" + (g.type ? "（" + g.type + "）" : "");
+    document.getElementById("p-nickname").textContent = groupTypeLabel(g.type);
     document.getElementById("p-fields").innerHTML = "";
     document.getElementById("p-relations").innerHTML = "";
     document.getElementById("p-musicals").innerHTML = "";
@@ -1921,12 +1920,6 @@
   if (cwQ) {
     document.getElementById("cw-go").addEventListener("click", queryCowork);
     cwQ.addEventListener("keydown", function (e) { if (e.key === "Enter") queryCowork(); });
-    var cwList = document.getElementById("cw-list");
-    Object.keys(actors).forEach(function (k) {
-      var o = document.createElement("option");
-      o.value = actors[k].name;
-      cwList.appendChild(o);
-    });
   }
 
   // ---- 演员页内容 ----
@@ -2044,7 +2037,7 @@
       if (g.type) {
         var sub = document.createElement("span");
         sub.className = "rel-detail";
-        sub.textContent = g.type;
+        sub.textContent = groupTypeLabel(g.type);
         li.appendChild(sub);
       }
       ul.appendChild(li);
@@ -2206,12 +2199,19 @@
   var topSearchBox = document.getElementById("top-search-box");
   function openTopSearch() {
     topSearchBox.classList.remove("hidden");
+    topSearchBox.classList.remove("open");
+    void topSearchBox.offsetWidth;   // 强制回流，让展开过渡生效
+    topSearchBox.classList.add("open");
     search.focus();
   }
   function closeTopSearch() {
-    topSearchBox.classList.add("hidden");
+    topSearchBox.classList.remove("open");
     search.value = "";
     dropdown.classList.add("hidden");
+    clearTimeout(topSearchBox._t);
+    topSearchBox._t = setTimeout(function () {
+      if (!topSearchBox.classList.contains("open")) topSearchBox.classList.add("hidden");
+    }, 320);   // 等收起动效结束再挂 display:none
   }
   if (searchToggle) {
     searchToggle.addEventListener("click", function (e) {
@@ -2227,7 +2227,7 @@
     if (!e.target.closest(".search-box") && !e.target.closest(".ap-search-wrap")) {
       document.getElementById("dropdown").classList.add("hidden");
       var topBox = document.getElementById("top-search-box");
-      if (topBox && !topBox.classList.contains("hidden")) topBox.classList.add("hidden");
+      if (topBox && !topBox.classList.contains("hidden")) closeTopSearch();
       var apDrop = document.getElementById("ap-dropdown");
       if (apDrop) apDrop.classList.add("hidden");
     }
@@ -2397,6 +2397,46 @@
   }
   document.getElementById("c-mode").addEventListener("change", syncContributeGroups);
   document.getElementById("c-category").addEventListener("change", syncContributeGroups);
+
+  // 自定义下拉（信息类别/对象类型）：深色弹层 + 悬停仅文字变色，值同步到隐藏的原生 select
+  function bindCSelect(triggerId, menuId, selectId) {
+    var trigger = document.getElementById(triggerId);
+    var menu = document.getElementById(menuId);
+    var sel = document.getElementById(selectId);
+    if (!trigger || !menu || !sel) return;
+    var wrap = trigger.parentElement;
+    function setOpen(open) {
+      wrap.classList.toggle("open", open);
+      menu.classList.toggle("hidden", !open);
+      trigger.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+    function pick(li) {
+      sel.value = li.getAttribute("data-value");
+      sel.dispatchEvent(new Event("change", { bubbles: true }));
+      trigger.querySelector(".c-select-value").textContent = li.textContent;
+      menu.querySelectorAll("li").forEach(function (x) { x.setAttribute("aria-selected", String(x === li)); });
+      setOpen(false);
+    }
+    trigger.addEventListener("mousedown", function (e) { e.preventDefault(); e.stopPropagation(); setOpen(menu.classList.contains("hidden")); });
+    menu.querySelectorAll("li").forEach(function (li) {
+      li.addEventListener("mousedown", function (e) { e.preventDefault(); e.stopPropagation(); pick(li); });
+    });
+    document.addEventListener("click", function (e) { if (!wrap.contains(e.target)) setOpen(false); });
+    sel.addEventListener("change", function () {
+      var li = menu.querySelector('li[data-value="' + sel.value + '"]');
+      if (li) trigger.querySelector(".c-select-value").textContent = li.textContent;
+    });
+  }
+  function syncCSelects() {
+    [["c-mode-trigger", "c-mode-menu", "c-mode"], ["c-category-trigger", "c-category-menu", "c-category"]].forEach(function (t) {
+      var tr = document.getElementById(t[0]), menu = document.getElementById(t[1]), sel = document.getElementById(t[2]);
+      if (!tr || !menu || !sel) return;
+      var li = menu.querySelector('li[data-value="' + sel.value + '"]');
+      if (li) tr.querySelector(".c-select-value").textContent = li.textContent;
+    });
+  }
+  bindCSelect("c-mode-trigger", "c-mode-menu", "c-mode");
+  bindCSelect("c-category-trigger", "c-category-menu", "c-category");
 
   function getContributions() {
     try { return JSON.parse(localStorage.getItem("mg_contributions") || "[]"); } catch (e) { return []; }
@@ -2569,6 +2609,7 @@
     if (!item) return;
     submitToBackend(item).then(function () {
       e.target.reset();
+      syncCSelects();
       showToast("提交成功，已进入待审核，感谢你的补充");
       renderReviewList();
     }).catch(function () {
@@ -2576,6 +2617,7 @@
       list.push(item);
       try { localStorage.setItem("mg_contributions", JSON.stringify(list)); } catch (err) { showToast("保存失败（存储空间不足）"); return; }
       e.target.reset();
+      syncCSelects();
       showToast("后端未连接，已保存为本地草稿");
       renderReviewList();
     });

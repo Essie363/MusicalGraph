@@ -516,7 +516,7 @@ function check(name, cond, extra) {
   check("作品演员表按角色分组", roleGroups >= 2, "角色组数=" + roleGroups);
 
   await page.keyboard.press("Escape");   // 关闭作品弹窗
-  await page.waitForTimeout(300);
+  await page.waitForTimeout(500);   // 等顶部搜索收起动画结束（320ms 后挂 hidden）
 
   console.log("== 团体 ==");
   await ensureSearch();
@@ -536,14 +536,17 @@ function check(name, cond, extra) {
   }));
 
   await page.keyboard.press("Escape");   // 返回全局
-  await page.waitForTimeout(300);
+  await page.waitForTimeout(500);   // 等顶部搜索收起动画结束
 
   console.log("== Contribute 页 ==");
   await page.click('.nav-links a[data-nav="contribute"]');
   await page.waitForTimeout(600);
   check("进入贡献页", await page.$eval("#view-contribute", el => !el.classList.contains("hidden")));
-  await page.selectOption("#c-mode", "supplement");
-  await page.selectOption("#c-category", "actor");
+  // 信息类别/对象类型为自定义下拉（原生 select 已隐藏，改用点击交互）
+  await page.click("#c-mode-trigger");
+  await page.click("#c-mode-menu li[data-value='supplement']");
+  await page.click("#c-category-trigger");
+  await page.click("#c-category-menu li[data-value='actor']");
   await page.fill("#c-supplement-actor input[name=name]", "测试演员甲");
   await page.fill("#c-supplement-actor input[name=school]", "测试学院");
   await page.fill("#c-ref", "https://example.com");

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -12,13 +12,13 @@
 <nav class="topnav">
   <span class="brand">MUSICAL GRAPH</span>
   <div class="top-search" id="top-search">
-    <button id="search-toggle" class="search-toggle" type="button" title="搜索" aria-label="搜索">
-      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M10.5 3a7.5 7.5 0 1 0 4.55 13.4l4.3 4.3 1.42-1.42-4.3-4.3A7.5 7.5 0 0 0 10.5 3zm0 2a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11z" fill="currentColor"/></svg>
-    </button>
     <div class="top-search-box search-box hidden" id="top-search-box">
       <input id="search" type="text" placeholder="搜索演员 / 作品 / 团体…" autocomplete="off" aria-label="搜索演员 / 作品 / 团体">
       <div id="dropdown" class="dropdown hidden"></div>
     </div>
+    <button id="search-toggle" class="search-toggle" type="button" title="搜索" aria-label="搜索">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M10.5 3a7.5 7.5 0 1 0 4.55 13.4l4.3 4.3 1.42-1.42-4.3-4.3A7.5 7.5 0 0 0 10.5 3zm0 2a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11z" fill="currentColor"/></svg>
+    </button>
   </div>
   <div class="nav-links">
     <a href="#/home" data-nav="home">Home</a>
@@ -91,9 +91,9 @@
         <svg class="cc-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </a>
     </div>
-    <h3 class="sec-sub">和我们一起</h3>
-    <a class="join-card" href="#/contribute" aria-label="去 Contribute 补充信息">
-      <p><strong>社区共建</strong> · 发现缺失或错误信息，欢迎提交补充；内容经审核后更新到图谱，让这份资料越来越完整。</p>
+    <h3 class="sec-sub">联系与反馈</h3>
+    <a class="join-card" href="#/contribute" aria-label="去 Contribute 补充信息或反馈建议">
+      <p><strong>社区共建</strong> · 发现资料缺失或错误，欢迎提交补充与勘误；对图谱功能有任何想法或建议，也欢迎随时交流。</p>
       <svg class="join-arrow" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </a>
   </section>
@@ -173,19 +173,41 @@
 <div id="view-contribute" class="view hidden">
   <div class="page-head">
     <h1>Contribute</h1>
-    <p class="page-sub">Found missing information? Help us improve the musical theater database.</p>
+    <p class="page-sub">发现资料有缺漏或错误？在这里补充演员、剧目、关系或精彩片段的信息，提交后经管理员审核入库，一起完善音乐剧资料库。</p>
   </div>
 
   <form id="contribute-form" class="c-form" novalidate>
     <div class="c-row">
       <label>信息类别
-        <select id="c-mode">
+        <div class="c-select">
+          <button type="button" class="c-select-trigger" id="c-mode-trigger" aria-haspopup="listbox" aria-expanded="false">
+            <span class="c-select-value">补充信息</span>
+            <svg class="c-select-arrow" viewBox="0 0 12 8" width="12" height="8" aria-hidden="true"><path d="M6 8L0 0h12z" fill="currentColor"/></svg>
+          </button>
+          <ul class="c-select-menu hidden" id="c-mode-menu" role="listbox">
+            <li role="option" data-value="supplement" aria-selected="true">补充信息</li>
+            <li role="option" data-value="fix">勘误（修正错误）</li>
+          </ul>
+        </div>
+        <select id="c-mode" class="hidden" aria-hidden="true" tabindex="-1">
           <option value="supplement">补充信息</option>
           <option value="fix">勘误（修正错误）</option>
         </select>
       </label>
       <label>对象类型
-        <select id="c-category">
+        <div class="c-select">
+          <button type="button" class="c-select-trigger" id="c-category-trigger" aria-haspopup="listbox" aria-expanded="false">
+            <span class="c-select-value">演员</span>
+            <svg class="c-select-arrow" viewBox="0 0 12 8" width="12" height="8" aria-hidden="true"><path d="M6 8L0 0h12z" fill="currentColor"/></svg>
+          </button>
+          <ul class="c-select-menu hidden" id="c-category-menu" role="listbox">
+            <li role="option" data-value="actor" aria-selected="true">演员</li>
+            <li role="option" data-value="musical">剧目</li>
+            <li role="option" data-value="relation">关系</li>
+            <li role="option" data-value="moment">精彩片段</li>
+          </ul>
+        </div>
+        <select id="c-category" class="hidden" aria-hidden="true" tabindex="-1">
           <option value="actor">演员</option>
           <option value="musical">剧目</option>
           <option value="relation">关系</option>
@@ -348,11 +370,12 @@
       <ul id="ap-moments" class="moments-list"></ul>
     </section>
     <section class="ap-card ap-wide">
-      <h3>常共演搭档</h3>
-      <div class="cw-query">
-        <input id="cw-q" type="text" placeholder="输入另一位演员姓名，查合作（含低频合作）" autocomplete="off" list="cw-list">
-        <datalist id="cw-list"></datalist>
-        <button id="cw-go" type="button">查合作</button>
+      <div class="cw-title-row">
+        <h3>常共演搭档</h3>
+        <div class="cw-query">
+          <input id="cw-q" type="text" placeholder="输入其它演员姓名查询合作" autocomplete="off">
+          <button id="cw-go" type="button" title="查合作" aria-label="查合作"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M10.5 3a7.5 7.5 0 1 0 4.55 13.4l4.3 4.3 1.42-1.42-4.3-4.3A7.5 7.5 0 0 0 10.5 3zm0 2a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11z" fill="currentColor"/></svg></button>
+        </div>
       </div>
       <div id="cw-result" class="cw-result hidden"></div>
       <ul id="ap-cowork" class="cols-2"></ul>
