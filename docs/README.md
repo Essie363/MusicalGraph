@@ -79,5 +79,6 @@ python import_from_file.py
 - `docs/AI_CONTEXT.md` — 给 AI 的完整项目上下文
 - `docs/TODO.md` — 待办事项（按优先级）
 - `docs/DEPLOY.md`
-- `docs/POCKETBASE.md` — 本地后端使用指南 — 上线部署指南（Supabase + Next.js + Vercel）
+- `docs/POCKETBASE.md` — 本地后端使用指南
+- `docs/后端操作指南.md` — 后端操作指南（小白版）：你现在要做的每一步 — 上线部署指南（Supabase + Next.js + Vercel）
 - `docs/LESSONS.md` — 经验沉淀
