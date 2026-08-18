@@ -23,7 +23,7 @@
   <div class="nav-links">
     <a href="#/home" data-nav="home">Home</a>
     <a href="#/graph" data-nav="graph">Graph</a>
-    <a href="#/contribute" data-nav="contribute">Contribute</a>
+    <a href="#/contribute" data-nav="contribute">Feedback</a>
   </div>
 </nav>
 
@@ -66,28 +66,28 @@
     </div>
     <h2 class="sec-title">从哪里开始？</h2>
     <div class="chapters">
-      <a class="chapter-card" href="#/graph">
-        <span class="cc-num">01</span>
-        <span class="cc-title"><b>图谱</b><i>Graph</i></span>
-        <span class="cc-desc">光点即演员，连线即缘分——从整张星光网络开始。</span>
-        <svg class="cc-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </a>
       <a class="chapter-card" href="#/graph?scene=actors">
-        <span class="cc-num">02</span>
+        <span class="cc-num">01</span>
         <span class="cc-title"><b>演员</b><i>Actors</i></span>
         <span class="cc-desc">从一位演员出发，看 TA 的同台搭档与关系网络。</span>
         <svg class="cc-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </a>
       <a class="chapter-card" href="#/graph?scene=musicals">
-        <span class="cc-num">03</span>
+        <span class="cc-num">02</span>
         <span class="cc-title"><b>作品</b><i>Musicals</i></span>
         <span class="cc-desc">按剧目浏览演员表、角色与排期足迹。</span>
         <svg class="cc-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </a>
       <a class="chapter-card" href="#/graph?scene=groups">
-        <span class="cc-num">04</span>
+        <span class="cc-num">03</span>
         <span class="cc-title"><b>团体</b><i>Groups</i></span>
         <span class="cc-desc">从上音、北舞等院校与剧团切入。</span>
+        <svg class="cc-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="chapter-card" href="#/graph?scene=moments">
+        <span class="cc-num">04</span>
+        <span class="cc-title"><b>精彩片段</b><i>Moments</i></span>
+        <span class="cc-desc">从舞台高光片段出发，认识这些发光瞬间背后的演员。</span>
         <svg class="cc-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </a>
     </div>
@@ -99,9 +99,8 @@
   </section>
 
   <div class="home-foot">
-    <a href="#intro">Help</a>
-    <a href="#/contribute">Contribute</a>
-    <a href="#" id="contact-link">Contact</a>
+    <a href="#/contribute">帮助与反馈</a>
+    <span class="home-foot-src">音乐剧排期数据来源 · <a href="https://y.saoju.net/yyj/" target="_blank" rel="noopener noreferrer">y.saoju.net/yyj</a></span>
   </div>
 </div>
 
@@ -127,6 +126,12 @@
         <div id="first-hint" class="first-hint hidden">
           <p class="fh-zh">移动鼠标，探索演员之间的连接</p>
           <p class="fh-en">Move across the stars to explore.</p>
+        </div>
+        <div id="scene-filter" class="scene-filter" aria-label="按维度筛选图谱">
+          <button type="button" data-scene="actors">演员</button>
+          <button type="button" data-scene="musicals">作品</button>
+          <button type="button" data-scene="groups">团体</button>
+          <button type="button" data-scene="moments">精彩片段</button>
         </div>
       </div>
     <aside id="panel" class="hidden">
@@ -161,9 +166,8 @@
       <section id="scene-card" class="gt-block hidden">
         <div class="fc-head"><span id="scene-name"></span><button id="scene-close" title="返回全局图谱">×</button></div>
         <div id="scene-desc" class="fc-stats"></div>
-        <div class="fc-actions">
-          <button id="scene-exit" class="fc-btn">返回全局图谱</button>
-        </div>
+        <div id="scene-moments" class="scene-moments hidden"></div>
+        <a id="scene-add-moment" class="scene-add-moment hidden" href="#/contribute">＋ 补充精彩片段</a>
       </section>
     </aside>
   </div>
@@ -172,49 +176,83 @@
 <!-- ============ Contribute 信息补充页 ============ -->
 <div id="view-contribute" class="view hidden">
   <div class="page-head">
-    <h1>Contribute</h1>
-    <p class="page-sub">发现资料有缺漏或错误？在这里补充演员、剧目、关系或精彩片段的信息，提交后经管理员审核入库，一起完善音乐剧资料库。</p>
+    <h1>联系与反馈</h1>
+    <p class="page-sub">帮助我们让这份音乐剧演员图谱变得更加完整。</p>
   </div>
 
-  <form id="contribute-form" class="c-form" novalidate>
-    <div class="c-row">
-      <label>信息类别
-        <div class="c-select">
-          <button type="button" class="c-select-trigger" id="c-mode-trigger" aria-haspopup="listbox" aria-expanded="false">
-            <span class="c-select-value">补充信息</span>
-            <svg class="c-select-arrow" viewBox="0 0 12 8" width="12" height="8" aria-hidden="true"><path d="M6 8L0 0h12z" fill="currentColor"/></svg>
-          </button>
-          <ul class="c-select-menu hidden" id="c-mode-menu" role="listbox">
-            <li role="option" data-value="supplement" aria-selected="true">补充信息</li>
-            <li role="option" data-value="fix">勘误（修正错误）</li>
-          </ul>
-        </div>
-        <select id="c-mode" class="hidden" aria-hidden="true" tabindex="-1">
-          <option value="supplement">补充信息</option>
-          <option value="fix">勘误（修正错误）</option>
-        </select>
-      </label>
-      <label>对象类型
-        <div class="c-select">
-          <button type="button" class="c-select-trigger" id="c-category-trigger" aria-haspopup="listbox" aria-expanded="false">
-            <span class="c-select-value">演员</span>
-            <svg class="c-select-arrow" viewBox="0 0 12 8" width="12" height="8" aria-hidden="true"><path d="M6 8L0 0h12z" fill="currentColor"/></svg>
-          </button>
-          <ul class="c-select-menu hidden" id="c-category-menu" role="listbox">
-            <li role="option" data-value="actor" aria-selected="true">演员</li>
-            <li role="option" data-value="musical">剧目</li>
-            <li role="option" data-value="relation">关系</li>
-            <li role="option" data-value="moment">精彩片段</li>
-          </ul>
-        </div>
-        <select id="c-category" class="hidden" aria-hidden="true" tabindex="-1">
-          <option value="actor">演员</option>
-          <option value="musical">剧目</option>
-          <option value="relation">关系</option>
-          <option value="moment">精彩片段</option>
-        </select>
-      </label>
-    </div>
+  <div class="fb-flow" id="fb-flow">
+    <!-- 一级：三个入口 -->
+    <section class="fb-step" id="fb-step-root">
+      <div class="fb-card-grid">
+        <button type="button" class="fb-card" id="fb-add">
+          <span class="fb-card-num">01</span>
+          <span class="fb-card-title"><b>补充信息</b><i>Add</i></span>
+          <span class="fb-card-desc">为图谱添加新的演员、作品、关系或精彩片段。</span>
+          <svg class="fb-card-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button type="button" class="fb-card" id="fb-fix">
+          <span class="fb-card-num">02</span>
+          <span class="fb-card-title"><b>内容勘误</b><i>Fix</i></span>
+          <span class="fb-card-desc">发现信息有误？帮助我们修正图谱中的内容。</span>
+          <svg class="fb-card-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button type="button" class="fb-card" id="fb-feedback">
+          <span class="fb-card-num">03</span>
+          <span class="fb-card-title"><b>意见反馈</b><i>Feedback</i></span>
+          <span class="fb-card-desc">告诉我们你的想法、建议，或使用过程中的体验。</span>
+          <svg class="fb-card-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- 二级：选择内容类型 -->
+    <section class="fb-step hidden" id="fb-step-type">
+      <div class="fb-nav">
+        <button type="button" class="fb-back" id="fb-back-type">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          返回上一步
+        </button>
+        <span class="fb-crumb" id="fb-crumb-type">联系与反馈</span>
+      </div>
+      <h2 class="fb-ask" id="fb-ask-type">你想补充什么？</h2>
+      <div class="fb-card-grid fb-grid-4" id="fb-type-cards">
+        <button type="button" class="fb-card" data-category="actor">
+          <span class="fb-card-num">01</span>
+          <span class="fb-card-title"><b>演员</b><i>Actor</i></span>
+          <span class="fb-card-desc">补充演员相关信息。</span>
+          <svg class="fb-card-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button type="button" class="fb-card" data-category="musical">
+          <span class="fb-card-num">02</span>
+          <span class="fb-card-title"><b>作品</b><i>Musical</i></span>
+          <span class="fb-card-desc">补充音乐剧作品相关信息。</span>
+          <svg class="fb-card-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button type="button" class="fb-card" data-category="relation">
+          <span class="fb-card-num">03</span>
+          <span class="fb-card-title"><b>人物关系</b><i>Relation</i></span>
+          <span class="fb-card-desc">补充演员之间的关系。</span>
+          <svg class="fb-card-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button type="button" class="fb-card" data-category="moment">
+          <span class="fb-card-num">04</span>
+          <span class="fb-card-title"><b>精彩片段</b><i>Moment</i></span>
+          <span class="fb-card-desc">补充 Stage Moments。</span>
+          <svg class="fb-card-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- 三级：具体填写表单 -->
+    <section class="fb-step hidden" id="fb-step-form">
+      <div class="fb-nav">
+        <button type="button" class="fb-back" id="fb-back-form">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          返回上一步
+        </button>
+        <span class="fb-crumb" id="fb-crumb-form"></span>
+      </div>
+      <form id="contribute-form" class="c-form" novalidate>
 
     <!-- 补充 · 演员 -->
     <div class="c-group" id="c-supplement-actor">
@@ -249,26 +287,57 @@
     <!-- 补充 · 剧目 -->
     <div class="c-group hidden" id="c-supplement-musical">
       <label>剧目名称 *<input type="text" name="name" data-label="剧目名称" required placeholder="必填" autocomplete="off"></label>
-      <label>演出日期<input type="text" name="date" data-label="演出日期" placeholder="如 2026/8/7（可选）" autocomplete="off"></label>
-      <label>城市<input type="text" name="city" data-label="城市" placeholder="可选" autocomplete="off"></label>
-      <label>剧院<input type="text" name="theatre" data-label="剧院" placeholder="可选" autocomplete="off"></label>
-      <label>参演演员与角色<textarea name="cast" data-label="参演演员与角色" rows="4" placeholder="每行一个：演员名：角色名（可选）"></textarea></label>
+      <div class="c-sub-sec">
+        <span class="c-sub-title">卡司 / 角色表</span>
+        <span class="c-sub-hint">作品最重要的信息，请优先填写；每行一位演员</span>
+        <div class="cast-rows" id="cast-rows-supplement">
+          <div class="cast-row">
+            <label>演员姓名<input type="text" name="castActor" placeholder="必填" autocomplete="off"></label>
+            <label>角色名<input type="text" name="castRole" placeholder="可选" autocomplete="off"></label>
+          </div>
+          <div class="cast-row">
+            <label>演员姓名<input type="text" name="castActor" placeholder="必填" autocomplete="off"></label>
+            <label>角色名<input type="text" name="castRole" placeholder="可选" autocomplete="off"></label>
+          </div>
+        </div>
+        <button type="button" class="cast-add" data-target="cast-rows-supplement">＋ 添加一位演员</button>
+      </div>
+      <div class="c-sub-sec">
+        <span class="c-sub-title">演出排期</span>
+        <span class="c-sub-hint">日期 / 城市 / 剧院（可选）</span>
+        <label>演出日期<input type="text" name="date" data-label="演出日期" placeholder="如 2026/8/7（可选）" autocomplete="off"></label>
+        <label>城市<input type="text" name="city" data-label="城市" placeholder="可选" autocomplete="off"></label>
+        <label>剧院<input type="text" name="theatre" data-label="剧院" placeholder="可选" autocomplete="off"></label>
+      </div>
       <label>备注<textarea name="note" data-label="备注" rows="3" placeholder="可选"></textarea></label>
     </div>
 
     <!-- 勘误 · 剧目 -->
     <div class="c-group hidden" id="c-fix-musical">
       <label>剧目名称 *<input type="text" name="name" data-label="剧目名称" required placeholder="必填" autocomplete="off"></label>
-      <label>要修正的字段
-        <select name="field" data-label="要修正的字段">
-          <option value="name">剧目名称</option><option value="date">演出日期</option>
-          <option value="city">城市</option><option value="theatre">剧院</option>
-          <option value="role">角色</option><option value="cast">演员表</option>
-          <option value="other">其他</option>
-        </select>
-      </label>
-      <label>当前内容（如已知）<input type="text" name="wrong" data-label="当前内容" placeholder="可选" autocomplete="off"></label>
-      <label>正确内容 *<input type="text" name="correct" data-label="正确内容" required placeholder="必填" autocomplete="off"></label>
+      <div class="c-sub-sec">
+        <span class="c-sub-title">卡司修正</span>
+        <span class="c-sub-hint">修正某位演员的角色信息（优先处理）</span>
+        <label>演员姓名 *<input type="text" name="castActor" placeholder="必填" autocomplete="off"></label>
+        <label>当前角色<input type="text" name="wrongCastRole" placeholder="可选" autocomplete="off"></label>
+        <label>正确角色 *<input type="text" name="correctCastRole" placeholder="必填" autocomplete="off"></label>
+      </div>
+      <div class="c-sub-sec">
+        <span class="c-sub-title">其他信息修正</span>
+        <span class="c-sub-hint">名称 / 演出排期等（可选）</span>
+        <label>要修正的字段
+          <select name="field" data-label="要修正的字段">
+            <option value="">— 选择 —</option>
+            <option value="name">剧目名称</option>
+            <option value="date">演出日期</option>
+            <option value="city">城市</option>
+            <option value="theatre">剧院</option>
+            <option value="other">其他</option>
+          </select>
+        </label>
+        <label>当前内容<input type="text" name="wrong" data-label="当前内容" placeholder="可选" autocomplete="off"></label>
+        <label>正确内容 *<input type="text" name="correct" data-label="正确内容" required placeholder="必填" autocomplete="off"></label>
+      </div>
     </div>
 
     <!-- 补充 · 关系 -->
@@ -312,21 +381,35 @@
     <label>Reference（来源链接，必填）<input id="c-ref" type="text" placeholder="https://…" required autocomplete="off"></label>
     <label>Email（可选，用于反馈）<input id="c-email" type="email" placeholder="your@email.com" autocomplete="off"></label>
 
-    <button type="submit" class="c-submit">Submit Contribution</button>
-    <div id="c-success" class="c-success hidden">提交成功！已进入待审核列表，感谢你的补充。</div>
-  </form>
+    <button type="submit" class="c-submit">提交</button>
+      </form>
+      <div class="hidden">
+        <select id="c-mode" aria-hidden="true" tabindex="-1"><option value="supplement">补充信息</option><option value="fix">勘误（修正错误）</option></select>
+        <select id="c-category" aria-hidden="true" tabindex="-1"><option value="actor">演员</option><option value="musical">剧目</option><option value="relation">关系</option><option value="moment">精彩片段</option></select>
+      </div>
+    </section>
 
-  <!-- 开发者审核列表（本地 MVP：存于浏览器 localStorage，可导出 JSON / 复制成 GitHub Issue 文本） -->
-  <details id="c-review" class="c-review">
-    <summary>本地草稿（后端未连接时）</summary>
-    <ul id="c-review-list" class="c-review-list"></ul>
-    <div class="c-review-actions">
-      <button id="c-export" type="button">导出 JSON</button>
-      <button id="c-copy-all" type="button">复制全部为 Issue 文本</button>
-      <button id="c-clear" type="button">清空</button>
-    </div>
-    <p class="c-review-tip">本地草稿仅在后端（PocketBase）未连接时生效；正常时提交会直接写入后端待审核列表，管理员在 http://127.0.0.1:8090/_/ 审核通过后自动入库。</p>
-  </details>
+    <!-- 意见反馈 -->
+    <section class="fb-step hidden" id="fb-step-feedback">
+      <div class="fb-nav">
+        <button type="button" class="fb-back" id="fb-back-feedback">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          返回上一步
+        </button>
+        <span class="fb-crumb">联系与反馈 / 意见反馈</span>
+      </div>
+      <form id="fb-feedback-form" class="c-form" novalidate>
+        <label>你的想法 *
+          <textarea name="message" rows="5" placeholder="告诉我们你的想法、建议，或者使用过程中遇到的问题……" required></textarea>
+        </label>
+        <label>联系方式（Email / 其他）*
+          <input type="text" name="contact" placeholder="your@email.com / 其他联系方式" required autocomplete="off">
+        </label>
+        <button type="submit" class="c-submit">提交反馈</button>
+      </form>
+    </section>
+  </div>
+
 </div>
 
 <!-- ============ 演员独立详情页 ============ -->
@@ -352,7 +435,6 @@
   <section class="ap-net">
     <h3>关系网络</h3>
     <div id="ap-graph-wrap"><canvas id="ap-graph"></canvas></div>
-    <div class="ap-hint">点击图中任意人物，进入他的关系详情页</div>
   </section>
 
   <div class="ap-sections">
@@ -387,6 +469,6 @@
 <div id="toast" class="toast hidden"></div>
 <script src="data.js"></script>
 <script src="data_loader.js"></script>
-<!-- app.js ? data_loader.js ???????? -->
+<!-- app.js 由 data_loader.js 在数据就绪后注入 -->
 </body>
 </html>

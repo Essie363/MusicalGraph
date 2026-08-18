@@ -195,7 +195,6 @@
     actorView.classList.add("hidden");
     document.body.classList.remove("actor-mode");
     setNavActive("contribute");
-    renderReviewList();
   }
   function showActorView(id) {
     viewHome.classList.add("hidden");
@@ -215,6 +214,7 @@
     else if (route === "graph") showGraphView();
     else if (route === "contribute") showContributeView();
     else showHomeView();
+    syncSceneFilter();
   }
 
   // ============ 首页：全局图谱（舞台追光互动） ============
@@ -659,6 +659,37 @@
     view.x = 0; view.y = 0;
   }
 
+  // 场景进入后：把被点亮的节点适配进视口（默认只保证约 70% 落在视口内，留出可拖动的边缘）
+  function fitViewToHighlights() {
+    var ks = Object.keys(sceneHighlight).filter(function (k) { return !!nodes[k]; });
+    if (!ks.length) return;
+    // 按到质心的距离排序，取最近的一部分（默认 70%）计算适配框，避免为了包住离群点而缩得太小
+    var cx0 = 0, cy0 = 0;
+    ks.forEach(function (k) { cx0 += nodes[k].x; cy0 += nodes[k].y; });
+    cx0 /= ks.length; cy0 /= ks.length;
+    var ordered = ks.slice().sort(function (a, b) {
+      var da = (nodes[a].x - cx0) * (nodes[a].x - cx0) + (nodes[a].y - cy0) * (nodes[a].y - cy0);
+      var db = (nodes[b].x - cx0) * (nodes[b].x - cx0) + (nodes[b].y - cy0) * (nodes[b].y - cy0);
+      return da - db;
+    });
+    var take = Math.max(1, Math.round(ordered.length * 0.7));
+    var subset = ordered.slice(0, take);
+    var minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
+    subset.forEach(function (k) {
+      var n = nodes[k];
+      if (n.x < minX) minX = n.x; if (n.x > maxX) maxX = n.x;
+      if (n.y < minY) minY = n.y; if (n.y > maxY) maxY = n.y;
+    });
+    var w = Math.max(60, maxX - minX), h = Math.max(60, maxY - minY);
+    var cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+    var pad = 40;
+    var zoom = Math.min(2.0, Math.max(0.3,
+      Math.min((canvas.clientWidth - pad * 2) / w, (canvas.clientHeight - pad * 2) / h) * 1.2));
+    view.zoom = zoom;
+    view.x = -cx * zoom;
+    view.y = -cy * zoom;
+  }
+
   // 0.8 秒入场动效：节点从中心平滑展开到各自位置
   function playEntrance() {
     entranceT = 0;
@@ -717,6 +748,7 @@
   // 单击聚焦：以该演员为中心重建并展开（幂等：同一人再次单击不重复重排）
   function focusActor(id) {
     if (focusId === id) { showFocusCard(id); return; }   // 已聚焦同一人：仅重新拉出信息卡，不重复重排
+    if (scene) { scene = null; sceneHighlight = {}; hideSceneCard(); stripSceneFromHash(); }   // 点演员聚焦：退出场景，只保留个人信息
     var oldPos = {};
     Object.keys(nodes).forEach(function (k) { oldPos[k] = { x: nodes[k].x, y: nodes[k].y }; });
     focusId = id;
@@ -832,6 +864,7 @@
     layoutAndCenter();
     playEntrance();
     updateStats();
+    syncSceneFilter();
   }
 
   // ============ 场景模式（首页章节卡片直达图谱的对应内容） ============
@@ -849,14 +882,46 @@
     history.replaceState(null, "", base || "#/graph");
   }
   function showSceneCard(name) {
-    var info = { actors: "热门演员 · Top 20", musicals: "热门剧目 · Top 30", groups: "团体一览" }[name];
+    var info = {
+      actors: "热门演员 · Top 20",
+      musicals: "热门剧目 · Top 30",
+      groups: "团体一览",
+      moments: "精彩片段 · " + Object.keys(momentsByActor).length + " 位演员"
+    }[name];
     var card = document.getElementById("scene-card");
     if (!card || !info) { hideSceneCard(); return; }
     document.getElementById("scene-name").textContent = info;
     document.getElementById("scene-desc").textContent =
-      name === "actors" ? "按影响力（剧目数 / 合作人数 / 关系度）排名的前 20 位演员。点击光点可聚焦或进详情。"
-      : name === "musicals" ? "按演出场次与巡演城市数排序的热门剧目 Top 30。点击剧目查看演员表。"
-      : "共 " + groups.length + " 个团体（同班同学 / 室友 / 其他）。点击团体查看成员。";
+      name === "actors" ? "按影响力（剧目数 / 合作人数 / 关系度）排名的前 20 位演员。"
+      : name === "musicals" ? "按演出场次与巡演城市数排序的热门剧目 Top 30。"
+      : name === "moments" ? "拥有 Stage Moments（舞台高光片段）的演员。"
+      : "共 " + groups.length + " 个团体（同班同学 / 室友 / 其他）。";
+    var momBox = document.getElementById("scene-moments");
+    if (momBox) {
+      if (name === "moments") {
+        var rows = moments.map(function (m) {
+          return { name: actorLabel(m.actorId), title: m.title, url: m.url, source: m.source };
+        });
+        rows.sort(function (a, b) {
+          return a.name < b.name ? -1 : a.name > b.name ? 1 : (a.title < b.title ? -1 : a.title > b.title ? 1 : 0);
+        });
+        momBox.innerHTML = "<div class='fc-mom-title'>推荐片段</div><ul class='scene-mom-list'>" +
+          rows.map(function (r) {
+            var url = safeUrl(r.url);
+            var t = url
+              ? "<a class='mom-title' href='" + escAttr(url) + "' target='_blank' rel='noopener noreferrer'>" + escHtml(r.title) + "</a>"
+              : "<span class='mom-title'>" + escHtml(r.title) + "</span>";
+            return "<li><span class='scene-mom-actor'>" + escHtml(r.name) + "</span>" + t +
+              "<span class='mom-src'>" + escHtml(SOURCE_LABEL[r.source] || r.source || "") + "</span></li>";
+          }).join("") + "</ul>";
+        momBox.classList.remove("hidden");
+      } else {
+        momBox.classList.add("hidden");
+        momBox.innerHTML = "";
+      }
+    }
+    var addMom = document.getElementById("scene-add-moment");
+    if (addMom) addMom.classList.toggle("hidden", name !== "moments");
     card.classList.remove("hidden");
     document.body.classList.add("side-open");     // 场景卡显示 -> 右侧面板滑出
   }
@@ -864,6 +929,24 @@
     var c = document.getElementById("scene-card");
     if (c) c.classList.add("hidden");
     document.body.classList.remove("side-open");
+  }
+  // 底部场景筛选条：按当前场景同步高亮；点击切换/退出
+  function syncSceneFilter() {
+    var bar = document.getElementById("scene-filter");
+    if (!bar) return;
+    bar.querySelectorAll("button").forEach(function (b) {
+      b.classList.toggle("active", scene === b.getAttribute("data-scene"));
+    });
+  }
+  var sceneFilter = document.getElementById("scene-filter");
+  if (sceneFilter) {
+    sceneFilter.addEventListener("click", function (e) {
+      var btn = e.target && e.target.closest ? e.target.closest("button[data-scene]") : null;
+      if (!btn) return;
+      var s = btn.getAttribute("data-scene");
+      if (scene === s) location.hash = "#/graph";          // 再点一次：退出筛选回全局
+      else location.hash = "#/graph?scene=" + s;            // 进入对应筛选场景
+    });
   }
   function focusSearch(q) {
     var el = document.getElementById("search");
@@ -926,11 +1009,27 @@
         });
       });
       applyNodeRadii();
+    } else if (name === "moments") {
+      // 场景：精彩片段（点亮所有拥有 Stage Moments 的演员）
+      buildGraph();
+      Object.keys(momentsByActor).forEach(function (aid) {
+        if (actors[aid]) {
+          ensureActorNode(aid); sceneHighlight[aid] = true;
+          // 每个演员只标注一个片段：取该演员第一条，歌名 = 标题「剧名-歌名」中的后半段
+          var m0 = (momentsByActor[aid] || [])[0];
+          var song = m0 && m0.title ? String(m0.title).split("-").pop().trim() : "";
+          if (nodes[aid] && song) nodes[aid].label2 = song;
+        }
+      });
+      rebuildEdges();
+      applyNodeRadii();
     }
     layoutAndCenter();
+    fitViewToHighlights();   // 场景进入后自动把被点亮节点适配进视口
     playEntrance();
     updateStats();
     showSceneCard(name);
+    syncSceneFilter();
   }
   function handleSceneFromHash() {
     var s = sceneFromHash();
@@ -1146,13 +1245,19 @@
       var col = (relColorCache && relColorCache[k]) ? relColorCache[k] : n.color;   // 明确关系用关系色点亮
       drawLightPoint(ctx, x, y, n, col);                // 柔和光点：光晕 + 中心亮点，无边框
       // 姓名：放大到接近最大时全部显示；hover 时焦点与其一跳邻居显示；聚焦态显示中心与剧目节点
-      var showLabel = view.zoom >= 2.4 || (k === hoverId) || (hovering && nb[k]) || (focusId && k === focusId) || (focusId && n.type === "musical") || (focusId && nbFocus && nbFocus[k]) || (scene && sceneHighlight[k] && (scene === "actors" || scene === "groups" || scene === "musicals" || view.zoom >= 1.6));
-      if (showLabel && view.zoom > 0.5) {
+      var showLabel = view.zoom >= 2.4 || (k === hoverId) || (hovering && nb[k]) || (focusId && k === focusId) || (focusId && n.type === "musical") || (focusId && nbFocus && nbFocus[k]) || (scene && sceneHighlight[k] && (scene === "actors" || scene === "groups" || scene === "musicals" || scene === "moments" || view.zoom >= 1.6));
+      if (showLabel && (view.zoom > 0.5 || scene === "moments")) {
         var fs = n.type === "musical" ? 11 : (n.type === "group" ? 13 : (k === focusId ? 14 : 12));
         ctx.font = fs + "px sans-serif";
         ctx.textAlign = "center";
         var label = n.type === "musical" && n.label.length > 10 ? n.label.slice(0, 10) + "…" : n.label;
         fillLabel(ctx, label, x, y + n.core + 16);
+        if (scene === "moments" && sceneHighlight[k] && n.label2) {
+          ctx.font = "10px sans-serif";
+          ctx.fillStyle = "rgba(242,242,242,0.62)";
+          ctx.fillText(n.label2, x, y + n.core + 30);
+          ctx.fillStyle = "#f2f2f2";
+        }
       }
     });
     ctx.restore();
@@ -1189,21 +1294,25 @@
   }
 
   // 点击与拖动区分：按住人物拖动=调整位置；原地单击=聚焦展开；双击=进入详情页
-  var dragging = null, panning = false, lastX = 0, lastY = 0, dragMoved = false;
+  var dragging = null, panning = false, lastX = 0, lastY = 0, startX = 0, startY = 0, dragMoved = false;
   canvas.addEventListener("mousedown", function (e) {
     cancelViewTween();
     var rect = canvas.getBoundingClientRect();
     var px = e.clientX - rect.left, py = e.clientY - rect.top;
     var hit = hitTest(px, py);
     lastX = e.clientX; lastY = e.clientY;
+    startX = e.clientX; startY = e.clientY;   // 记录按下点，按总位移判断是否拖动
     dragMoved = false;
     hideHoverCard();
     if (hit) { dragging = hit; nodes[hit].fixed = true; }
     else { panning = true; }
   });
   window.addEventListener("mousemove", function (e) {
+    if (dragging || panning) {
+      // 从按下点累计总位移：超过阈值才算「拖动」（慢速拖动也能正确识别）
+      if (Math.abs(e.clientX - startX) + Math.abs(e.clientY - startY) > 4) dragMoved = true;
+    }
     if (dragging) {
-      if (Math.abs(e.clientX - lastX) + Math.abs(e.clientY - lastY) > 4) dragMoved = true;
       var rect = canvas.getBoundingClientRect();
       var p = screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
       nodes[dragging].x = p.x; nodes[dragging].y = p.y;
@@ -1234,10 +1343,11 @@
     }
     if (panning) {
       panning = false;
+      if (dragMoved) return;   // 拖动图谱 = 平移，不算点击，不返回全局
       var rect = canvas.getBoundingClientRect();
       var hit = hitTest(e.clientX - rect.left, e.clientY - rect.top);
       if (hit) onNodeClick(hit);
-      else if (focusId || scene) resetHome();   // 点击空白 -> 返回全局
+      else if (focusId || scene) resetHome();   // 原地点击空白 -> 返回全局
     }
   });
   canvas.addEventListener("mouseleave", function () { hideHoverCard(); });
@@ -1326,11 +1436,6 @@
         });
         hoverCard.appendChild(tdiv);
       }
-    } else {
-      var mhint = document.createElement("div");
-      mhint.className = "hc-hint";
-      mhint.textContent = "单击查看演员表";
-      hoverCard.appendChild(mhint);
     }
     hoverCard.classList.remove("hidden");
     moveHoverCard(clientX, clientY);
@@ -1377,7 +1482,7 @@
     if (fcMom) {
       var mlist = momentsByActor[id] || [];
       if (mlist.length) {
-        var h = "<div class='fc-mom-title'>精彩片段</div><ul class='fc-mom-list'>";
+        var h = "<div class='fc-mom-title'>推荐片段</div><ul class='fc-mom-list'>";
         mlist.slice(0, 3).forEach(function (m) {
           var url = safeUrl(m.url);
           var titleHtml = url
@@ -1385,7 +1490,7 @@
             : "<span class='mom-title'>" + escHtml(m.title) + "</span>";
           h += "<li>" + titleHtml + "<span class='mom-src'>" + escHtml(SOURCE_LABEL[m.source] || m.source || "") + "</span></li>";
         });
-        if (mlist.length > 3) h += "<li class='fc-mom-more'>… 共 " + mlist.length + " 条，详情页查看全部</li>";
+        if (mlist.length > 3) h += "<li class='fc-mom-more'>… 共 " + mlist.length + " 条</li>";
         h += "</ul>";
         fcMom.innerHTML = h;
         fcMom.classList.remove("hidden");
@@ -1460,9 +1565,7 @@
   }
   document.getElementById("fc-detail").addEventListener("click", function () { if (focusId && focusId.indexOf("mus:") !== 0) goActor(focusId); });
   document.getElementById("fc-close").addEventListener("click", resetHome);
-  var sceneExit = document.getElementById("scene-exit");
   var sceneClose = document.getElementById("scene-close");
-  if (sceneExit) sceneExit.addEventListener("click", resetHome);
   if (sceneClose) sceneClose.addEventListener("click", resetHome);
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape") {
@@ -2372,15 +2475,16 @@
     clearTimeout(toastEl._t);
     toastEl._t = setTimeout(function () { toastEl.classList.add("hidden"); }, 2600);
   }
-  var MODE_LABELS = { supplement: "补充信息", fix: "勘误" };
-  var CAT_LABELS = { actor: "演员", musical: "剧目", relation: "关系", moment: "精彩片段" };
+  var MODE_LABELS = { supplement: "补充信息", fix: "勘误", feedback: "意见反馈" };
+  var CAT_LABELS = { actor: "演员", musical: "剧目", relation: "关系", moment: "精彩片段", feedback: "意见反馈" };
   var FIELD_LABELS = {
     name: "名称", nickname: "昵称/别名", birth: "生日", school: "毕业院校", grade: "入学年份/年级",
     major: "专业", hometown: "籍贯", height: "身高(cm)", note: "备注", groupName: "所属团体",
     field: "要修正的字段", wrong: "当前内容", correct: "正确内容",
     date: "演出日期", city: "城市", theatre: "剧院", cast: "参演演员与角色",
+    castActor: "演员姓名", castRole: "角色名", wrongCastRole: "当前角色", correctCastRole: "正确角色",
     actorA: "人物 A", actorB: "人物 B", relType: "关系类型", detail: "关系详情/备注",
-    actorName: "演员姓名", title: "标题", url: "链接", platform: "平台", desc: "描述"
+    actorName: "演员姓名", title: "标题", url: "链接", platform: "平台", desc: "描述", message: "反馈内容", contact: "联系方式"
   };
 
   function activeGroupId() {
@@ -2397,58 +2501,149 @@
   }
   document.getElementById("c-mode").addEventListener("change", syncContributeGroups);
   document.getElementById("c-category").addEventListener("change", syncContributeGroups);
-
-  // 自定义下拉（信息类别/对象类型）：深色弹层 + 悬停仅文字变色，值同步到隐藏的原生 select
-  function bindCSelect(triggerId, menuId, selectId) {
-    var trigger = document.getElementById(triggerId);
-    var menu = document.getElementById(menuId);
-    var sel = document.getElementById(selectId);
-    if (!trigger || !menu || !sel) return;
-    var wrap = trigger.parentElement;
-    function setOpen(open) {
-      wrap.classList.toggle("open", open);
-      menu.classList.toggle("hidden", !open);
-      trigger.setAttribute("aria-expanded", open ? "true" : "false");
+  // 作品表单：卡司行「＋ 添加一位演员」
+  function addCastRow(targetId) {
+    var box = document.getElementById(targetId);
+    if (!box) return;
+    var row = document.createElement("div");
+    row.className = "cast-row";
+    row.innerHTML = '<label>演员姓名<input type="text" name="castActor" placeholder="必填" autocomplete="off"></label>' +
+                    '<label>角色名<input type="text" name="castRole" placeholder="可选" autocomplete="off"></label>';
+    box.appendChild(row);
+  }
+  document.querySelectorAll(".cast-add").forEach(function (btn) {
+    btn.addEventListener("click", function () { addCastRow(btn.getAttribute("data-target")); });
+  });
+  // 表单原生下拉统一为自定义下拉（黑底、悬停红字），保持全站 UI 一致
+  function enhanceSelect(sel) {
+    if (!sel || sel.dataset.enhanced) return;
+    sel.dataset.enhanced = "1";
+    var wrap = document.createElement("div");
+    wrap.className = "c-select";
+    var trigger = document.createElement("button");
+    trigger.type = "button";
+    trigger.className = "c-select-trigger";
+    trigger.innerHTML = '<span class="c-select-value"></span><span class="c-select-arrow">▾</span>';
+    var menu = document.createElement("ul");
+    menu.className = "c-select-menu";
+    function sync() {
+      var v = sel.value;
+      var opt = sel.querySelector('option[value="' + v + '"]');
+      trigger.querySelector(".c-select-value").textContent = opt ? opt.textContent : "";
+      menu.querySelectorAll("li").forEach(function (li) {
+        li.setAttribute("aria-selected", String(li.getAttribute("data-value")) === String(v));
+      });
     }
-    function pick(li) {
-      sel.value = li.getAttribute("data-value");
-      sel.dispatchEvent(new Event("change", { bubbles: true }));
-      trigger.querySelector(".c-select-value").textContent = li.textContent;
-      menu.querySelectorAll("li").forEach(function (x) { x.setAttribute("aria-selected", String(x === li)); });
-      setOpen(false);
+    function closeOutside() {
+      wrap.classList.remove("open");
+      document.removeEventListener("mousedown", closeOutside, true);
     }
-    trigger.addEventListener("mousedown", function (e) { e.preventDefault(); e.stopPropagation(); setOpen(menu.classList.contains("hidden")); });
-    menu.querySelectorAll("li").forEach(function (li) {
-      li.addEventListener("mousedown", function (e) { e.preventDefault(); e.stopPropagation(); pick(li); });
+    Array.prototype.forEach.call(sel.options, function (o) {
+      var li = document.createElement("li");
+      li.textContent = o.textContent;
+      li.setAttribute("data-value", o.value);
+      li.setAttribute("role", "option");
+      li.addEventListener("click", function () {
+        sel.value = o.value;
+        sel.dispatchEvent(new Event("change", { bubbles: true }));
+        sync();
+        closeOutside();
+      });
+      menu.appendChild(li);
     });
-    document.addEventListener("click", function (e) { if (!wrap.contains(e.target)) setOpen(false); });
-    sel.addEventListener("change", function () {
-      var li = menu.querySelector('li[data-value="' + sel.value + '"]');
-      if (li) trigger.querySelector(".c-select-value").textContent = li.textContent;
+    trigger.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (wrap.classList.toggle("open")) document.addEventListener("mousedown", closeOutside, true);
     });
+    sel.parentNode.insertBefore(wrap, sel.nextSibling);
+    sel.classList.add("hidden");
+    wrap.appendChild(trigger);
+    wrap.appendChild(menu);
+    sync();
   }
-  function syncCSelects() {
-    [["c-mode-trigger", "c-mode-menu", "c-mode"], ["c-category-trigger", "c-category-menu", "c-category"]].forEach(function (t) {
-      var tr = document.getElementById(t[0]), menu = document.getElementById(t[1]), sel = document.getElementById(t[2]);
-      if (!tr || !menu || !sel) return;
-      var li = menu.querySelector('li[data-value="' + sel.value + '"]');
-      if (li) tr.querySelector(".c-select-value").textContent = li.textContent;
-    });
-  }
-  bindCSelect("c-mode-trigger", "c-mode-menu", "c-mode");
-  bindCSelect("c-category-trigger", "c-category-menu", "c-category");
+  document.querySelectorAll("#contribute-form select").forEach(function (sel) {
+    if (sel.id === "c-mode" || sel.id === "c-category") return;
+    enhanceSelect(sel);
+  });
 
-  function getContributions() {
-    try { return JSON.parse(localStorage.getItem("mg_contributions") || "[]"); } catch (e) { return []; }
+  // ---- 联系与反馈：卡片式流程（一级入口 → 内容类型 → 表单 / 意见反馈）----
+  var MODE_TITLE = { supplement: "补充信息", fix: "内容勘误" };
+  var CAT_TITLE = { actor: "演员", musical: "作品", relation: "人物关系", moment: "精彩片段" };
+  var fbRoot = document.getElementById("fb-step-root");
+  var fbType = document.getElementById("fb-step-type");
+  var fbForm = document.getElementById("fb-step-form");
+  var fbFeedback = document.getElementById("fb-step-feedback");
+  var fbMode = document.getElementById("c-mode");
+  var fbCat = document.getElementById("c-category");
+  var fbPageHead = document.querySelector("#view-contribute .page-head");
+  var fbView = document.getElementById("view-contribute");
+  function fbShow(step) {
+    [fbRoot, fbType, fbForm, fbFeedback].forEach(function (s) { if (s) s.classList.toggle("hidden", s !== step); });
+    if (fbPageHead) fbPageHead.classList.toggle("hidden", step !== fbRoot);   // 大标题+副标题只在一级页显示
+    if (fbView) fbView.classList.toggle("fb-deep", step !== fbRoot);          // 二级/三级贴顶（收起顶部留白）
   }
+  // 类型卡描述按模式区分：补充页只说补充、勘误页只说修正，互不混用
+  var FB_DESC = {
+    actor:    { supplement: "补充演员相关信息。", fix: "修正演员相关信息。" },
+    musical:  { supplement: "补充音乐剧作品相关信息。", fix: "修正音乐剧作品相关信息。" },
+    relation: { supplement: "补充演员之间的关系。", fix: "修正演员之间的关系。" },
+    moment:   { supplement: "补充 Stage Moments。", fix: "修正 Stage Moments。" }
+  };
+  function fbGoType(mode) {
+    fbMode.value = mode;
+    var t = MODE_TITLE[mode] || mode;
+    document.getElementById("fb-crumb-type").textContent = "联系与反馈 / " + t;
+    document.getElementById("fb-ask-type").textContent = mode === "fix" ? "你想修改哪一类内容？" : "你想补充什么？";
+    document.querySelectorAll("#fb-type-cards .fb-card").forEach(function (card) {
+      var d = FB_DESC[card.getAttribute("data-category")];
+      var desc = card.querySelector(".fb-card-desc");
+      if (d && desc) desc.textContent = d[mode] || d.supplement;
+    });
+    fbShow(fbType);
+  }
+  function fbGoForm(category) {
+    fbCat.value = category;
+    fbCat.dispatchEvent(new Event("change", { bubbles: true }));   // 触发 syncContributeGroups 显示对应表单
+    document.getElementById("fb-crumb-form").textContent =
+      "联系与反馈 / " + (MODE_TITLE[fbMode.value] || fbMode.value) + " / " + (CAT_TITLE[category] || category);
+    fbShow(fbForm);
+  }
+  if (fbRoot) {
+    document.getElementById("fb-add").addEventListener("click", function () { fbGoType("supplement"); });
+    document.getElementById("fb-fix").addEventListener("click", function () { fbGoType("fix"); });
+    document.getElementById("fb-feedback").addEventListener("click", function () { fbShow(fbFeedback); });
+    document.getElementById("fb-back-type").addEventListener("click", function () { fbShow(fbRoot); });
+    document.getElementById("fb-back-form").addEventListener("click", function () { fbShow(fbType); });
+    document.getElementById("fb-back-feedback").addEventListener("click", function () { fbShow(fbRoot); });
+    document.querySelectorAll("#fb-type-cards .fb-card").forEach(function (card) {
+      card.addEventListener("click", function () { fbGoForm(card.getAttribute("data-category")); });
+    });
+  }
+
   function collectContribution() {
     var mode = document.getElementById("c-mode").value;
     var category = document.getElementById("c-category").value;
     var group = document.getElementById(category === "moment" ? "c-moment" : activeGroupId());
     var fields = {};
     group.querySelectorAll("input, textarea, select").forEach(function (el) {
-      if (el.name) fields[el.name] = el.value.trim();
+      if (el.name && el.name !== "castActor" && el.name !== "castRole") fields[el.name] = el.value.trim();
     });
+    if (category === "musical") {
+      // 卡司行：逐行收集为「演员：角色」列表（保持与旧 textarea 相同的提交格式）
+      var castLines = [];
+      group.querySelectorAll(".cast-row").forEach(function (row) {
+        var a = row.querySelector("[name=castActor]");
+        var r = row.querySelector("[name=castRole]");
+        var av = a ? a.value.trim() : "";
+        var rv = r ? r.value.trim() : "";
+        if (av) castLines.push(rv ? av + "：" + rv : av);
+      });
+      if (castLines.length) fields.cast = castLines.join("\n");
+      if (mode === "fix") {
+        var ca = group.querySelector("[name=castActor]");
+        if (ca && ca.value.trim()) fields.castActor = ca.value.trim();
+      }
+    }
     var item = {
       id: Date.now(),
       mode: mode,
@@ -2463,76 +2658,11 @@
       if (!fields.actorName || !fields.title || !fields.url) { showToast("请填写演员姓名、标题与链接"); return null; }
     } else if (!(fields.name || fields.actorA)) { showToast("请填写名称"); return null; }
     if (category === "relation" && (!fields.actorA || !fields.actorB)) { showToast("请填写关系双方姓名"); return null; }
-    if (mode === "fix" && !fields.correct) { showToast("请填写正确内容"); return null; }
-    return item;
-  }
-  function issueTextFor(item) {
-    var lines = [];
-    lines.push("### 信息类别");
-    lines.push((MODE_LABELS[item.mode] || item.mode) + " · " + (CAT_LABELS[item.category] || item.category));
-    var f = item.fields || {};
-    Object.keys(FIELD_LABELS).forEach(function (k) {
-      if (f[k]) { lines.push(""); lines.push("### " + FIELD_LABELS[k]); lines.push(f[k]); }
-    });
-    lines.push(""); lines.push("### 来源链接");
-    lines.push(item.ref || "（无）");
-    lines.push(""); lines.push("### 提交时间");
-    lines.push(new Date(item.ts).toLocaleString());
-    return lines.join("\n");
-  }
-  function copyText(text, okMsg) {
-    function fallback() {
-      var ta = document.createElement("textarea");
-      ta.value = text;
-      ta.style.cssText = "position:fixed;opacity:0;";
-      document.body.appendChild(ta);
-      ta.select();
-      try { document.execCommand("copy"); showToast(okMsg || "已复制"); } catch (e) { showToast("复制失败，请手动复制"); }
-      ta.remove();
+    if (mode === "fix") {
+      var castFixOk = category === "musical" && fields.castActor && fields.correctCastRole;
+      if (!castFixOk && !fields.correct) { showToast("请填写正确角色或正确内容"); return null; }
     }
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(function () { showToast(okMsg || "已复制"); }, fallback);
-    } else { fallback(); }
-  }
-  function renderReviewList() {
-    var ul = document.getElementById("c-review-list");
-    if (!ul) return;
-    ul.innerHTML = "";
-    getContributions().forEach(function (item) {
-      var li = document.createElement("li");
-      li.className = "cr-item";
-      var head = document.createElement("div");
-      head.className = "cr-head";
-      head.textContent = "[" + (MODE_LABELS[item.mode] || item.mode) + " · " + (CAT_LABELS[item.category] || item.category) + "] " + (item.fields.name || item.fields.actorA || "");
-      li.appendChild(head);
-      var info = document.createElement("div");
-      info.className = "cr-info";
-      info.textContent = item.fields.correct || item.fields.detail || item.fields.note || item.fields.cast || "";
-      li.appendChild(info);
-      var meta = document.createElement("div");
-      meta.className = "cr-meta";
-      meta.textContent = new Date(item.ts).toLocaleString();
-      li.appendChild(meta);
-      var btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "cr-copy";
-      btn.textContent = "复制为 Issue 文本";
-      btn.addEventListener("click", function () { copyText(issueTextFor(item), "Issue 文本已复制"); });
-      li.appendChild(btn);
-      if (MG_GITHUB_REPO) {
-        var gbtn = document.createElement("button");
-        gbtn.type = "button";
-        gbtn.className = "cr-copy";
-        gbtn.textContent = "在 GitHub 提交";
-        gbtn.addEventListener("click", function () {
-          var title = "[贡献] " + (item.fields.name || item.fields.actorA) + " " + (CAT_LABELS[item.category] || "");
-          var url = "https://github.com/" + MG_GITHUB_REPO + "/issues/new?title=" + encodeURIComponent(title) + "&body=" + encodeURIComponent(issueTextFor(item));
-          window.open(url, "_blank");
-        });
-        li.appendChild(gbtn);
-      }
-      ul.appendChild(li);
-    });
+    return item;
   }
   // ???????? submissions ?????????????????
   function buildSubmissionPayload(item) {
@@ -2566,14 +2696,22 @@
       if (f.note) d.description = f.note;
       if (f.cast) {
         d.cast = String(f.cast).split(/[\n\r]+/).map(function (line) {
-          var parts = line.split(/[?:]/);
+          var parts = line.split(/[?:：？]/);
           return { actor: (parts[0] || "").trim(), role: (parts[1] || "").trim() };
         }).filter(function (x) { return x.actor; });
       }
       if (f.date) d.date = f.date;
       if (f.city) d.city = f.city;
       if (f.theatre) d.theatre = f.theatre;
-      if (item.mode === "fix" && f.field === "date" && f.correct) d.fix = { field: "year", wrong: f.wrong, correct: f.correct };
+      if (item.mode === "fix") {
+        if (f.castActor && f.correctCastRole) {
+          d.fix = { field: "cast", actor: f.castActor, wrong: f.wrongCastRole || "", correct: f.correctCastRole };
+        } else {
+          var fixMap = { name: "name", date: "year", city: "city", theatre: "theatre" };
+          var ff = fixMap[f.field];
+          if (f.correct && ff) d.fix = { field: ff, wrong: f.wrong || "", correct: f.correct };
+        }
+      }
       if (Object.keys(d).length) p.details = JSON.stringify(d);
     } else if (item.category === "relation") {
       p.submission_type = "relation_update";
@@ -2603,57 +2741,38 @@
       signal: AbortSignal.timeout(2000)
     }).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); });
   }
+  function persistSubmission(item, form, okMsg) {
+    submitToBackend(item).then(function () {
+      form.reset();
+      showToast(okMsg || "提交成功，已进入待审核，感谢你的补充");
+    }).catch(function (err) {
+      console.error("提交失败", err);
+      showToast("提交失败：后端未连接，请稍后重试");
+    });
+  }
   document.getElementById("contribute-form").addEventListener("submit", function (e) {
     e.preventDefault();
     var item = collectContribution();
     if (!item) return;
-    submitToBackend(item).then(function () {
-      e.target.reset();
-      syncCSelects();
-      showToast("提交成功，已进入待审核，感谢你的补充");
-      renderReviewList();
-    }).catch(function () {
-      var list = getContributions();
-      list.push(item);
-      try { localStorage.setItem("mg_contributions", JSON.stringify(list)); } catch (err) { showToast("保存失败（存储空间不足）"); return; }
-      e.target.reset();
-      syncCSelects();
-      showToast("后端未连接，已保存为本地草稿");
-      renderReviewList();
+    persistSubmission(item, e.target);
+  });
+  var fbFeedbackForm = document.getElementById("fb-feedback-form");
+  if (fbFeedbackForm) {
+    fbFeedbackForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var msg = fbFeedbackForm.querySelector("[name=message]").value.trim();
+      var contact = fbFeedbackForm.querySelector("[name=contact]").value.trim();
+      if (!msg || !contact) return;
+      var item = { id: Date.now(), mode: "feedback", category: "feedback", fields: { message: msg, contact: contact }, ref: "", email: contact, ts: new Date().toISOString() };
+      persistSubmission(item, fbFeedbackForm, "反馈已提交，感谢你的建议");
     });
-  });
-  document.getElementById("c-export").addEventListener("click", function () {
-    var list = getContributions();
-    if (!list.length) { showToast("暂无待审核内容"); return; }
-    var blob = new Blob([JSON.stringify(list, null, 2)], { type: "application/json" });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement("a");
-    a.href = url; a.download = "mg_contributions.json";
-    document.body.appendChild(a); a.click(); a.remove();
-    URL.revokeObjectURL(url);
-    showToast("已导出 JSON 文件");
-  });
-  document.getElementById("c-copy-all").addEventListener("click", function () {
-    var list = getContributions();
-    if (!list.length) { showToast("暂无待审核内容"); return; }
-    copyText(list.map(issueTextFor).join("\n\n---\n\n"), "已复制全部 Issue 文本");
-  });
-  document.getElementById("c-clear").addEventListener("click", function () {
-    localStorage.removeItem("mg_contributions");
-    renderReviewList();
-    showToast("已清空待审核列表");
-  });
+  }
   var toolsToggle = document.getElementById("tools-toggle");
   if (toolsToggle) {
     toolsToggle.addEventListener("click", function () {
       document.body.classList.toggle("side-open");
     });
   }
-  document.getElementById("contact-link").addEventListener("click", function (e) {
-    e.preventDefault();
-    showToast("联系方式将在后续开放，可先通过 Contribute 页提交反馈");
-  });
-
   // ---- 首页右上角数据标签（跟随导出数据自动更新） ----
   var heroStats = document.querySelector(".hero-stats");
   if (heroStats && D.musicalStats) {

@@ -79,9 +79,9 @@
   --rel-same-company: #64748b;     /* 同公司 · 烟灰蓝 */
   --rel-cowork: #c9a227;           /* 共演 · 香槟金 */
 
-  /* 字体 */
-  --font-sans: "Geist", "Inter", -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
-  --font-mono: "Geist Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  /* 字体（中文优先思源黑体 Noto Sans SC：Windows 上已安装，排在微软雅黑之前） */
+  --font-sans: "Geist", "Inter", -apple-system, "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-mono: "Geist Mono", "SFMono-Regular", Consolas, "Liberation Mono", "Noto Sans SC", monospace;
 
   /* 间距（4 为基数，表达关系而非统一堆叠） */
   --space-1: 4px;  --space-2: 8px;  --space-3: 12px;  --space-4: 16px;
@@ -308,15 +308,23 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--focus-ring); ou
 .join-card:hover .join-arrow { color: var(--text-primary); }
 
 .home-foot {
-  display: flex; justify-content: center; gap: 22px; flex-wrap: wrap;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
   padding: var(--space-5) 20px var(--space-8);
   border-top: 1px solid var(--border-subtle);
 }
 .home-foot a { color: var(--text-secondary); text-decoration: none; font-size: 13px; transition: color 120ms ease; }
 .home-foot a:hover { color: var(--text-primary); text-decoration: underline; text-underline-offset: 4px; }
+.home-foot-src {
+  display: inline-flex; align-items: center; gap: 4px;
+  color: var(--text-tertiary); font-size: 12px;
+}
+.home-foot-src a { color: var(--text-tertiary); font-size: 12px; }
+.home-foot-src a:hover { color: var(--text-primary); text-decoration: underline; text-underline-offset: 4px; }
 
 /* ---- 关系图谱页 ---- */
-#view-graph { display: flex; flex-direction: column; height: calc(100vh - 52px); }
+#view-graph {
+  display: flex; flex-direction: column; height: calc(100vh - 52px);
+}
 .tools-toggle {
   position: absolute; top: 10px; right: 10px; z-index: 20;
   display: none;
@@ -399,14 +407,15 @@ body.side-open #graph-main { margin-right: 300px; }
 .lg-cowork { --c: var(--rel-cowork); }
 
 /* 当前聚焦人物 */
-#focus-card .fc-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.fc-head { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-right: 6px; }
 #fc-name { font-size: 16px; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-#fc-close {
+#fc-close, #scene-close {
+  position: absolute; right: -8px; top: 50%; transform: translateY(-50%);
   border: none; background: none; font-size: 20px; line-height: 1;
   color: var(--text-tertiary); cursor: pointer; padding: 0 4px;
   border-radius: var(--radius-sm); transition: color 120ms ease;
 }
-#fc-close:hover { color: var(--text-primary); }
+#fc-close:hover, #scene-close:hover { color: var(--text-primary); }
 .fc-stats { color: var(--text-secondary); font-size: 12px; margin: 2px 0 8px; }
 .fc-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
 .fc-tags span, #panel li .tag, .ap-card li .tag {
@@ -446,6 +455,23 @@ body.side-open #graph-main { margin-right: 300px; }
   transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
 }
 #help-fab:hover { color: var(--text-primary); border-color: rgba(255, 255, 255, .62); background: rgba(255, 255, 255, .06); }
+/* 底部场景筛选条：4 类维度（演员/作品/团体/精彩片段），低调不抢眼 */
+.scene-filter {
+  position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%);
+  z-index: 12;
+  display: flex; align-items: center; gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--border-subtle); border-radius: 999px;
+  background: rgba(10, 10, 10, .72);
+}
+.scene-filter button {
+  border: none; background: none; cursor: pointer;
+  color: var(--text-tertiary); font-size: 12px; line-height: 1;
+  padding: 6px 14px; border-radius: 999px;
+  transition: color 120ms ease, background 120ms ease;
+}
+.scene-filter button:hover { color: var(--text-primary); background: rgba(255, 255, 255, .06); }
+.scene-filter button.active { color: var(--text-primary); background: rgba(255, 255, 255, .12); }
 /* 探索指南小卡片（点击「？」后出现） */
 .help-guide {
   position: absolute; left: 20px; bottom: 58px; z-index: 17;
@@ -488,7 +514,6 @@ body.side-open #graph-main { margin-right: 300px; }
 .hc-stats { color: var(--text-secondary); margin-bottom: 3px; }
 .hc-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 3px; }
 .hc-tags span { font-size: 11px; background: rgba(255, 255, 255, .1); border-radius: var(--radius-sm); padding: 1px 6px; }
-.hc-hint { color: var(--text-tertiary); font-size: 11px; }
 
 /* ---- 作品 / 团体 弹窗 ---- */
 #panel {
@@ -542,7 +567,7 @@ body.side-open #graph-main { margin-right: 300px; }
 #panel .c:hover { color: var(--text-primary); }
 
 /* ---- Contribute 信息补充页 ---- */
-#view-contribute { max-width: 1080px; margin: 0 auto; padding: var(--space-8) 24px var(--space-10); }
+#view-contribute { max-width: 1200px; margin: 0 auto; padding: var(--space-8) 24px var(--space-10); }
 .page-head { margin-bottom: var(--space-6); max-width: 640px; }
 .page-head h1 { font-size: 30px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 8px; }
 .page-sub { color: var(--text-secondary); font-size: 15px; }
@@ -606,6 +631,76 @@ body.side-open #graph-main { margin-right: 300px; }
 }
 .c-select-menu li:hover { color: var(--accent-strong); }   /* 悬停仅文字变红 */
 .c-select-menu li[aria-selected="true"] { color: var(--text-primary); }
+/* 作品表单：卡司分区（结构化多行输入，优先于演出排期） */
+.c-sub-sec { margin-bottom: var(--space-5); }
+.c-sub-title { display: block; font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: .02em; margin-bottom: 4px; }
+.c-sub-hint { display: block; font-size: 12px; color: var(--text-tertiary); margin-bottom: var(--space-3); }
+.cast-rows { display: grid; gap: var(--space-3); margin-bottom: var(--space-3); }
+.cast-row { display: flex; gap: var(--space-3); }
+.cast-row label { flex: 1; min-width: 0; margin-bottom: 0; }
+.cast-add {
+  width: 100%; padding: 8px 12px; font-size: 13px; cursor: pointer;
+  border: 1px dashed var(--border-default); border-radius: var(--radius);
+  background: transparent; color: var(--text-secondary);
+  transition: color 120ms ease, border-color 120ms ease, background 120ms ease;
+}
+.cast-add:hover { color: var(--text-primary); border-color: var(--border-strong); background: rgba(255, 255, 255, .04); }
+@media (max-width: 640px) {
+  .cast-row { flex-direction: column; gap: var(--space-3); }
+}
+/* ---- 联系与反馈：卡片式流程 ---- */
+.fb-flow { width: 100%; }
+.fb-step { animation: fb-fade 220ms ease; }
+@keyframes fb-fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.fb-card-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 1px; align-items: stretch;
+  background: var(--border-subtle); border: 1px solid var(--border-subtle);
+  margin-top: var(--space-6);
+}
+#fb-step-root .fb-card-grid { min-height: calc(100vh - 320px); }
+.fb-card {
+  position: relative; display: flex; flex-direction: column; text-align: left;
+  padding: 30px 26px 26px;
+  border: none; border-radius: 0; background: var(--surface-page);
+  color: var(--text-primary); font-family: inherit; cursor: pointer;
+  transition: background 160ms ease;
+}
+.fb-card:hover { background: var(--surface-raised); }
+.fb-card:active { background: #161616; }
+.fb-card:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--border-strong); }
+.fb-card-num {
+  display: block; font-family: var(--font-mono); font-size: 12px;
+  letter-spacing: .12em; color: var(--text-tertiary); margin-bottom: 20px;
+}
+.fb-card-title { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; }
+.fb-card-title b { font-size: 20px; font-weight: 600; color: var(--text-primary); letter-spacing: .04em; }
+.fb-card-title i { font-style: normal; font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: var(--text-tertiary); }
+.fb-card-desc { font-size: 14px; line-height: 1.75; color: var(--text-secondary); max-width: 340px; }
+.fb-card-arrow {
+  position: absolute; right: 22px; top: 26px; color: var(--text-tertiary);
+  transition: color 160ms ease, transform 160ms ease;
+}
+.fb-card:hover .fb-card-arrow { color: var(--accent-strong); transform: translateX(4px); }
+.fb-grid-4 { grid-template-columns: repeat(2, 1fr); }   /* 类型选择：上二下二 */
+#fb-step-type .fb-card-grid { min-height: calc(100vh - 220px); }   /* 保持占满第一屏且不超出 */
+.fb-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: var(--space-3); }
+.fb-back {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: none; background: none; padding: 6px 8px; margin-left: -8px;
+  color: var(--text-secondary); font-size: 13px; cursor: pointer; border-radius: var(--radius-sm);
+  transition: color 120ms ease, background 120ms ease;
+}
+.fb-back svg { flex: none; }
+.fb-back:hover { color: var(--text-primary); background: rgba(255, 255, 255, .06); }
+.fb-crumb { font-size: 12px; color: var(--text-tertiary); }
+.fb-ask { font-size: 20px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 4px; }
+#view-contribute.fb-deep { padding-top: var(--space-4); }   /* 二级/三级：返回行贴顶，去掉大段顶部留白 */
+
+@media (max-width: 860px) {
+  .fb-card-grid, .fb-grid-4 { grid-template-columns: 1fr; min-height: auto; }
+  #fb-step-type .fb-card-grid { min-height: auto; }
+}
 .c-form ::placeholder { color: var(--text-tertiary); }
 .c-submit {
   margin-top: var(--space-4);
@@ -621,31 +716,6 @@ body.side-open #graph-main { margin-right: 300px; }
   font-size: 14px; color: #8fd3ae;
   background: rgba(80, 200, 130, .08); border: 1px solid rgba(80, 200, 130, .3);
 }
-.c-review { max-width: 640px; margin: var(--space-8) auto 0; padding: 0 24px; }
-.c-review summary { cursor: pointer; color: var(--text-secondary); font-size: 14px; margin-bottom: var(--space-3); }
-.c-review summary:hover { color: var(--text-primary); }
-.c-review-list { list-style: none; display: flex; flex-direction: column; }
-.cr-item { padding: var(--space-3) 0; border-top: 1px solid var(--border-subtle); }
-.cr-item:first-child { border-top: none; }
-.cr-head { font-size: 14px; font-weight: 600; color: var(--text-primary); }
-.cr-info { font-size: 13px; color: var(--text-secondary); margin-top: 4px; white-space: pre-wrap; word-break: break-all; }
-.cr-meta { font-size: 12px; color: var(--text-tertiary); margin-top: 4px; }
-.cr-copy {
-  margin-top: var(--space-2); margin-right: var(--space-2);
-  padding: 6px 14px; border-radius: var(--radius);
-  border: 1px solid var(--border-default); background: transparent;
-  color: var(--text-secondary); font-size: 12px; cursor: pointer;
-}
-.cr-copy:hover { background: rgba(255, 255, 255, .06); color: var(--text-primary); }
-.c-review-actions { display: flex; gap: var(--space-3); flex-wrap: wrap; margin-top: var(--space-3); }
-.c-review-actions button {
-  padding: 7px 18px; border-radius: var(--radius);
-  font-size: 13px; cursor: pointer;
-  border: 1px solid var(--border-default); background: transparent; color: var(--text-secondary);
-}
-.c-review-actions button:hover { background: rgba(255, 255, 255, .06); color: var(--text-primary); }
-.c-review-tip { color: var(--text-tertiary); font-size: 12px; margin-top: var(--space-3); line-height: 1.7; }
-.c-review-tip code { background: rgba(255, 255, 255, .08); padding: 1px 6px; border-radius: var(--radius-sm); }
 
 /* ---- 演员独立详情页 ---- */
 #actor-view {
@@ -713,7 +783,6 @@ body.side-open #graph-main { margin-right: 300px; }
   overflow: hidden; background: var(--surface-raised);
 }
 #ap-graph { display: block; width: 100%; height: 100%; }
-.ap-hint { font-size: 12px; color: var(--text-tertiary); margin-top: var(--space-2); }
 .ap-legend { display: flex; flex-wrap: wrap; gap: 6px; margin-top: var(--space-2); }
 .ap-legend .lg { cursor: default; }
 
@@ -1276,6 +1345,24 @@ a.mom-title:hover { color: var(--text-primary); }   /* 精彩片段标题悬停�
 .fc-mom-list a.mom-title:hover { color: var(--text-primary); text-decoration: none; }   /* 悬停不显示下划线 */
 .fc-mom-list .mom-src { flex: none; }
 .fc-mom-more { color: var(--text-tertiary); font-size: 12px; }
+.scene-moments {
+  border-top: 1px solid var(--border-subtle);
+  padding-top: var(--space-2); margin: 2px 0 var(--space-2);
+}
+.scene-mom-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.scene-mom-list li { display: flex; align-items: baseline; gap: 8px; font-size: 12px; min-width: 0; }
+.scene-mom-actor { flex: none; color: var(--text-primary); font-weight: 500; }
+.scene-mom-list .mom-title { font-size: 12px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-decoration: none; min-width: 0; }
+.scene-mom-list a.mom-title:hover { color: var(--text-primary); }
+.scene-mom-list .mom-src { flex: none; }
+.scene-add-moment {
+  display: inline-flex; align-items: center; gap: 4px;
+  margin-top: var(--space-2); padding-top: var(--space-2);
+  border-top: 1px solid var(--border-subtle);
+  color: var(--text-tertiary); font-size: 12px; text-decoration: none;
+  transition: color 120ms ease;
+}
+.scene-add-moment:hover { color: var(--accent-strong); }
 /* 剧目信息卡：演员表（复用角色分组样式，作用域改为信息卡） */
 #focus-card .fc-cast { list-style: none; margin-top: 6px; max-height: 44vh; overflow-y: auto; }
 #focus-card .fc-cast .role-group { display: block; padding: 9px 2px; border-bottom: 1px solid var(--border-subtle); }

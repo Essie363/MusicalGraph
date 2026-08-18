@@ -110,16 +110,39 @@ function check(name, cond, extra) {
 
   console.log("== 精彩片段 ==");
   check("数据含精彩片段", await page.evaluate(() => Array.isArray(window.MUSIC_GRAPH.moments) && window.MUSIC_GRAPH.moments.length > 0));
-  const momSecVisible = await page.evaluate(() => {
-    const el = document.getElementById("ap-moments-sec");
-    return el && !el.classList.contains("hidden");
+  // 动态选一个有片段的演员（片段数据会更新，避免固定人名失效）
+  const momActorId = await page.evaluate(() => {
+    const m = window.MUSIC_GRAPH.moments[0];
+    return m ? String(m.actorId) : null;
   });
-  const momCount = await page.$$eval("#ap-moments li", els => els.length);
-  check("详情页显示精彩片段", momSecVisible && momCount >= 1, "条目数=" + momCount);
-  const momTitleLinkOk = await page.$$eval("#ap-moments a.mom-title", els => els.length >= 1 && els.every(a => a.target === "_blank" && /^https?:/.test(a.href)));
-  check("标题即外链且新窗口打开", momTitleLinkOk);
-  const momNoBtn = await page.$$eval("#ap-moments .mom-link", els => els.length === 0);
-  check("无独立查看链接按钮", momNoBtn);
+  if (momActorId) {
+    await page.goto(FILE_URL + "&v=" + Date.now() + "#/actor/" + momActorId, { waitUntil: "load" });
+    await page.waitForTimeout(3000);
+    const momSecVisible = await page.evaluate(() => {
+      const el = document.getElementById("ap-moments-sec");
+      return el && !el.classList.contains("hidden");
+    });
+    const momCount = await page.$$eval("#ap-moments li", els => els.length);
+    check("详情页显示精彩片段", momSecVisible && momCount >= 1, "条目数=" + momCount);
+    const momTitleLinkOk = await page.$$eval("#ap-moments a.mom-title", els => els.length >= 1 && els.every(a => a.target === "_blank" && /^https?:/.test(a.href)));
+    check("标题即外链且新窗口打开", momTitleLinkOk);
+    const momNoBtn = await page.$$eval("#ap-moments .mom-link", els => els.length === 0);
+    check("无独立查看链接按钮", momNoBtn);
+    // 回到郑云龙详情页，继续后续「在图谱中查看」流程
+    const zlyBackId = await page.evaluate(() => {
+      const a = window.MUSIC_GRAPH.actors;
+      for (const k in a) if (a[k].name === "郑云龙") return k;
+      return null;
+    });
+    if (zlyBackId) {
+      await page.goto(FILE_URL + "&v=" + Date.now() + "#/actor/" + zlyBackId, { waitUntil: "load" });
+      await page.waitForTimeout(3000);
+    }
+  } else {
+    check("详情页显示精彩片段", false, "无片段数据");
+    check("标题即外链且新窗口打开", false, "无片段数据");
+    check("无独立查看链接按钮", false, "无片段数据");
+  }
 
   console.log("== 在图谱中查看 ==");
   await page.click("#ap-graph-link");
@@ -333,6 +356,49 @@ function check(name, cond, extra) {
     }
   }
 
+  console.log("== 拖动 vs 点击空白 ==");
+  {
+    await page.evaluate(() => { location.hash = "#/graph?scene=actors"; });
+    await page.waitForTimeout(1800);
+    const blankPt = () => page.evaluate(() => {
+      const c = document.getElementById("graph");
+      const r = c.getBoundingClientRect();
+      const ids = window.__homeNodeIds();
+      let best = null, bestD = -1;
+      for (let x = r.left + 24; x <= r.right - 24; x += 48) {
+        for (let y = r.top + 24; y <= r.bottom - 24; y += 48) {
+          let minD = 1e18;
+          ids.forEach(id => {
+            const p = window.__homeNodeScreen(id);
+            if (p) minD = Math.min(minD, (p.x - x) * (p.x - x) + (p.y - y) * (p.y - y));
+          });
+          if (minD > bestD) { bestD = minD; best = { x: x, y: y }; }
+        }
+      }
+      return best;
+    });
+    check("拖动测试前场景激活", await page.evaluate(() => window.__homeScene() === "actors"));
+    const b1 = await blankPt();
+    if (b1) {
+      await page.mouse.move(b1.x, b1.y);
+      await page.mouse.down();
+      await page.mouse.move(b1.x + 120, b1.y + 60, { steps: 8 });
+      await page.mouse.up();
+      await page.waitForTimeout(800);
+      check("拖动空白不返回全局", await page.evaluate(() => window.__homeScene() === "actors"));
+      const b2 = await blankPt();
+      if (b2) {
+        await page.mouse.click(b2.x, b2.y);
+        await page.waitForTimeout(800);
+        check("原地点击空白返回全局", await page.evaluate(() => window.__homeScene() === null && window.__homeFocusId() === null));
+      } else {
+        check("原地点击空白返回全局", false, "找不到空白点");
+      }
+    } else {
+      check("拖动空白不返回全局", false, "找不到空白点");
+    }
+  }
+
   console.log("== 共演线强弱 ==");
   {
     const edges = await page.evaluate(() => (window.__homeEdges() || []).filter(e => e.count > 0));
@@ -542,20 +608,55 @@ function check(name, cond, extra) {
   await page.click('.nav-links a[data-nav="contribute"]');
   await page.waitForTimeout(600);
   check("进入贡献页", await page.$eval("#view-contribute", el => !el.classList.contains("hidden")));
-  // 信息类别/对象类型为自定义下拉（原生 select 已隐藏，改用点击交互）
-  await page.click("#c-mode-trigger");
-  await page.click("#c-mode-menu li[data-value='supplement']");
-  await page.click("#c-category-trigger");
-  await page.click("#c-category-menu li[data-value='actor']");
+  check("一级页显示大标题", await page.$eval("#view-contribute .page-head", el => !el.classList.contains("hidden")));
+  // 卡片式流程：一级「补充信息」→ 二级「演员」
+  await page.click("#fb-add");
+  await page.waitForTimeout(300);
+  check("二级页隐藏大标题", await page.$eval("#view-contribute .page-head", el => el.classList.contains("hidden")));
+  await page.click("#fb-type-cards .fb-card[data-category='actor']");
+  await page.waitForTimeout(300);
   await page.fill("#c-supplement-actor input[name=name]", "测试演员甲");
   await page.fill("#c-supplement-actor input[name=school]", "测试学院");
   await page.fill("#c-ref", "https://example.com");
   await page.click("#contribute-form button[type=submit]");
-  await page.waitForTimeout(2500);   // wait for offline fallback after backend submit timeout
-  const savedN = await page.evaluate(() => JSON.parse(localStorage.getItem("mg_contributions") || "[]").length);
-  check("提交内容已保存", savedN >= 1, "条数=" + savedN);
-  check("待审核列表展示", await page.$$eval("#c-review-list li", els => els.length) >= 1);
-  await page.evaluate(() => localStorage.removeItem("mg_contributions"));
+  await page.waitForTimeout(400);
+  check("已移除本地草稿入口", await page.evaluate(() => !document.querySelector("#view-contribute #c-review")));
+  // 提交流程走后端：stub 后端验证请求载荷与成功提示
+  await page.evaluate(() => {
+    window.MG_PB_CONFIG = { url: "http://fake.local" };
+    window.__sent = [];
+    window.fetch = function (url, opts) {
+      window.__sent.push({ body: opts.body });
+      return Promise.resolve({ ok: true, json: function () { return Promise.resolve({ ok: true }); } });
+    };
+  });
+  await page.click("#contribute-form button[type=submit]");
+  await page.waitForTimeout(600);
+  check("提交成功提示", await page.$eval("#toast", el => el.textContent.indexOf("成功") >= 0));
+  check("提交请求已发送(actor_update)", await page.evaluate(() => {
+    const s = window.__sent[window.__sent.length - 1];
+    if (!s) return false;
+    const b = JSON.parse(s.body);
+    return b.submission_type === "actor_update" && typeof b.actor_a === "string" && b.actor_a.length > 0;
+  }));
+  // 作品表单：卡司区优先于演出排期（结构化输入）
+  await page.click("#fb-back-form");
+  await page.waitForTimeout(250);
+  await page.click("#fb-back-type");
+  await page.waitForTimeout(250);
+  await page.click("#fb-add");
+  await page.waitForTimeout(250);
+  await page.click("#fb-type-cards .fb-card[data-category='musical']");
+  await page.waitForTimeout(250);
+  check("作品表单: 卡司区在演出排期之前", await page.evaluate(() => {
+    const g = document.getElementById("c-supplement-musical");
+    const names = [...g.querySelectorAll("input[name]")].map(i => i.name);
+    return names.indexOf("castActor") >= 0 && names.indexOf("date") > names.indexOf("castActor");
+  }));
+  check("作品表单: 卡司结构化输入（两行+可加行）", await page.evaluate(() => {
+    const g = document.getElementById("c-supplement-musical");
+    return g.querySelectorAll(".cast-row").length === 2 && !!g.querySelector(".cast-add");
+  }));
   await page.click('.nav-links a[data-nav="graph"]');
   await page.waitForTimeout(600);
 
@@ -588,7 +689,7 @@ function check(name, cond, extra) {
     const hl = window.__homeSceneHighlight();
     return ids.length === 30 && hl.length === 30 && ids.every(k => window.__homeNodeType(k) === "musical");
   }));
-  await page.click("#scene-exit");
+  await page.keyboard.press("Escape");   // 场景卡无「返回全局图谱」按钮，用 Esc 退出
   await page.waitForTimeout(1200);
   check("退出作品场景回全局", await page.evaluate(() => window.__homeScene() === null && window.__homeFocusId() === null));
 
@@ -614,6 +715,31 @@ function check(name, cond, extra) {
   await page.evaluate(() => { location.hash = "#/home"; });
   await page.waitForTimeout(600);
 
+  // 精彩片段场景：点「01 精彩片段」→ 点亮有片段的演员 + 场景卡罗列推荐片段
+  await page.click('.chapter-card[href="#/graph?scene=moments"]');
+  await page.waitForTimeout(2000);
+  check("精彩片段场景: 点亮有片段演员", await page.evaluate(() => {
+    const hl = window.__homeSceneHighlight();
+    const byActor = {};
+    (window.MUSIC_GRAPH.moments || []).forEach(m => { byActor[String(m.actorId)] = true; });
+    return hl.length > 0 && hl.every(k => byActor[k] === true);
+  }));
+  check("精彩片段场景: 场景卡罗列推荐片段", await page.evaluate(() => {
+    const box = document.getElementById("scene-moments");
+    const n = (window.MUSIC_GRAPH.moments || []).length;
+    return box && !box.classList.contains("hidden") &&
+      box.querySelectorAll(".scene-mom-list li").length === n &&
+      box.querySelectorAll(".scene-mom-list .scene-mom-actor").length === n;
+  }));
+  check("场景卡关闭按钮与聚焦卡一致", await page.evaluate(() => {
+    const s = getComputedStyle(document.getElementById("scene-close"));
+    const f = getComputedStyle(document.getElementById("fc-close"));
+    return s.border === f.border && s.background === f.background && s.color === f.color &&
+      s.fontSize === f.fontSize && s.borderRadius === f.borderRadius;
+  }));
+  await page.evaluate(() => { location.hash = "#/home"; });
+  await page.waitForTimeout(600);
+
   // 搜索场景：hero 搜索 → 图谱聚焦搜索框并出结果
   await page.evaluate(() => { location.hash = "#/graph?scene=search&q=" + encodeURIComponent("刘令飞"); });
   await page.waitForTimeout(1500);
@@ -622,6 +748,23 @@ function check(name, cond, extra) {
     return document.activeElement === el && el.value === "刘令飞";
   }));
   check("搜索场景: 下拉有结果", await page.evaluate(() => !document.getElementById("dropdown").classList.contains("hidden")));
+
+  console.log("== 底部场景筛选条 ==");
+  check("筛选条存在且含四类", await page.evaluate(() => {
+    const b = document.getElementById("scene-filter");
+    return !!b && [...b.querySelectorAll("button")].map(x => x.getAttribute("data-scene")).join(",") === "actors,musicals,groups,moments";
+  }));
+  await page.evaluate(() => { location.hash = "#/graph"; });
+  await page.waitForTimeout(1200);
+  await page.click('#scene-filter button[data-scene="moments"]');
+  await page.waitForTimeout(2000);
+  check("筛选条点亮对应场景", await page.evaluate(() => {
+    const active = [...document.querySelectorAll("#scene-filter button.active")].map(x => x.getAttribute("data-scene"));
+    return window.__homeScene() === "moments" && active.join(",") === "moments";
+  }));
+  await page.click('#scene-filter button[data-scene="moments"]');
+  await page.waitForTimeout(1500);
+  check("筛选条再次点击退出", await page.evaluate(() => window.__homeScene() === null));
 
   console.log("== JS 错误 ==");
   check("无 JS 错误", errors.length === 0, errors.slice(0, 3).join("; "));
