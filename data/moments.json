@@ -1,13 +1,131 @@
-﻿{
-  "_note": "精彩片段示例数据（第一阶段：bilibili / xiaohongshu）。url 为占位符，正式使用前请管理员替换为真实链接。维护方式：编辑本文件后运行 python import_moments.py",
+{
+  "_note": "精彩片段（bilibili / xiaohongshu）。维护方式：编辑本文件后运行 python import_moments.py，再运行 python refresh_all.py 刷新网页数据",
   "moments": [
-    { "actor": "郑云龙", "title": "《歌剧魅影》- The Music of the Night", "source": "bilibili", "url": "https://example.com/moments/zheng-yunlong-1" },
-    { "actor": "郑云龙", "title": "《我，堂吉诃德》- The Impossible Dream", "source": "xiaohongshu", "url": "https://example.com/moments/zheng-yunlong-2" },
-    { "actor": "阿云嘎", "title": "《在远方》- 我的远方", "source": "bilibili", "url": "https://example.com/moments/a-yunga-1" },
-    { "actor": "郑棋元", "title": "《金沙》- 总有一天", "source": "bilibili", "url": "https://example.com/moments/zheng-qiyuan-1" },
-    { "actor": "刘令飞", "title": "《变身怪医》- This Is the Moment", "source": "xiaohongshu", "url": "https://example.com/moments/liu-lingfei-1" },
-    { "actor": "徐均朔", "title": "《赵氏孤儿》- 片段", "source": "bilibili", "url": "https://example.com/moments/xu-junshuo-1" },
-    { "actor": "张泽", "title": "《火焰》- 现场录音", "source": "bilibili", "url": "https://example.com/moments/zhang-ze-1" },
-    { "actor": "金圣权", "title": "《卡拉马佐夫兄弟》- 片段", "source": "xiaohongshu", "url": "https://example.com/moments/jin-shengquan-1" }
+    {
+      "actor": "徐丽东",
+      "title": "嫌疑人X的献身-答案",
+      "source": "bilibili",
+      "url": "https://www.bilibili.com/video/BV1x5RCBNEM6/"
+    },
+    {
+      "actor": "徐丽东",
+      "title": "阿拉丁-Speechless",
+      "source": "bilibili",
+      "url": "https://www.bilibili.com/video/BV1UT4y1i7dK/"
+    },
+    {
+      "actor": "叶麒圣",
+      "title": "道林格雷的画像-给我你不朽的青春",
+      "source": "bilibili",
+      "url": "https://www.bilibili.com/video/BV1qx4y1T7Tu/"
+    },
+    {
+      "actor": "郭耀嵘",
+      "title": "我是地狱",
+      "source": "bilibili",
+      "url": "https://www.bilibili.com/video/BV13b3ueNEdC/"
+    },
+    {
+      "actor": "李炜铃",
+      "title": "人间失格-天真罪",
+      "source": "bilibili",
+      "url": "https://www.bilibili.com/video/BV1Ya411E7sB/"
+    },
+    {
+      "actor": "刘浩冉",
+      "title": "我，堂吉诃德-阿尔东莎",
+      "source": "bilibili",
+      "url": "https://www.bilibili.com/video/BV1rv4y1r7JX/"
+    },
+    {
+      "actor": "徐瑶",
+      "title": "聂小倩与宁采臣-身世",
+      "source": "bilibili",
+      "url": "https://www.bilibili.com/video/BV1qJ41157Ke/"
+    },
+    {
+      "actor": "崔恩尔",
+      "title": "粉丝来信-星光闪耀的时刻",
+      "source": "bilibili",
+      "url": "https://www.bilibili.com/video/BV1K3411p7au/"
+    },
+    {
+      "actor": "刘乙萱",
+      "title": "沉默的真相-迟到的正义",
+      "source": "bilibili",
+      "url": "https://www.bilibili.com/video/BV1NL4y1B7Ps/"
+    },
+    {
+      "actor": "阿云嘎",
+      "title": "世界的尽头-余温",
+      "source": "bilibili",
+      "url": "https://www.bilibili.com/video/BV1xB4y1b7mn/"
+    },
+    {
+      "actor": "顾易",
+      "title": "沉默的真相-丢了",
+      "source": "bilibili",
+      "url": "https://www.bilibili.com/video/BV1AL411c75x"
+    },
+    {
+      "actor": "王逸飞",
+      "title": "女神在看-期待您看到这些",
+      "source": "bilibili",
+      "url": "https://www.bilibili.com/video/BV1V6421M7K1"
+    },
+    {
+      "actor": "张沁丹",
+      "title": "蝶变-电车",
+      "source": "bilibili",
+      "url": "https://www.bilibili.com/video/BV1f341197c5"
+    },
+    {
+      "actor": "陈科铭",
+      "title": "阿波罗尼亚-爱情",
+      "source": "bilibili",
+      "url": "https://www.bilibili.com/video/BV1t34y1d7Y8"
+    },
+    {
+      "actor": "徐杭",
+      "title": "辛吉路的画材店-光明在我心中",
+      "source": "bilibili",
+      "url": "https://www.bilibili.com/video/BV13K421k78T"
+    },
+    {
+      "actor": "姜崃",
+      "title": "阿波罗尼亚-爱情",
+      "source": "bilibili",
+      "url": "https://www.bilibili.com/video/BV14P4y1L7Nx"
+    },
+    {
+      "actor": "曹牧之",
+      "title": "阿波罗尼亚-我的家族",
+      "source": "bilibili",
+      "url": "https://www.bilibili.com/video/BV1Mb4y1s7NV"
+    },
+    {
+      "actor": "毛二",
+      "title": "锦衣卫之刀与花-花间藏刀",
+      "source": "bilibili",
+      "url": "https://www.bilibili.com/video/BV1Qzk3YPEQp"
+    },
+    {
+      "actor": "胡迪",
+      "title": "沉默的真相-丢了",
+      "source": "bilibili",
+      "url": "https://www.bilibili.com/video/BV1ag411o7gm"
+    },
+    {
+      "actor": "陈玉婷",
+      "title": "她对此感到厌烦-什么是爱",
+      "source": "bilibili",
+      "url": "https://www.bilibili.com/video/BV1hcmhYhEAy"
+    },
+    {
+      "actor": "杜鑫艳",
+      "title": "摇滚红与黑-叮咚",
+      "source": "bilibili",
+      "url": "https://www.bilibili.com/video/BV1uG411R79W"
+    }
   ]
 }
