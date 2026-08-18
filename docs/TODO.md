@@ -1,7 +1,7 @@
-# TODO — MusicGraph 待办事项
+# TODO — MusicalGraph 待办事项
 
 > 按 高/中/低 优先级分组。功能完成后同步更新并勾选。
-> 更新时间：2026-08-12
+> 更新时间：2026-08-18
 
 ## 🔴 高优先级
 
@@ -19,6 +19,7 @@
 
 ## 🟡 中优先级（V1 功能）
 
+- [x] 前端静态 demo 上线准备（2026-08-18）：线上默认静态模式（不再探测本机后端）+ 演示模式提交兜底（无后端时保存到浏览器本地并显示成功提示）；删除过时 web_deploy.zip；上线名称 MusicalGraph（GitHub 公开仓库 Essie363/MusicalGraph + Vercel `web/`）
 - [x] 演员精彩片段模块（2026-08-11）：新增 moments 表 + import_moments.py（data/moments.json 导入）；演员详情页「精彩片段」轻量列表（标题即外链，点击跳转新窗口；无符号/无按钮/无封面）；图谱聚焦卡同步显示前 3 条；snapshot_moments.csv 快照；回归 54 项全过
 - [x] 前端节点 4 层级渲染（2026-08-11）：imp 分位 → 普通/活跃/明星/核心，核心=大亮点强光晕，无圆环
 - [x] 首页 Actor+Work+Group 维度布局（2026-08-11）：作品 Top48 成簇 + 团体 33 个节点，演员环绕作品、成员环绕团体；作品/团体-成员极淡连线常显
@@ -87,7 +88,7 @@
 
 - [x] 用户提交 + 管理员审核工作流（2026-08-12：PocketBase 后端完成；用户账号体系待后续）
 - [x] PocketBase 后端内容管理系统（2026-08-12）：正式集合 + submissions 提交 + 审核自动入库钩子 + 前端 API 优先数据层 + Contribute 四类提交 + 备份；回归与后端 E2E 全部通过（见 docs/POCKETBASE.md）
-- [ ] Vercel 部署上线
+- [ ] 静态前端 demo 部署完成（2026-08-18：代码与文档已就绪，待 GitHub 建仓 + Vercel 部署后补充公网链接）
 - [ ] GitHub Actions 每日同步启用（2026-08-18：用户确认上线时执行——推送到 GitHub + 启用 .github/workflows/sync.yml，每日 06:00 自动爬取 y.saoju 排期并刷新网页数据）
 - [ ] 建立 docs/LESSONS.md 的持续更新习惯（同问题出现两次以上必须记录）
 - [x] 快照更新纳入流程（2026-08-07 完成）：数据变更后运行 `python refresh_all.py` 一键刷新快照 + 网页数据

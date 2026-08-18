@@ -1,8 +1,15 @@
-# MusicGraph — 音乐剧演员关系图谱
+# MusicalGraph — 音乐剧演员关系图谱
 
 音乐剧演员关系图谱网站：粉丝可以搜索演员、探索演员之间的关系网络，并共同补充、维护音乐剧行业人物资料。
 
 数据来源：y.saoju.net API（演出排期）+ 手动整理（档案/CP/团体）。
+
+## 线上 Demo（2026-08-18 上线准备中）
+
+- 上线名称：**MusicalGraph**（GitHub 公开仓库 `Essie363/MusicalGraph`，Vercel 托管 `web/` 目录）
+- 链接：部署完成后在此填写（预计 `https://musicalgraph.vercel.app`）
+- 当前为纯静态演示版：数据打包在 `web/data.js`，无需后端即可体验搜索、关系图谱、演员详情、作品、团体与精彩片段。
+- 提交功能为「后端优先 + 演示模式兜底」：没有后端时内容保存在访客浏览器本地并显示成功提示，接入后端后自动走真实提交。
 
 ## 技术栈
 
@@ -70,7 +77,9 @@ python import_from_file.py
 
 ## 部署
 
-尚当前后端为本地 PocketBase（见 POCKETBASE.md）；未上线。V1 目标是部署到 Vercel + Supabase，做成可搜索、可看关系图、可提交补充的真实网站。项目已初始化 Git，可在此基础上推送到 GitHub 再接 Vercel。
+当前进展（2026-08-18）：静态前端 Demo 已准备上线 —— GitHub 公开仓库 `Essie363/MusicalGraph` + Vercel（Root Directory = `web`）。数据更新后运行 `python refresh_all.py` 再推送即可自动部署。
+
+V1 正式版目标仍是 Vercel + Supabase（详见 [DEPLOY.md](DEPLOY.md)）；PocketBase 保持本地联调用途（见 POCKETBASE.md）。
 
 ## 文档导航
 

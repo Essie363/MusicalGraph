@@ -621,6 +621,41 @@ function check(name, cond, extra) {
   await page.click("#contribute-form button[type=submit]");
   await page.waitForTimeout(400);
   check("已移除本地草稿入口", await page.evaluate(() => !document.querySelector("#view-contribute #c-review")));
+  console.log("== 演示模式提交 ==");
+  check("演示提交成功提示", await page.$eval("#toast", el => el.textContent.indexOf("提交成功") >= 0));
+  check("演示提交已存本地", await page.evaluate(() => {
+    try {
+      const list = JSON.parse(localStorage.getItem("mg_demo_submissions") || "[]");
+      return list.length === 1 && list[0].fields.name === "测试演员甲";
+    } catch (e) { return false; }
+  }));
+  await page.click("#fb-back-form");
+  await page.waitForTimeout(250);
+  await page.click("#fb-back-type");
+  await page.waitForTimeout(250);
+  await page.click("#fb-feedback");
+  await page.waitForTimeout(250);
+  await page.fill("#fb-feedback-form [name=message]", "测试反馈内容");
+  await page.fill("#fb-feedback-form [name=contact]", "tester@example.com");
+  await page.click("#fb-feedback-form button[type=submit]");
+  await page.waitForTimeout(400);
+  check("反馈演示提交成功提示", await page.$eval("#toast", el => el.textContent.indexOf("反馈已提交") >= 0));
+  check("反馈演示提交已存本地", await page.evaluate(() => {
+    try {
+      const list = JSON.parse(localStorage.getItem("mg_demo_submissions") || "[]");
+      return list.length === 2 && list[1].category === "feedback";
+    } catch (e) { return false; }
+  }));
+  // 回到补充信息流程，继续原有后端 stub 验证
+  await page.click("#fb-back-feedback");
+  await page.waitForTimeout(250);
+  await page.click("#fb-add");
+  await page.waitForTimeout(250);
+  await page.click("#fb-type-cards .fb-card[data-category='actor']");
+  await page.waitForTimeout(250);
+  await page.fill("#c-supplement-actor input[name=name]", "测试演员甲");
+  await page.fill("#c-supplement-actor input[name=school]", "测试学院");
+  await page.fill("#c-ref", "https://example.com");
   // 提交流程走后端：stub 后端验证请求载荷与成功提示
   await page.evaluate(() => {
     window.MG_PB_CONFIG = { url: "http://fake.local" };

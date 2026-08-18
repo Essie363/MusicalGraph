@@ -2741,13 +2741,25 @@
       signal: AbortSignal.timeout(2000)
     }).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); });
   }
+  var DEMO_SUBMISSIONS_KEY = "mg_demo_submissions";
+  function saveDemoSubmission(item) {
+    try {
+      var list = [];
+      var raw = localStorage.getItem(DEMO_SUBMISSIONS_KEY);
+      if (raw) list = JSON.parse(raw) || [];
+      list.push(item);
+      localStorage.setItem(DEMO_SUBMISSIONS_KEY, JSON.stringify(list));
+    } catch (e) { /* 演示模式尽力保存，失败不阻塞提示 */ }
+  }
   function persistSubmission(item, form, okMsg) {
     submitToBackend(item).then(function () {
       form.reset();
       showToast(okMsg || "提交成功，已进入待审核，感谢你的补充");
     }).catch(function (err) {
-      console.error("提交失败", err);
-      showToast("提交失败：后端未连接，请稍后重试");
+      console.error("后端不可用，已按演示模式保存", err);
+      saveDemoSubmission(item);
+      form.reset();
+      showToast(okMsg ? okMsg + "（演示版已保存）" : "提交成功，感谢你的补充（演示版已保存）");
     });
   }
   document.getElementById("contribute-form").addEventListener("submit", function (e) {

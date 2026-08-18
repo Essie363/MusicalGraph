@@ -1,4 +1,6 @@
-# DEPLOY — MusicGraph 上线部署指南
+# DEPLOY — MusicalGraph 上线部署指南
+
+> 2026-08-18 状态：静态前端 demo 上线流程已确定 —— GitHub 公开仓库 `Essie363/MusicalGraph` + Vercel 部署 `web/` 目录；页面已内置「线上静态模式 + 演示提交兜底」。下方第 0-5 步为正式版（Supabase/Next.js）路线，静态版见「快速通道」。
 
 > 目标：把当前本地可跑的关系图谱网站（`web/` MVP + SQLite）升级为**真实上线网站**。
 > 技术栈：Next.js + React + Supabase + Vercel（全部免费）。
@@ -23,15 +25,17 @@
 ### 方式 B：Vercel（推荐，以后正式版也用这个平台）
 
 1. 注册 <https://vercel.com>（用 GitHub 登录最方便）
-2. 安装 CLI 后执行：
+2. 推荐用 Git 自动部署：Vercel → New Project → Import `Essie363/MusicalGraph` → Root Directory 填 `web` → Deploy
+   （或用 CLI 手动部署：安装 Vercel CLI 后执行）
    ```bash
    cd E:/AI VibeCoding Project/MusicGraph
    npx vercel deploy web --prod
    ```
-3. 得到 `https://xxx.vercel.app` 链接
+3. 得到 `https://xxx.vercel.app` 链接（Project Name 填 `musicalgraph` 时约为 `https://musicalgraph.vercel.app`）
 
 > 说明：静态版数据是"打包"在网页里的（`web/data.js`），数据库更新后要重新 `refresh_all.py` 再部署；
 > 正式版（第 3-5 步）接上 Supabase 后数据实时同步，就不需要重新部署了。
+> 静态 demo 的「提交」在无后端时保存到浏览器本地并显示成功提示（演示模式），不会暴露「后端未连接」错误。
 
 ---
 

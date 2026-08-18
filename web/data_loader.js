@@ -2,12 +2,23 @@
    加载顺序：data.js → data_loader.js →（数据就绪后注入）app.js
    数据源：优先 PocketBase API（在线、含审核通过的新内容），失败回退静态快照 data.js。
    用法：?pb=<url> 指定后端地址；?mode=static 强制离线快照；localStorage mg_pb_url 可保存地址。
+   线上静态 demo：默认只读打包快照；仅本机（localhost/file）自动探测本地 PocketBase。
 */
 (function () {
   "use strict";
-  var CONFIG = { url: "http://127.0.0.1:8090", timeoutMs: 2500 };
+  var CONFIG = { url: "", timeoutMs: 2500 };
 
-  // 配置覆盖：URL 参数 > localStorage > 默认
+  function defaultBackendUrl() {
+    var proto = location.protocol;
+    var host = (location.hostname || "").toLowerCase();
+    if (proto === "file:") return "http://127.0.0.1:8090";
+    if (host === "localhost" || host === "127.0.0.1" || host === "0.0.0.0" || host === "::1") {
+      return "http://127.0.0.1:8090";
+    }
+    return "";
+  }
+
+  // 配置覆盖：URL 参数 > localStorage > 默认（默认仅本机启用后端探测）
   try {
     var q = new URLSearchParams(location.search);
     if (q.get("mode") === "static") {
@@ -16,7 +27,11 @@
       CONFIG.url = q.get("pb").replace(/\/+$/, "");
     } else {
       var saved = localStorage.getItem("mg_pb_url");
-      if (saved) CONFIG.url = saved.replace(/\/+$/, "");
+      if (saved) {
+        CONFIG.url = saved.replace(/\/+$/, "");
+      } else {
+        CONFIG.url = defaultBackendUrl();
+      }
     }
   } catch (e) { /* 忽略 */ }
 
