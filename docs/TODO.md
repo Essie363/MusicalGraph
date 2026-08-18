@@ -1,4 +1,4 @@
-﻿# TODO — MusicGraph 待办事项
+# TODO — MusicGraph 待办事项
 
 > 按 高/中/低 优先级分组。功能完成后同步更新并勾选。
 > 更新时间：2026-08-12
@@ -88,7 +88,8 @@
 - [x] 用户提交 + 管理员审核工作流（2026-08-12：PocketBase 后端完成；用户账号体系待后续）
 - [x] PocketBase 后端内容管理系统（2026-08-12）：正式集合 + submissions 提交 + 审核自动入库钩子 + 前端 API 优先数据层 + Contribute 四类提交 + 备份；回归与后端 E2E 全部通过（见 docs/POCKETBASE.md）
 - [ ] Vercel 部署上线
+- [ ] GitHub Actions 每日同步启用（2026-08-18：用户确认上线时执行——推送到 GitHub + 启用 .github/workflows/sync.yml，每日 06:00 自动爬取 y.saoju 排期并刷新网页数据）
 - [ ] 建立 docs/LESSONS.md 的持续更新习惯（同问题出现两次以上必须记录）
 - [x] 快照更新纳入流程（2026-08-07 完成）：数据变更后运行 `python refresh_all.py` 一键刷新快照 + 网页数据
 - [ ] 补充真实情侣（couple）数据（用户后续提供）
-- [ ] 重新创建计划任务 MusicGraphSync（每日 6:00 运行 `run_sync.bat`；当前任务不存在）
+- [x] 本机计划任务 MusicGraphSync：**决定不重建**（2026-08-18 用户确认不需要本机计划任务；每日自动同步改走 GitHub Actions，待上线时启用）

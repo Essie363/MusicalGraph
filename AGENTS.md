@@ -1,4 +1,4 @@
-﻿# MusicGraph — 音乐剧演员关系图谱
+# MusicGraph — 音乐剧演员关系图谱
 
 ## 项目概述
 
@@ -167,7 +167,7 @@ python -c "import sqlite3; c=sqlite3.connect('music_graph.db'); r=c.execute('SEL
 # 查活跃但无档案的演员（按剧目数排）
 python check_gaps.py
 
-# 手动同步（通常不需要，计划任务每日 6:00 自动跑）
+# 手动同步（当前无自动定时；上线启用 GitHub Actions 后自动跑）
 python sync.py
 
 # 启动后端与网页（首次先跑 setup_pocketbase.ps1）
@@ -185,9 +185,10 @@ python apply_pocketbase.py
 
 ## 数据同步
 
-- **计划任务**：`MusicGraphSync`，每日 6:00 执行 `run_sync.bat`
-- **延迟同步**：`schtasks /run /tn MusicGraphSync`
-- **删除任务**：`schtasks /delete /tn MusicGraphSync /f`
+- **本机计划任务**：`MusicGraphSync` **未启用**（2026-08-18 用户确认不需要本机计划任务，不再重建）
+- **GitHub Actions 每日同步**：`.github/workflows/sync.yml` 已配置（每日 06:00 爬取 y.saoju 排期 + 刷新网页数据）；**待用户确认上线后推送到 GitHub 启用**
+
+
 - **同步内容**：基础表全量刷新（artists/musicals/roles）+ 演出排期增量拉取 + 共演边重算
 
 ## 当前进度与待办
@@ -195,7 +196,7 @@ python apply_pocketbase.py
 ### 已完成
 - [x] 演出数据库搭建（34,993 场，152,235 条卡司）
 - [x] 共演边机器计算（48,343 对）
-- [x] 每日自动同步
+- [x] 每日自动同步脚本与 GitHub Actions 工作流已就绪（2026-08-18 状态：尚未启用——本机计划任务决定不重建；Actions 待确认上线后推送 GitHub 启用）
 - [x] 百度百科自动抓取（部分成功，44 人）
 - [x] 手动档案导入（213 人有资料）
 - [x] note 字段拆分为 major + nickname + note
