@@ -275,6 +275,7 @@ Vercel → Settings → Domains，绑定你自己的域名（如 `musicgraph.fan
 ## GitHub 自动同步（2026-08-07）
 
 - `.github/workflows/sync.yml`：每日北京时间 06:00 在 GitHub Actions 运行 `sync.py`（增量抓取 y.saoju.net 排期）+ `export_graph.py` + `refresh_all.py`，自动提交数据与网页文件；也可手动 Run workflow。
+- 当前状态（2026-08-18）：静态 demo 阶段**暂不启用**，workflow 文件已改名 `sync.yml.disabled`；需要启用时改回 `sync.yml` 并推送即可。
 - 前置：将本仓库推送到 GitHub（`music_graph.db` 与 `web/data.js` 均已入库，可增量同步）。
 - 用户提交闭环：Contribute 页提交 → 本地待审核列表（可导出 JSON / 复制为 Issue 文本，配置 `MG_GITHUB_REPO` 后可一键开 Issue）→ 开发者确认录入 → `python refresh_all.py` → 图谱自动同步。
 
