@@ -1,9 +1,9 @@
 ﻿group,type,member
 1001,other,叶宇锋
 1001,other,亓振源
-213,other,胡超政
-213,other,李锐涵
-213,other,张智涵
+213,dorm,胡超政
+213,dorm,李锐涵
+213,dorm,张智涵
 330,other,李磊
 605,dorm,翟李朔天
 605,dorm,张泽
@@ -90,11 +90,6 @@ siva6009,dorm,许昌泰
 北舞09级,class,郑云龙
 北舞09级,class,孙葛川野
 北舞09级,class,阿云嘎
-北舞09级,class,李秋盟
-北舞09级,class,宁梦恬
-北舞09级,class,苗梦初
-北舞09级,class,孙礼杰
-北舞09级,class,陈学冬
 上音02级,class,蒋倩如
 上音02级,class,李炜鹏
 上音02级,class,陈沁
@@ -173,3 +168,5 @@ siva22级,class,伍语涵
 中戏17级305宿舍,dorm,邵奕磊
 中戏17级305宿舍,dorm,吴以瀚
 中戏17级305宿舍,dorm,崔力戈
+上音10级,class,李秋盟
+上音10级,class,宁梦恬

@@ -325,14 +325,6 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--focus-ring); ou
 #view-graph {
   display: flex; flex-direction: column; height: calc(100vh - 52px);
 }
-.tools-toggle {
-  position: absolute; top: 10px; right: 10px; z-index: 20;
-  display: none;
-  padding: 7px 16px; border-radius: var(--radius); font-size: 13px;
-  color: var(--text-secondary); background: var(--surface-raised);
-  border: 1px solid var(--border-default); cursor: pointer;
-}
-.tools-toggle:hover { color: var(--text-primary); border-color: var(--border-strong); }
 #home-view { position: relative; display: flex; flex: 1; min-height: 0; }
 #graph-main {
   position: relative; flex: 1; min-width: 0;
@@ -623,6 +615,10 @@ body.side-open #graph-main { margin-right: 300px; }
   background: var(--surface-raised); border: 1px solid rgba(255, 255, 255, .14);
   border-radius: var(--radius); box-shadow: 0 10px 28px rgba(0, 0, 0, .45);
   max-height: 240px; overflow-y: auto;
+  display: none;
+}
+.c-select.open .c-select-menu {
+  display: block;
 }
 .c-select-menu li {
   padding: 7px 10px; border-radius: var(--radius-sm);
@@ -881,9 +877,8 @@ body.side-open #graph-main { margin-right: 300px; }
   .explore-card:nth-child(-n+2) { border-top: 1px solid var(--border-subtle); }
   .explore-card:first-child { border-top: none; }
   .join-card { flex-direction: column; align-items: flex-start; gap: var(--space-2); }
-  #view-graph { height: calc(100vh - 48px); }
-  #actor-view { height: calc(100vh - 48px); padding: var(--space-4) 14px var(--space-8); }
-  .tools-toggle { display: inline-block; }
+  #view-graph { height: calc(100vh - 52px); }
+  #actor-view { height: calc(100vh - 52px); padding: var(--space-4) 14px var(--space-8); }
   #graph-tools {
     position: fixed; left: 0; right: 0; bottom: 0; top: auto;
     width: 100%; max-width: none; max-height: 62vh;

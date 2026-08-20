@@ -266,6 +266,7 @@
   }
 
   var focusId = null;                   // 当前聚焦演员 id（null=全局视图）
+  var backHistory = [];                 // 聚焦历史（单击空白返回上一级，双击空白回默认）
   var hoverId = null;                   // 当前悬停节点 key
   var depthCenterId = null;             // 景深中心节点 key
   var maxDepth = 0;                     // 距景深中心的最大距离（每帧重算）
@@ -859,12 +860,30 @@
   function resetHome() {
     if (scene) { scene = null; sceneHighlight = {}; hideSceneCard(); stripSceneFromHash(); }
     focusId = null;
+    backHistory = [];
     hideFocusCard();
     buildGraph();
     layoutAndCenter();
     playEntrance();
     updateStats();
     syncSceneFilter();
+  }
+
+  function restoreFocus(key) {
+    if (key.indexOf("mus:") === 0) focusMusical(Number(key.slice(4)));
+    else if (key.indexOf("grp:") === 0) focusGroup(Number(key.slice(4)));
+    else focusActor(Number(key));
+  }
+  function backOne() {
+    if (backHistory.length) {
+      restoreFocus(backHistory.pop());
+    } else {
+      resetHome();
+    }
+  }
+  function resetToDefault() {
+    backHistory = [];
+    resetHome();
   }
 
   // ============ 场景模式（首页章节卡片直达图谱的对应内容） ============
@@ -886,7 +905,7 @@
       actors: "热门演员 · Top 20",
       musicals: "热门剧目 · Top 30",
       groups: "团体一览",
-      moments: "精彩片段 · " + Object.keys(momentsByActor).length + " 位演员"
+      moments: "精彩片段"
     }[name];
     var card = document.getElementById("scene-card");
     if (!card || !info) { hideSceneCard(); return; }
@@ -894,7 +913,7 @@
     document.getElementById("scene-desc").textContent =
       name === "actors" ? "按影响力（剧目数 / 合作人数 / 关系度）排名的前 20 位演员。"
       : name === "musicals" ? "按演出场次与巡演城市数排序的热门剧目 Top 30。"
-      : name === "moments" ? "拥有 Stage Moments（舞台高光片段）的演员。"
+      : name === "moments" ? "通过舞台高光片段了解演员。"
       : "共 " + groups.length + " 个团体（同班同学 / 室友 / 其他）。";
     var momBox = document.getElementById("scene-moments");
     if (momBox) {
@@ -1045,6 +1064,7 @@
   function onNodeClick(key) {
     var n = nodes[key];
     if (!n) return;
+    if (focusId && focusId !== key) backHistory.push(focusId);
     if (n.type === "musical") { goMusical(n.id); return; }
     if (n.type === "group") { goGroup(n.id); return; }
     focusActor(n.id);
@@ -1347,14 +1367,14 @@
       var rect = canvas.getBoundingClientRect();
       var hit = hitTest(e.clientX - rect.left, e.clientY - rect.top);
       if (hit) onNodeClick(hit);
-      else if (focusId || scene) resetHome();   // 原地点击空白 -> 返回全局
+      else if (focusId || scene) backOne();   // 原地单击空白 -> 返回上一级
     }
   });
   canvas.addEventListener("mouseleave", function () { hideHoverCard(); });
   canvas.addEventListener("dblclick", function (e) {
     var rect = canvas.getBoundingClientRect();
     var hit = hitTest(e.clientX - rect.left, e.clientY - rect.top);
-    if (!hit) return;
+    if (!hit) { resetToDefault(); return; }   // 双击空白 -> 返回默认
     var n = nodes[hit];
     if (!n) return;
     if (n.type === "musical") goMusical(n.id);
@@ -1564,9 +1584,13 @@
     if (gtEmpty) gtEmpty.classList.add("hidden");
   }
   document.getElementById("fc-detail").addEventListener("click", function () { if (focusId && focusId.indexOf("mus:") !== 0) goActor(focusId); });
-  document.getElementById("fc-close").addEventListener("click", resetHome);
+  document.getElementById("fc-close").addEventListener("click", function () {
+    document.body.classList.remove("side-open");
+  });
   var sceneClose = document.getElementById("scene-close");
-  if (sceneClose) sceneClose.addEventListener("click", resetHome);
+  if (sceneClose) sceneClose.addEventListener("click", function () {
+    document.body.classList.remove("side-open");
+  });
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape") {
       if (!panel.classList.contains("hidden")) { hidePanel(); return; }
@@ -1592,7 +1616,7 @@
       touchMoved = false;
       touches = hit
         ? { mode: "drag", id: t.identifier, nodeId: hit, startX: px, startY: py }
-        : { mode: "pan", id: t.identifier, startX: px, startY: py };
+        : { mode: "pan", id: t.identifier, startX: t.clientX, startY: t.clientY, startViewX: view.x, startViewY: view.y };
     } else if (e.touches.length === 2) {
       var a = e.touches[0], b = e.touches[1];
       touches = {
@@ -1611,11 +1635,15 @@
     if (touches.mode === "pinch" && e.touches.length >= 2) {
       var a = e.touches[0], b = e.touches[1];
       var dist = Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
-      var scale = dist / (touches.startDist || 1);
-      view.zoom = Math.max(0.2, Math.min(4, touches.startZoom * scale));
-      var cx = (a.clientX + b.clientX) / 2 - rect.left, cy = (a.clientY + b.clientY) / 2 - rect.top;
-      view.x += (touches.cx - cx) * (view.zoom / (touches.startZoom || 1));
-      view.y += (touches.cy - cy) * (view.zoom / (touches.startZoom || 1));
+      var newZoom = Math.max(0.2, Math.min(4, touches.startZoom * (dist / (touches.startDist || 1))));
+      // 以两指中点为锚：缩放前后，中点下的世界坐标保持不变
+      var midX = (a.clientX + b.clientX) / 2 - rect.left;
+      var midY = (a.clientY + b.clientY) / 2 - rect.top;
+      var wx = (midX - canvas.clientWidth / 2 - view.x) / view.zoom;
+      var wy = (midY - canvas.clientHeight / 2 - view.y) / view.zoom;
+      view.zoom = newZoom;
+      view.x = midX - canvas.clientWidth / 2 - wx * newZoom;
+      view.y = midY - canvas.clientHeight / 2 - wy * newZoom;
       return;
     }
     if (touches.mode === "drag" && nodes[touches.nodeId]) {
@@ -1623,8 +1651,9 @@
       nodes[touches.nodeId].x = p.x; nodes[touches.nodeId].y = p.y;
       touchMoved = true;
     } else if (touches.mode === "pan") {
-      view.x += e.touches[0].clientX - touches.startX; view.y += e.touches[0].clientY - touches.startY;
-      touches.startX = e.touches[0].clientX; touches.startY = e.touches[0].clientY;
+      // 画面跟随手指同向移动
+      view.x = touches.startViewX + (e.touches[0].clientX - touches.startX);
+      view.y = touches.startViewY + (e.touches[0].clientY - touches.startY);
       touchMoved = true;
     }
   }, { passive: false });
@@ -1644,7 +1673,7 @@
         var t = e.changedTouches[0];
         var hit = hitTest(t.clientX - rect.left, t.clientY - rect.top);
         if (hit) onNodeClick(hit);
-        else if (focusId || scene) resetHome();   // 点空白 -> 返回全局
+        else if (focusId || scene) backOne();   // 单击空白 -> 返回上一级
       }
     }
     touchMoved = false;
@@ -2534,9 +2563,17 @@
         li.setAttribute("aria-selected", String(li.getAttribute("data-value")) === String(v));
       });
     }
-    function closeOutside() {
+    function open() {
+      wrap.classList.add("open");
+      document.addEventListener("mousedown", closeOutside, true);
+    }
+    function close() {
       wrap.classList.remove("open");
       document.removeEventListener("mousedown", closeOutside, true);
+    }
+    function closeOutside(e) {
+      if (e && wrap.contains(e.target)) return;   // 组件内部点击不关闭
+      close();
     }
     Array.prototype.forEach.call(sel.options, function (o) {
       var li = document.createElement("li");
@@ -2547,13 +2584,13 @@
         sel.value = o.value;
         sel.dispatchEvent(new Event("change", { bubbles: true }));
         sync();
-        closeOutside();
+        close();
       });
       menu.appendChild(li);
     });
     trigger.addEventListener("click", function (e) {
       e.stopPropagation();
-      if (wrap.classList.toggle("open")) document.addEventListener("mousedown", closeOutside, true);
+      if (wrap.classList.contains("open")) close(); else open();
     });
     sel.parentNode.insertBefore(wrap, sel.nextSibling);
     sel.classList.add("hidden");
@@ -2777,12 +2814,6 @@
       if (!msg || !contact) return;
       var item = { id: Date.now(), mode: "feedback", category: "feedback", fields: { message: msg, contact: contact }, ref: "", email: contact, ts: new Date().toISOString() };
       persistSubmission(item, fbFeedbackForm, "反馈已提交，感谢你的建议");
-    });
-  }
-  var toolsToggle = document.getElementById("tools-toggle");
-  if (toolsToggle) {
-    toolsToggle.addEventListener("click", function () {
-      document.body.classList.toggle("side-open");
     });
   }
   // ---- 首页右上角数据标签（跟随导出数据自动更新） ----

@@ -1,7 +1,7 @@
 """Incremental sync of music_graph.db with the live y.saoju.net API.
 
-- Base tables (artists / musicals / roles / actor_roles / musicalstaff) refreshed fully
-  (small, ~5 requests).
+- Base tables (artists / musicals / roles / actor_roles) are merged incrementally.
+  Manually added rows (自建演员/剧目，如《坏家伙》) are preserved and never deleted.
 - Show schedule synced day-by-day via /api/search_day/?date=YYYY-MM-DD.
   Only dates not already in the DB are fetched, so reruns are cheap.
 - After syncing, co_work_edges are recomputed.
@@ -38,32 +38,60 @@ def get_json(path):
 
 
 def upsert_base_tables(cur, conn):
-    """Refresh artists/musicals/roles/actor_roles from the official API."""
+    """Merge base tables from the official API, preserving manually added data.
+
+    Manual rows (self-created actors/musicals like 《坏家伙》) are not present in
+    the y.saoju API and must survive every sync. API rows are upserted by id;
+    fully-API actor_roles are refreshed, while rows touching a manual artist or
+    manual musical are kept.
+    """
     artists = get_json("/artist/")
     musicals = get_json("/musical/")
     roles = get_json("/role/")
     mc = get_json("/musicalcast/")
 
-    cur.execute("DELETE FROM artists")
-    cur.executemany(
-        "INSERT OR REPLACE INTO artists (id,name,note,is_actor) VALUES (?,?,?,1)",
-        [(a["pk"], a["fields"]["name"], a["fields"].get("note")) for a in artists],
+    api_artist_ids = []
+    for a in artists:
+        aid = a["pk"]
+        api_artist_ids.append(aid)
+        cur.execute(
+            "INSERT INTO artists (id,name,note,is_actor) VALUES (?,?,?,1) "
+            "ON CONFLICT(id) DO UPDATE SET name=excluded.name, note=excluded.note, is_actor=1",
+            (aid, a["fields"]["name"], a["fields"].get("note")),
+        )
+
+    api_musical_ids = []
+    for m in musicals:
+        mid = m["pk"]
+        api_musical_ids.append(mid)
+        cur.execute(
+            "INSERT INTO musicals (id,name,is_original,progress,premiere_date,info) VALUES (?,?,?,?,?,?) "
+            "ON CONFLICT(id) DO UPDATE SET name=excluded.name, is_original=excluded.is_original, "
+            "progress=excluded.progress, premiere_date=excluded.premiere_date, info=excluded.info",
+            (mid, m["fields"]["name"], 1 if m["fields"]["is_original"] else 0,
+             m["fields"]["progress"], m["fields"]["premiere_date"] or None, m["fields"]["info"] or None),
+        )
+
+    for r in roles:
+        cur.execute(
+            "INSERT INTO roles (id,musical_id,name) VALUES (?,?,?) "
+            "ON CONFLICT(id) DO UPDATE SET musical_id=excluded.musical_id, name=excluded.name",
+            (r["pk"], r["fields"]["musical"], r["fields"]["name"]),
+        )
+
+    # Refresh only fully-API actor_roles; keep rows that involve a manual artist
+    # or a manual musical (e.g. 《坏家伙》).
+    cur.execute("CREATE TEMP TABLE IF NOT EXISTS _api_artist(id INTEGER PRIMARY KEY)")
+    cur.executemany("INSERT OR IGNORE INTO _api_artist(id) VALUES (?)", [(i,) for i in api_artist_ids])
+    cur.execute("CREATE TEMP TABLE IF NOT EXISTS _api_musical(id INTEGER PRIMARY KEY)")
+    cur.executemany("INSERT OR IGNORE INTO _api_musical(id) VALUES (?)", [(i,) for i in api_musical_ids])
+    cur.execute(
+        "DELETE FROM actor_roles WHERE artist_id IN (SELECT id FROM _api_artist) "
+        "AND musical_id IN (SELECT id FROM _api_musical)"
     )
-    cur.execute("DELETE FROM musicals")
-    cur.executemany(
-        "INSERT OR REPLACE INTO musicals (id,name,is_original,progress,premiere_date,info) VALUES (?,?,?,?,?,?)",
-        [
-            (m["pk"], m["fields"]["name"], 1 if m["fields"]["is_original"] else 0,
-             m["fields"]["progress"], m["fields"]["premiere_date"] or None, m["fields"]["info"] or None)
-            for m in musicals
-        ],
-    )
-    cur.execute("DELETE FROM roles")
-    cur.executemany(
-        "INSERT OR REPLACE INTO roles (id,musical_id,name) VALUES (?,?,?)",
-        [(r["pk"], r["fields"]["musical"], r["fields"]["name"]) for r in roles],
-    )
-    cur.execute("DELETE FROM actor_roles")
+    cur.execute("DROP TABLE _api_artist")
+    cur.execute("DROP TABLE _api_musical")
+
     role2musical = {r["pk"]: r["fields"]["musical"] for r in roles}
     cur.executemany(
         "INSERT INTO actor_roles (artist_id,musical_id,role_id) VALUES (?,?,?)",
