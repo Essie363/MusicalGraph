@@ -885,10 +885,21 @@ body.side-open #graph-main { margin-right: 300px; }
   #actor-view { height: calc(100vh - 48px); padding: var(--space-4) 14px var(--space-8); }
   .tools-toggle { display: inline-block; }
   #graph-tools {
-    width: 82%; max-width: 320px;
-    box-shadow: -8px 0 28px rgba(0, 0, 0, .5);
+    position: fixed; left: 0; right: 0; bottom: 0; top: auto;
+    width: 100%; max-width: none; max-height: 62vh;
+    border-left: none; border-top: 1px solid var(--border-subtle);
+    border-radius: 8px 8px 0 0;
+    box-shadow: 0 -12px 32px rgba(0, 0, 0, .45);
+    transform: translateY(101%);
+    padding-bottom: calc(var(--space-4) + env(safe-area-inset-bottom));
   }
-  body.side-open #graph-main { margin-right: 0; }   /* 移动端：抽屉覆盖，星图不收缩 */
+  #graph-tools::before {
+    content: ""; display: block; width: 40px; height: 4px;
+    border-radius: 2px; margin: 0 auto 8px; background: var(--border-strong);
+    flex: none;
+  }
+  body.side-open #graph-tools { transform: translateY(0); }
+  body.side-open #graph-main { margin-right: 0; }   /* 移动端：星图不收缩，卡片底部上滑覆盖 */
   .ap-sections { grid-template-columns: 1fr; }
   .ap-card { border-top: 1px solid var(--border-subtle); }
   .ap-card:first-child { border-top: none; }

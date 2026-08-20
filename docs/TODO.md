@@ -88,7 +88,7 @@
 
 - [x] 用户提交 + 管理员审核工作流（2026-08-12：PocketBase 后端完成；用户账号体系待后续）
 - [x] PocketBase 后端内容管理系统（2026-08-12）：正式集合 + submissions 提交 + 审核自动入库钩子 + 前端 API 优先数据层 + Contribute 四类提交 + 备份；回归与后端 E2E 全部通过（见 docs/POCKETBASE.md）
-- [ ] 静态前端 demo 部署完成（2026-08-18：代码与文档已就绪，待 GitHub 建仓 + Vercel 部署后补充公网链接）
+- [x] 静态前端 demo 部署完成（2026-08-18：公网链接 https://musicalgraph.vercel.app/）
 - [ ] GitHub Actions 每日同步启用（2026-08-18：用户确认上线时执行——推送到 GitHub + 启用 .github/workflows/sync.yml，每日 06:00 自动爬取 y.saoju 排期并刷新网页数据）
 - [ ] 建立 docs/LESSONS.md 的持续更新习惯（同问题出现两次以上必须记录）
 - [x] 快照更新纳入流程（2026-08-07 完成）：数据变更后运行 `python refresh_all.py` 一键刷新快照 + 网页数据

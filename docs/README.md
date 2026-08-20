@@ -2,12 +2,14 @@
 
 音乐剧演员关系图谱网站：粉丝可以搜索演员、探索演员之间的关系网络，并共同补充、维护音乐剧行业人物资料。
 
+> 这是面向维护者的项目笔记；对外介绍请以根目录 README.md 为准（线上 Demo：https://musicalgraph.vercel.app/）。
+
 数据来源：y.saoju.net API（演出排期）+ 手动整理（档案/CP/团体）。
 
-## 线上 Demo（2026-08-18 上线准备中）
+## 线上 Demo（2026-08-18 已上线）
 
 - 上线名称：**MusicalGraph**（GitHub 公开仓库 `Essie363/MusicalGraph`，Vercel 托管 `web/` 目录）
-- 链接：部署完成后在此填写（预计 `https://musicalgraph.vercel.app`）
+- 链接：https://musicalgraph.vercel.app/
 - 当前为纯静态演示版：数据打包在 `web/data.js`，无需后端即可体验搜索、关系图谱、演员详情、作品、团体与精彩片段。
 - 提交功能为「后端优先 + 演示模式兜底」：没有后端时内容保存在访客浏览器本地并显示成功提示，接入后端后自动走真实提交。
 
@@ -20,7 +22,7 @@
 | 前端（正式版） | Next.js + React | ⏳ 规划中 |
 | 关系图 | Cytoscape.js | ⏳ 规划中 |
 | 数据库 | Supabase（当前 SQLite 单文件） | ⏳ 规划迁移 |
-| 部署 | Vercel | ⏳ 规划中 |
+| 部署 | Vercel | ✅ 已上线（静态 demo） |
 | 后端（本地） | PocketBase（单文件，自带数据库与管理后台） | ✅ 已集成（2026-08-12） |
 
 ## 如何运行
@@ -77,7 +79,7 @@ python import_from_file.py
 
 ## 部署
 
-当前进展（2026-08-18）：静态前端 Demo 已准备上线 —— GitHub 公开仓库 `Essie363/MusicalGraph` + Vercel（Root Directory = `web`）。数据更新后运行 `python refresh_all.py` 再推送即可自动部署。
+当前进展（2026-08-18）：静态前端 Demo 已上线（https://musicalgraph.vercel.app/）— GitHub 公开仓库 `Essie363/MusicalGraph` + Vercel（Root Directory = `web`）。数据更新后运行 `python refresh_all.py` 再推送即可自动部署。
 
 V1 正式版目标仍是 Vercel + Supabase（详见 [DEPLOY.md](DEPLOY.md)）；PocketBase 保持本地联调用途（见 POCKETBASE.md）。
 
