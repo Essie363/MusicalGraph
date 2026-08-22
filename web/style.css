@@ -634,6 +634,51 @@ body.side-open #graph-main { margin-right: 300px; }
 .cast-rows { display: grid; gap: var(--space-3); margin-bottom: var(--space-3); }
 .cast-row { display: flex; gap: var(--space-3); }
 .cast-row label { flex: 1; min-width: 0; margin-bottom: 0; }
+
+/* 演出排期批量补充 */
+.batch-tools { display: flex; align-items: center; gap: 16px; margin: 8px 0; }
+.c-link {
+  display: inline-flex; align-items: center;
+  color: var(--text-secondary); cursor: pointer; font-size: 12px;
+  background: none; border: none; padding: 0;
+  text-decoration: none;
+}
+.c-link:hover { color: var(--text-primary); }
+.batch-tools .c-link,
+.batch-tools .c-file {
+  display: inline-flex; align-items: center;
+  height: 20px; min-height: 20px; line-height: 1;
+  margin: 0; padding: 0; font-size: 12px;
+}
+.c-btn {
+  padding: 6px 12px; border-radius: var(--radius); font-size: 12px; cursor: pointer;
+  border: 1px solid var(--border-default); background: var(--surface-raised); color: var(--text-secondary);
+}
+.c-btn:hover { color: var(--text-primary); border-color: var(--border-strong); }
+.c-file { display: inline-flex; align-items: center; gap: 6px; margin: 0; padding: 0; font-size: 12px; color: var(--text-secondary); cursor: pointer; }
+.c-file input { display: none; }
+#sched-bulk {
+  width: 100%; min-height: 104px; padding: 8px 10px; margin: 4px 0;
+  background: var(--surface-raised); color: var(--text-primary);
+  border: 1px solid var(--border-default); border-radius: var(--radius);
+  font: 12px/1.5 ui-monospace, Consolas, monospace; resize: vertical;
+}
+#sched-preview { margin-top: 8px; }
+.sched-row { display: flex; gap: 8px; align-items: center; padding: 5px 6px; border-bottom: 1px solid var(--border-subtle); font-size: 12px; line-height: 1.5; }
+.sched-row:last-child { border-bottom: none; }
+.sched-row.ok { color: var(--text-primary); }
+.sched-row.err { color: #e5484d; }
+.sched-num { flex: none; min-width: 22px; color: var(--text-tertiary); }
+.sched-info { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sched-status { flex: none; font-size: 11px; }
+.sched-foot { margin-top: 8px; display: flex; gap: 10px; align-items: center; font-size: 12px; color: var(--text-secondary); }
+.cw-actions { display: flex; gap: 16px; align-items: center; margin-top: 8px; }
+.cw-hint { font-size: 12px; line-height: 1.5; color: var(--text-tertiary); }
+.cw-detail { margin-top: 10px; }
+.cw-detail-table { width: 100%; border-collapse: collapse; font-size: 12px; color: var(--text-secondary); }
+.cw-detail-table th,
+.cw-detail-table td { text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--border-subtle); }
+.cw-detail-table th { color: var(--text-tertiary); font-weight: 500; }
 .cast-add {
   width: 100%; padding: 8px 12px; font-size: 13px; cursor: pointer;
   border: 1px dashed var(--border-default); border-radius: var(--radius);

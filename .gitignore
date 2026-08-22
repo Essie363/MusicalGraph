@@ -40,3 +40,25 @@ data/backups/
 .opencode/
 .codex/
 
+# 一次性维护脚本（本地保留，不入库；旧版本见 git 历史）
+build_graph.py
+build_tables.py
+classmate_derive.py
+cleanup_notes.py
+crawl_moments.py
+crawler.py
+fetch_baike.py
+fix_cp.py
+fix_major.py
+fix_note.py
+fix_note_cleanup.py
+fix_note_polish.py
+fix_tags.py
+import_cp.py
+import_profiles.py
+import_profiles_batch2.py
+import_profiles_v2.py
+make_batches.py
+merge_baike.py
+save_profiles_0_1.py
+

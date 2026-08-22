@@ -308,6 +308,17 @@
         <label>城市<input type="text" name="city" data-label="城市" placeholder="可选" autocomplete="off"></label>
         <label>剧院<input type="text" name="theatre" data-label="剧院" placeholder="可选" autocomplete="off"></label>
       </div>
+      <div class="c-sub-sec">
+        <span class="c-sub-title">演出排期批量上传</span>
+        <span class="c-sub-hint">多场排期可一次粘贴表格或上传 CSV；请按模板的每一列填一个字段（每个字段一格）。导入时会按 日期/时间/城市/剧场/剧目 自动去重。</span>
+        <div class="batch-tools">
+          <a class="c-link" id="sched-template" href="javascript:void(0)">下载表格模板</a>
+          <label class="c-link c-file">上传表格<input id="sched-file" type="file" accept=".csv,.tsv,.txt"></label>
+        </div>
+        <textarea id="sched-bulk" rows="5" placeholder="把多行排期粘贴到这里，示例：&#10;2026-05-01,19:30,上海,文化广场,我，堂吉诃德,刘阳：堂吉诃德；党韫葳：阿尔东莎"></textarea>
+        <a class="c-link" id="sched-parse" href="javascript:void(0)">解析并预览</a>
+        <div id="sched-preview" class="hidden"></div>
+      </div>
       <label>备注<textarea name="note" data-label="备注" rows="3" placeholder="可选"></textarea></label>
     </div>
 
@@ -343,12 +354,17 @@
     <div class="c-group hidden" id="c-supplement-relation">
       <label>人物 A *<input type="text" name="actorA" data-label="人物 A" required placeholder="必填" autocomplete="off"></label>
       <label>人物 B *<input type="text" name="actorB" data-label="人物 B" required placeholder="必填" autocomplete="off"></label>
+      <label>关系分类
+        <select name="relCat" data-label="关系分类">
+          <option value="co_work">合作演出</option>
+          <option value="love">感情关系</option>
+          <option value="group">团体·同侪</option>
+          <option value="fan">CP</option>
+        </select>
+      </label>
       <label>关系类型
         <select name="relType" data-label="关系类型">
           <option value="co_work">合作演出</option>
-          <option value="classmate">同学</option>
-          <option value="teacher_student">师生</option>
-          <option value="same_company">同公司</option>
         </select>
       </label>
       <label>关系详情 / 备注<textarea name="detail" data-label="关系详情/备注" rows="3" placeholder="可选"></textarea></label>
@@ -366,11 +382,10 @@
     <div class="c-group hidden" id="c-moment">
       <label>演员姓名 *<input type="text" name="actorName" data-label="演员姓名" required placeholder="必填" autocomplete="off"></label>
       <label>标题 *<input type="text" name="title" data-label="标题" required placeholder="如：《剧名》现场演唱" autocomplete="off"></label>
-      <label>链接 *<input type="text" name="url" data-label="链接" required placeholder="Bilibili / 网易云 / YouTube 视频链接" autocomplete="off"></label>
+      <label>链接 *<input type="text" name="url" data-label="链接" required placeholder="Bilibili / YouTube / 小红书 视频链接" autocomplete="off"></label>
       <label>平台
         <select name="platform" data-label="平台">
           <option value="bilibili">Bilibili</option>
-          <option value="netease">网易云音乐</option>
           <option value="youtube">YouTube</option>
           <option value="xiaohongshu">小红书</option>
           <option value="other">其它</option>
@@ -379,7 +394,7 @@
       <label>描述（可选）<textarea name="desc" data-label="描述" rows="2" placeholder="简短说明，如：某场演出的精彩片段"></textarea></label>
     </div>
 
-    <label>Reference（来源链接，必填）<input id="c-ref" type="text" placeholder="https://…" required autocomplete="off"></label>
+    <label id="c-ref-wrap">Reference（来源链接，选填）<input id="c-ref" type="text" placeholder="https://…（可选）" autocomplete="off"></label>
     <label>Email（可选，用于反馈）<input id="c-email" type="email" placeholder="your@email.com" autocomplete="off"></label>
 
     <button type="submit" class="c-submit">提交</button>
