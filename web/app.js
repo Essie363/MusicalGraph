@@ -1,4 +1,4 @@
-﻿/* MusicGraph 前端：零依赖 Canvas 关系图
+/* MusicGraph 前端：零依赖 Canvas 关系图
    视图结构（hash 路由）：
    - 首页 (#/)        ：全局关系图谱，只显示人名与关系连线（不显示共演场次），点击人物进入详情页
    - 演员详情页 (#/actor/ID)：个人资料 + 以该演员为中心的关系网络 + 关系/共演/剧目/团体明细
@@ -2009,59 +2009,76 @@
     s.onerror = cb;
     document.head.appendChild(s);
   }
+  function renderCoworkBox(target, pair, box) {
+    if (!target) {
+      box.innerHTML = "<div class='cw-none'>未找到演员「" + escHtml(document.getElementById("cw-q").value.trim()) + "」，可前往 Contribute 补充资料</div>";
+      box.classList.remove("hidden");
+      return;
+    }
+    if (!pair) {
+      box.innerHTML = "<div class='cw-none'>未发现「" + escHtml(actorName(apCenterId)) + "」与「" + escHtml(actorName(target)) + "」的合作记录（或资料暂缺）</div>";
+      box.classList.remove("hidden");
+      return;
+    }
+    var common = [];
+    Object.keys(musicals).forEach(function (mid) {
+      var m = musicals[mid];
+      var cast = m.cast || [];
+      if (cast.indexOf(apCenterId) >= 0 && cast.indexOf(target) >= 0) {
+        common.push({ name: m.name, r1: (m.roles || {})[apCenterId] || [], r2: (m.roles || {})[target] || [] });
+      }
+    });
+    var h = "<div class='cw-head'>与 <b>" + escHtml(actorName(target)) + "</b> 的合作</div>";
+    h += "<div class='cw-stats'>共演 <b>" + pair.c + "</b> 场 · 共同剧目 <b>" + (pair.m || common.length) + "</b> 部</div>";
+    if (pair.f || pair.l) h += "<div class='cw-meta'>首次 " + escHtml(pair.f || "-") + " · 最近 " + escHtml(pair.l || "-") + "</div>";
+    if (common.length) {
+      h += "<ul class='cw-mus'>";
+      common.slice(0, 20).forEach(function (cm) {
+        h += "<li><span class='cw-mus-name'>" + escHtml(cm.name) + "</span>";
+        if (cm.r1.length) h += " <span class='rel-detail'>" + escHtml(cm.r1.join("/")) + "</span>";
+        if (cm.r1.length && cm.r2.length) h += " × ";
+        if (cm.r2.length) h += "<span class='rel-detail'>" + escHtml(cm.r2.join("/")) + "</span>";
+        h += "</li>";
+      });
+      if (common.length > 20) h += "<li class='rel-detail'>… 共 " + common.length + " 部</li>";
+      h += "</ul>";
+    }
+    h += "<div class='cw-actions'><span class='cw-hint'>查看共演场次明细</span><button type='button' class='c-btn' id='cw-export'>导出表格</button></div>";
+    box.innerHTML = h;
+    box.classList.remove("hidden");
+    lastCowork = { a: apCenterId, b: target, name: actorName(target), pair: pair, common: common };
+    var ex = document.getElementById("cw-export");
+    if (ex) ex.addEventListener("click", exportCoworkDetail);
+  }
+  function queryCoworkSupabase(name, box) {
+    var target = null;
+    Object.keys(actors).forEach(function (k) { if (target === null && actors[k].name === name) target = k; });
+    if (!target) { renderCoworkBox(null, null, box); return; }
+    var a = String(apCenterId), b = String(target);
+    var where = "or=(and(actor_a.eq." + a + ",actor_b.eq." + b + "),and(actor_a.eq." + b + ",actor_b.eq." + a + "))";
+    sbGet("/rest/v1/co_work_edges?select=actor_a,actor_b,co_show_count,co_musical_count,first_co_date,last_co_date&" + where + "&limit=5")
+      .then(function (rows) {
+        var row = rows && rows[0] ? rows[0] : null;
+        var pair = row ? { a: a, b: b, c: row.co_show_count || 0, m: row.co_musical_count || 0, f: row.first_co_date || "", l: row.last_co_date || "" } : null;
+        renderCoworkBox(target, pair, box);
+      }).catch(function () { renderCoworkBox(target, null, box); });
+  }
   function queryCowork() {
     var name = document.getElementById("cw-q").value.trim();
     var box = document.getElementById("cw-result");
     if (!name || !apCenterId) return;
     box.classList.add("hidden");
+    var sb = window.MG_SUPABASE;
+    if (sb && sb.url && sb.anonKey) { queryCoworkSupabase(name, box); return; }
     loadCoworkData(function () {
       var target = null;
       Object.keys(actors).forEach(function (k) { if (target === null && actors[k].name === name) target = k; });
-      if (!target) {
-        box.innerHTML = "<div class='cw-none'>未找到演员「" + escHtml(name) + "」，可前往 Contribute 补充资料</div>";
-        box.classList.remove("hidden");
-        return;
-      }
       var pair = null;
       (window.MUSIC_GRAPH_COWORK || []).forEach(function (e) {
         if (pair) return;
         if ((e.a === apCenterId && e.b === target) || (e.a === target && e.b === apCenterId)) pair = e;
       });
-      if (!pair) {
-        box.innerHTML = "<div class='cw-none'>未发现「" + escHtml(actorName(apCenterId)) + "」与「" + escHtml(actorName(target)) + "」的合作记录（或资料暂缺）</div>";
-        box.classList.remove("hidden");
-        return;
-      }
-      // 共同剧目：由作品演员表计算（含角色）
-      var common = [];
-      Object.keys(musicals).forEach(function (mid) {
-        var m = musicals[mid];
-        var cast = m.cast || [];
-        if (cast.indexOf(apCenterId) >= 0 && cast.indexOf(target) >= 0) {
-          common.push({ name: m.name, r1: (m.roles || {})[apCenterId] || [], r2: (m.roles || {})[target] || [] });
-        }
-      });
-      var h = "<div class='cw-head'>与 <b>" + escHtml(actorName(target)) + "</b> 的合作</div>";
-      h += "<div class='cw-stats'>共演 <b>" + pair.c + "</b> 场 · 共同剧目 <b>" + (pair.m || common.length) + "</b> 部</div>";
-      if (pair.f || pair.l) h += "<div class='cw-meta'>首次 " + escHtml(pair.f || "-") + " · 最近 " + escHtml(pair.l || "-") + "</div>";
-      if (common.length) {
-        h += "<ul class='cw-mus'>";
-        common.slice(0, 20).forEach(function (cm) {
-          h += "<li><span class='cw-mus-name'>" + escHtml(cm.name) + "</span>";
-          if (cm.r1.length) h += " <span class='rel-detail'>" + escHtml(cm.r1.join("/")) + "</span>";
-          if (cm.r1.length && cm.r2.length) h += " × ";
-          if (cm.r2.length) h += "<span class='rel-detail'>" + escHtml(cm.r2.join("/")) + "</span>";
-          h += "</li>";
-        });
-        if (common.length > 20) h += "<li class='rel-detail'>… 共 " + common.length + " 部</li>";
-        h += "</ul>";
-      }
-      h += "<div class='cw-actions'><span class='cw-hint'>查看共演场次明细</span><button type='button' class='c-btn' id='cw-export'>导出表格</button></div>";
-      box.innerHTML = h;
-      box.classList.remove("hidden");
-      lastCowork = { a: apCenterId, b: target, name: actorName(target), pair: pair, common: common };
-      var ex = document.getElementById("cw-export");
-      if (ex) ex.addEventListener("click", exportCoworkDetail);
+      renderCoworkBox(target, pair, box);
     });
   }
   function coworkDetailKey() {
@@ -2088,8 +2105,64 @@
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
   }
+  function sbAuth() {
+    var sb = window.MG_SUPABASE;
+    return sb && sb.url && sb.anonKey ? { apikey: sb.anonKey, Authorization: "Bearer " + sb.anonKey } : null;
+  }
+  function sbGet(path) {
+    return fetch(window.MG_SUPABASE.url + path, { headers: sbAuth(), signal: AbortSignal.timeout(8000) })
+      .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); });
+  }
+  function sbPageAll(table, fields, where) {
+    var out = [], limit = 1000;
+    function next(off) {
+      var q = "select=" + encodeURIComponent(fields) + "&limit=" + limit + "&offset=" + off + (where ? "&" + where : "");
+      return sbGet("/rest/v1/" + table + "?" + q).then(function (rows) {
+        rows = rows || []; out = out.concat(rows);
+        if (rows.length === limit) return next(off + rows.length);
+        return out;
+      });
+    }
+    return next(0);
+  }
   function exportCoworkDetail() {
     if (!lastCowork) return;
+    var sb = window.MG_SUPABASE;
+    if (sb && sb.url && sb.anonKey) {
+      var a = String(lastCowork.a), b = String(lastCowork.b);
+      Promise.all([
+        sbPageAll("show_casts", "show_id,role", "artist_id=eq." + a),
+        sbPageAll("show_casts", "show_id,role", "artist_id=eq." + b)
+      ]).then(function (both) {
+        var mapA = {}, mapB = {}, ids = [];
+        both[0].forEach(function (r) { mapA[String(r.show_id)] = r.role || ""; });
+        both[1].forEach(function (r) { mapB[String(r.show_id)] = r.role || ""; });
+        Object.keys(mapA).forEach(function (sid) { if (mapB[sid] !== undefined && ids.indexOf(sid) < 0) ids.push(sid); });
+        if (!ids.length) {
+          downloadCsv("共演场次明细.csv", [["日期","时间","剧目","城市","剧场",actorName(lastCowork.a),actorName(lastCowork.b)],["共演场次",String(lastCowork.pair.c),"共同剧目数",String(lastCowork.pair.m || lastCowork.common.length),"首次",lastCowork.pair.f || "-","最近",lastCowork.pair.l || "-"]]);
+          return;
+        }
+        var groups = [];
+        for (var gi = 0; gi < ids.length; gi += 500) groups.push(ids.slice(gi, gi + 500));
+        return Promise.all(groups.map(function (g) {
+          return sbGet("/rest/v1/shows?select=id,date,time,musical,city,theatre&id=in.(" + g.join(",") + ")&limit=1000");
+        })).then(function (chunks) {
+          var shows = [];
+          chunks.forEach(function (c) { shows = shows.concat(c || []); });
+          shows.sort(function (x, y) {
+            return String(x.date || "").localeCompare(String(y.date || "")) || String(x.time || "").localeCompare(String(y.time || ""));
+          });
+          var rows = [["日期","时间","剧目","城市","剧场",actorName(lastCowork.a),actorName(lastCowork.b)]];
+          shows.forEach(function (s) {
+            rows.push([s.date || "-", s.time || "-", s.musical || "-", s.city || "-", s.theatre || "-", mapA[String(s.id)] || "-", mapB[String(s.id)] || "-"]);
+          });
+          downloadCsv("共演场次明细.csv", rows);
+        });
+      }).catch(function () {
+        downloadCsv("共演场次明细.csv", [["日期","时间","剧目","城市","剧场",actorName(lastCowork.a),actorName(lastCowork.b)],["共演场次",String(lastCowork.pair.c),"共同剧目数",String(lastCowork.pair.m || lastCowork.common.length),"首次",lastCowork.pair.f || "-","最近",lastCowork.pair.l || "-"]]);
+      });
+      return;
+    }
     var map = window.MUSIC_GRAPH_COWORK_DETAIL;
     var key = coworkDetailKey();
     var list = (map && key && map[key]) ? map[key] : [];
@@ -2151,6 +2224,28 @@
   }
   function renderCowork(id) {
     var ul = document.getElementById("ap-cowork"); ul.innerHTML = "";
+    var sb = window.MG_SUPABASE;
+    if (sb && sb.url && sb.anonKey) {
+      sbGet("/rest/v1/co_work_edges?select=actor_a,actor_b,co_show_count&or=(actor_a.eq." + String(id) + ",actor_b.eq." + String(id) + ")&limit=1000").then(function (rows) {
+        var list = (rows || []).map(function (r) { return { a: String(r.actor_a), b: String(r.actor_b), count: r.co_show_count || 0 }; })
+          .filter(function (e) { return e.a !== e.b; })
+          .sort(function (x, y) { return y.count - x.count; })
+          .slice(0, 30);
+        list.forEach(function (e) {
+          var other = e.a === String(id) ? e.b : e.a;
+          var li = document.createElement("li");
+          var span = document.createElement("span"); span.className = "c"; span.textContent = actorLabel(other);
+          span.title = "查看 " + actorName(other) + " 的关系页";
+          span.addEventListener("click", function () { goActor(other); });
+          li.appendChild(span);
+          var cnt = document.createElement("span"); cnt.className = "rel-detail"; cnt.textContent = "共演 " + e.count + " 场";
+          li.appendChild(cnt);
+          ul.appendChild(li);
+        });
+        if (!list.length) { var li = document.createElement("li"); li.textContent = "暂无共演数据"; ul.appendChild(li); }
+      }).catch(function () { var li = document.createElement("li"); li.textContent = "暂无共演数据"; ul.appendChild(li); });
+      return;
+    }
     var list = (coWorkByActor[id] || []).filter(function (e) { return e.a !== e.b; })
       .slice().sort(function (x, y) { return y.count - x.count; }).slice(0, 30);
     list.forEach(function (e) {
@@ -2271,8 +2366,6 @@
     var relN = 0;
     relations.forEach(function (r) { if (r.a === id || r.b === id) relN++; });
     var grpN = groups.filter(function (g) { return (g.members || []).indexOf(id) >= 0; }).length;
-    var ident = document.getElementById("ap-identity");
-    if (ident) ident.textContent = "演员 · 参与 " + st.musicals + " 部音乐剧 · 关联 " + st.partners + " 位人物";
     var ov = document.getElementById("ap-overview");
     if (ov) {
       ov.innerHTML = "";
@@ -2301,6 +2394,11 @@
       var dt = document.createElement("dt"); dt.textContent = "资料";
       var dd = document.createElement("dd"); dd.textContent = "暂无补充资料";
       dl.appendChild(dt); dl.appendChild(dd);
+    }
+    if (Object.keys(actorMusicals[id] || {}).length > 0 && (coWorkByActor[id] || []).length === 0) {
+      var hintDt = document.createElement("dt"); hintDt.textContent = "提示";
+      var hintDd = document.createElement("dd"); hintDd.className = "rel-detail"; hintDd.textContent = "人物具体排期数据暂无，无法解析对应人物关系。";
+      dl.appendChild(hintDt); dl.appendChild(hintDd);
     }
     renderRelations(id);
     renderGroups(id);
@@ -2904,15 +3002,14 @@
       p.submission_type = "musical_update";
       p.musical_name = f.name;
       var d = {};
-      if (f.date) d.year = String(f.date).slice(0, 4);
-      if (f.note) d.description = f.note;
+      if (f.date) d.premiere_date = f.date;
+      if (f.note) d.info = f.note;
       if (f.cast) {
         d.cast = String(f.cast).split(/[\n\r]+/).map(function (line) {
           var parts = line.split(/[?:：？]/);
           return { actor: (parts[0] || "").trim(), role: (parts[1] || "").trim() };
         }).filter(function (x) { return x.actor; });
       }
-      if (f.date) d.date = f.date;
       if (f.city) d.city = f.city;
       if (f.theatre) d.theatre = f.theatre;
       if (item.mode === "fix") {
@@ -2933,23 +3030,71 @@
       var desc = f.detail || "";
       if (item.mode === "fix" && f.correct) desc = (desc ? desc + "；" : "") + "勘误：" + f.correct;
       if (desc) p.description = desc;
+      if (item.mode === "fix" && f.correct) p.details = JSON.stringify({ fix: { field: "detail", correct: f.correct } });
     } else if (item.category === "moment") {
       p.submission_type = "moment_submission";
       p.actor_a = f.actorName;
       p.title = f.title;
       p.url = f.url;
       p.platform = f.platform || "bilibili";
-      if (f.desc) p.description = f.desc;
+          if (f.desc) p.description = f.desc;
+    } else if (item.category === "feedback") {
+      p.submission_type = "feedback";
+      p.description = f.message || "";
+      p.actor_a = f.contact || "";
+      p.source_url = f.contact || "feedback";
+    } else if (item.category === "schedule") {
+      p.submission_type = "schedule_submission";
+      p.details = ((item.fields && item.fields.rows) || []).map(function (row) {
+        return {
+          date: row.date || "",
+          time: row.time || "",
+          city: row.city || "",
+          theatre: row.theatre || "",
+          musical: row.musical || "",
+          cast: (row.cast || []).map(function (c) {
+            return { actor: c.a || c.actor || "", role: c.r || c.role || "" };
+          })
+        };
+      });
+    }
+    if (p.details !== undefined && typeof p.details !== "string") {
+      try { p.details = JSON.stringify(p.details); } catch (e) { delete p.details; }
     }
     return p;
   }
+    function mgClientId() {
+    try {
+      var v = localStorage.getItem("mg_client_id");
+      if (!v) {
+        v = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ("c" + Date.now().toString(36) + Math.random().toString(36).slice(2, 10));
+        localStorage.setItem("mg_client_id", v);
+      }
+      return v;
+    } catch (e) { return "c" + Date.now() + Math.random().toString(36).slice(2, 10); }
+  }
   function submitToBackend(item) {
+    var sb = window.MG_SUPABASE;
+    var payload = buildSubmissionPayload(item);
+    if (sb && sb.url && sb.anonKey) {
+      if (payload.details && typeof payload.details === "string") {
+        try { payload.details = JSON.parse(payload.details); } catch (e) { delete payload.details; }
+      }
+      delete payload.status;
+      payload.client_id = mgClientId();
+      return fetch(sb.url + "/rest/v1/submissions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", apikey: sb.anonKey, Authorization: "Bearer " + sb.anonKey, Prefer: "return=minimal" },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(sb.timeoutMs || 8000)
+      }).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r; });
+    }
     var url = window.MG_PB_CONFIG && window.MG_PB_CONFIG.url;
     if (!url) return Promise.reject(new Error("no backend"));
     return fetch(url + "/api/collections/submissions/records", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(buildSubmissionPayload(item)),
+      body: JSON.stringify(payload),
       signal: AbortSignal.timeout(2000)
     }).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); });
   }
@@ -3119,31 +3264,30 @@
   }
   function submitScheduleBatch() {
     try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
-    var items = schedParsed.filter(function (r) { return r.ok; }).map(function (r) {
-      var cast = r.cast.map(function (c) { return c.r ? c.a + "：" + c.r : c.a; }).join("\n");
+    var rows = schedParsed.filter(function (r) { return r.ok; }).map(function (r) {
       return {
-        id: Date.now() + Math.random(), mode: "supplement", category: "musical",
-        fields: { name: r.musical, date: r.date, time: r.time, city: r.city, theatre: r.theatre, cast: cast },
-        ref: document.getElementById("c-ref").value.trim() || "",
-        email: document.getElementById("c-email").value.trim() || "",
-        ts: new Date().toISOString()
+        date: r.date, time: r.time, city: r.city, theatre: r.theatre, musical: r.musical,
+        cast: r.cast.map(function (c) { return { a: c.a, r: c.r }; })
       };
     });
-    if (!items.length) return;
-    var done = 0;
-    items.forEach(function (it) {
-      submitToBackend(it).then(function () {
-        done++;
-        if (done === items.length) showToast("批量排期提交成功，共 " + items.length + " 条");
-      }).catch(function () {
-        saveDemoSubmission(it);
-        done++;
-        if (done === items.length) showToast("批量排期提交成功（演示版已保存），共 " + items.length + " 条");
-      });
+    if (!rows.length) return;
+    var item = {
+      id: Date.now() + Math.random(), mode: "supplement", category: "schedule", count: rows.length,
+      fields: { rows: rows },
+      ref: document.getElementById("c-ref").value.trim() || "",
+      email: document.getElementById("c-email").value.trim() || "",
+      ts: new Date().toISOString()
+    };
+    submitToBackend(item).then(function () {
+      showToast("批量排期提交成功，共 " + item.count + " 条");
+    }).catch(function () {
+      saveDemoSubmission(item);
+      showToast("批量排期提交成功（演示版已保存），共 " + item.count + " 条");
     });
     schedParsed = [];
     renderSchedPreview();
   }
+
   var schedTpl = document.getElementById("sched-template");
   if (schedTpl) schedTpl.addEventListener("click", function () {
     var csv = "日期,时间,城市,剧场,剧目,演员与角色\n" +
@@ -3200,4 +3344,33 @@
     });
   });
   applyRoute();
+  window.MG_UPGRADE = function (newD) {
+    if (!newD || !newD.actors) return;
+    window.MUSIC_GRAPH = newD;
+    D = newD;
+    actors = newD.actors; relations = newD.relations || []; coWork = newD.coWork || [];
+    actorMusicals = newD.actorMusicals || {}; musicals = newD.musicals || {}; groups = newD.groups || [];
+    moments = newD.moments || [];
+    relations.forEach(function (r) { r.a = s(r.a); r.b = s(r.b); });
+    coWork.forEach(function (e) { e.a = s(e.a); e.b = s(e.b); });
+    Object.keys(musicals).forEach(function (mid) {
+      var m = musicals[mid];
+      if (m.cast) m.cast = m.cast.map(s);
+      if (m.roles) { var nr = {}; Object.keys(m.roles).forEach(function (aid) { nr[s(aid)] = m.roles[aid]; }); m.roles = nr; }
+    });
+    groups.forEach(function (g) { if (g.members) g.members = g.members.map(s); if (g.id !== undefined) g.id = s(g.id); });
+    momentsByActor = {};
+    moments.forEach(function (m) { var aid = s(m.actorId); (momentsByActor[aid] = momentsByActor[aid] || []).push(m); });
+    var nm2 = {};
+    Object.keys(actorMusicals).forEach(function (aid) { nm2[s(aid)] = actorMusicals[aid]; });
+    actorMusicals = nm2;
+    Object.keys(actors).forEach(function (k) { if (actors[k].id !== undefined) actors[k].id = s(actors[k].id); });
+    Object.keys(musicals).forEach(function (k) { if (musicals[k].id !== undefined) musicals[k].id = s(musicals[k].id); });
+    coWorkByActor = {};
+    coWork.forEach(function (e) { if (e.a === e.b) return; (coWorkByActor[e.a] = coWorkByActor[e.a] || []).push(e); (coWorkByActor[e.b] = coWorkByActor[e.b] || []).push(e); });
+    nameCount = {};
+    Object.keys(actors).forEach(function (k) { nameCount[actors[k].name] = (nameCount[actors[k].name] || 0) + 1; });
+    if (currentRoute() === "actor" && currentActorId()) { renderActorPage(currentActorId()); } else { goHome(); }
+    updateStats();
+  };
 })();

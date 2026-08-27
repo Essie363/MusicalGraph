@@ -1,4 +1,4 @@
-﻿/* MusicGraph 数据层（web/data_loader.js）
+/* MusicGraph 数据层（web/data_loader.js）
    加载顺序：data.js → data_loader.js →（数据就绪后注入）app.js
    数据源：优先 PocketBase API（在线、含审核通过的新内容），失败回退静态快照 data.js。
    用法：?pb=<url> 指定后端地址；?mode=static 强制离线快照；localStorage mg_pb_url 可保存地址。
@@ -155,17 +155,25 @@
   }
 
   function loadData() {
-    if (!CONFIG.url) return Promise.resolve(null);
     if (!window.MUSIC_GRAPH) return Promise.resolve(null);
     staticD = window.MUSIC_GRAPH;
-    // quick health probe: fall back to static if backend is unreachable
-    // (probe timeout == data timeout; some environments are slow to first-connect)
-    return fetchJson(CONFIG.url + "/api/health").then(function () {
-      return fetchCollections();
-    }, function () {
-      return null;
+    var trySupabase = window.MG_supabaseLoadData
+      ? window.MG_supabaseLoadData(staticD)
+      : Promise.resolve(null);
+    return trySupabase.then(function (data) {
+      if (data) {
+        window.MG_DATA_SOURCE_NAME = "Supabase \u5728\u7ebf";
+        return data;
+      }
+      if (!CONFIG.url) return null;
+      return fetchJson(CONFIG.url + "/api/health").then(function () {
+        return fetchCollections();
+      }, function () {
+        return null;
+      });
     });
   }
+
   function fetchCollections() {
     return Promise.all([
       pageAll("actors", "id,legacy_id,name," + ACTOR_PROFILE_FIELDS.join(",")),
@@ -190,9 +198,6 @@
         try {
           var t = document.getElementById("toast");
           if (t) {
-            t.textContent = "\u6570\u636e\u6e90\uff1aPocketBase \u5728\u7ebf";
-            t.classList.remove("hidden");
-            setTimeout(function () { t.classList.add("hidden"); }, 2200);
           }
         } catch (e) { /* 忽略 */ }
       }
@@ -204,10 +209,11 @@
     return promise;
   };
 
-  // 数据就绪后注入 app.js（app.js 仍按同步方式读取 window.MUSIC_GRAPH）
-  window.MG_loadSiteData().then(function () {
-    var s = document.createElement("script");
-    s.src = "app.js";
-    document.head.appendChild(s);
+  // 先用静态快照立即渲染首页；Supabase 数据就绪后由 MG_UPGRADE 热替换
+  var s = document.createElement("script");
+  s.src = "app.js";
+  document.head.appendChild(s);
+  window.MG_loadSiteData().then(function (data) {
+    if (data && data !== window.MUSIC_GRAPH && window.MG_UPGRADE) window.MG_UPGRADE(data);
   });
 })();

@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    MusicGraph · 设计系统（参考 Vercel 设计规范，2026-08-10 改版）
    原则：
    - 黑底白字，单色优先；暗红点缀（#6B0F1A），图谱演员光点保持金色
@@ -786,7 +786,6 @@ body.side-open #graph-main { margin-right: 300px; }
 .ap-title { margin: var(--space-5) auto var(--space-3); }
 #ap-name { font-size: 34px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.15; }
 #ap-nickname { color: var(--text-tertiary); margin-top: 4px; }
-#ap-identity { font-size: 13px; color: var(--text-secondary); margin-top: 6px; }
 
 /* 数据统计条：标签 + 数值，无边框药丸 */
 .ap-overview {
