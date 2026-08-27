@@ -20,7 +20,7 @@
 |---|---|
 | 前端 | HTML / CSS / JS（零依赖 Canvas 图谱，桌面 + 手机可用） |
 | 数据 | SQLite 单文件 + Python 数据处理脚本 |
-| 后端（后续） | PocketBase（本地）、Supabase（规划中） |
+| 后端（线上） | Supabase（已选择；REST API + 提交审核流） |
 | 部署 | Vercel |
 
 ## 快速体验
@@ -34,8 +34,8 @@
 
 - `web/`：前端页面与数据快照（`index.html`、`app.js`、`style.css`、`data.js` 等）。
 - `data/`：数据库快照、CSV 导出、百科抓取 JSON、精彩片段数据等。
-- `docs/`：面向维护者的详细文档（部署、PocketBase、待办等）。
-- `pb/`：PocketBase 本地后端配置与迁移。
+- `docs/`：面向维护者的详细文档（部署、Supabase、待办等）。
+- `archive/pocketbase/`：PocketBase 后端存档（已归档，供国内云服务器回退使用）。
 - 根目录 Python 脚本：数据采集、修复、导入导出、一键刷新（`refresh_all.py`）。
 
 ## 数据来源

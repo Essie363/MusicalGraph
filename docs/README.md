@@ -23,7 +23,7 @@
 | 关系图 | Cytoscape.js | ⏳ 规划中 |
 | 数据库 | Supabase（当前 SQLite 单文件） | ⏳ 规划迁移 |
 | 部署 | Vercel | ✅ 已上线（静态 demo） |
-| 后端（本地） | PocketBase（单文件，自带数据库与管理后台） | ✅ 已集成（2026-08-12） |
+| 后端（线上） | Supabase（托管数据库 + REST API + 审核流） | ⏳ 迁移中（已定方案） |
 
 ## 如何运行
 
@@ -31,16 +31,16 @@
 
 双击 `web/index.html` 即可在浏览器打开关系图谱（无需服务器、无需联网）。
 
-### 后端（PocketBase）
+### 后端（当前方案：Supabase；PocketBase 已归档）
 
-如何使用详见 [POCKETBASE.md](POCKETBASE.md)。简版：
+PocketBase 存档位于 `archive/pocketbase/`，详见 [archive/pocketbase/README.md](../archive/pocketbase/README.md)。Supabase 上线步骤见 [DEPLOY_SUPABASE.md](DEPLOY_SUPABASE.md)。简版（存档用法）：
 
 ```bash
-powershell -ExecutionPolicy Bypass -File setup_pocketbase.ps1   # 首次安装：下载 + 建管理员
-start_all.bat                                   # 一键启动：后端 8090 + 网页 8080
-python import_pocketbase.py                     # 导入现有数据
+powershell -ExecutionPolicy Bypass -File archive\pocketbase\setup_pocketbase.ps1
+archive\pocketbase\start_all.bat                 # 一键启动：后端 8090 + 网页 8080
+python archive\pocketbase\import_pocketbase.py   # 导入现有数据
 # 管理员后台: http://127.0.0.1:8090/_/  （审核提交）
-python apply_pocketbase.py                     # 已审核内容回写本地库（可选）
+python archive\pocketbase\apply_pocketbase.py   # 已审核内容回写本地库（可选）
 ```
 
 ### 数据更新后一键刷新
@@ -81,7 +81,7 @@ python import_from_file.py
 
 当前进展（2026-08-18）：静态前端 Demo 已上线（https://musicalgraph.vercel.app/）— GitHub 公开仓库 `Essie363/MusicalGraph` + Vercel（Root Directory = `web`）。数据更新后运行 `python refresh_all.py` 再推送即可自动部署。
 
-V1 正式版目标仍是 Vercel + Supabase（详见 [DEPLOY.md](DEPLOY.md)）；PocketBase 保持本地联调用途（见 POCKETBASE.md）。
+当前后端方案为 Supabase（详见 [DEPLOY_SUPABASE.md](DEPLOY_SUPABASE.md)）；PocketBase 已归档到 `archive/pocketbase/`，仅保留为国内云服务器回退（见 [archive/pocketbase/README.md](../archive/pocketbase/README.md)）。
 
 ## 文档导航
 
@@ -90,6 +90,7 @@ V1 正式版目标仍是 Vercel + Supabase（详见 [DEPLOY.md](DEPLOY.md)）；
 - `docs/AI_CONTEXT.md` — 给 AI 的完整项目上下文
 - `docs/TODO.md` — 待办事项（按优先级）
 - `docs/DEPLOY.md`
-- `docs/POCKETBASE.md` — 本地后端使用指南
-- `docs/后端操作指南.md` — 后端操作指南（小白版）：你现在要做的每一步 — 上线部署指南（Supabase + Next.js + Vercel）
+- `archive/pocketbase/POCKETBASE.md` — PocketBase 存档使用指南（已归档）
+- `archive/pocketbase/后端操作指南.md` — PocketBase 存档操作指南（已归档）
+- `docs/DEPLOY_SUPABASE.md` — Supabase 上线方案（当前路线）
 - `docs/LESSONS.md` — 经验沉淀

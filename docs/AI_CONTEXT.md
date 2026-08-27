@@ -113,15 +113,15 @@ V1 核心功能：
 - 用户系统 + 审核工作流（relations.status: pending → approved/rejected）
 - Vercel 部署上线
 
-## 4.5 PocketBase 后端（2026-08-12 新增）
+## 4.5 后端方案（2026-08-23 更新）
 
-技术架构：正式数据由本地 PocketBase（`pb/`，单文件，自带 SQLite 与管理后台）管理；用户提交写入 `submissions`，管理员在 `http://127.0.0.1:8090/_/` 审核，通过后 `pb/pb_hooks/main.pb.js` 钩子自动写入正式集合（纯转换，不判断内容）。
+技术架构（2026-08-23 起）：线上后端采用 Supabase（托管 Postgres + REST API + RLS）；用户提交写入 `submissions`，管理员在 Supabase Studio 审核，通过后由数据库触发器/函数幂等写入正式表。PocketBase 实现已完整归档到 `archive/pocketbase/`（国内云服务器回退时恢复使用，tag `archive/pocketbase-2026-08-23`）。
 
 集合：actors / musicals / actor_roles / relations / moments / submissions；submissions 为结构化字段（要求来源链接，关系仅限 合作/同学/师生/同公司）。
 
 前端数据层：`web/data_loader.js` API 优先（含审核通过的新内容），后端不可达时回退静态快照 `web/data.js`；`?mode=static` 强制离线。
 
-常用脚本：`setup_pocketbase.ps1`（安装） / `start_all.bat`（一键启动） / `import_pocketbase.py`（SQLite → PocketBase） / `apply_pocketbase.py`（已审核内容回写） / `backup_pocketbase.ps1`（备份）。详见 `docs/POCKETBASE.md`。
+常用脚本（已归档到 `archive/pocketbase/`）：`setup_pocketbase.ps1` / `start_all.bat` / `import_pocketbase.py` / `apply_pocketbase.py` / `backup_pocketbase.ps1`。详见 `archive/pocketbase/README.md`；Supabase 执行步骤见 `docs/DEPLOY_SUPABASE.md`。
 
 ## 5. 数据库核心表（music_graph.db，约 14MB）
 

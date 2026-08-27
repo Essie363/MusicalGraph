@@ -80,14 +80,14 @@
 - [x] 演员个人页排版优化（2026-08-07）：关系网络图改为与首页一致的柔和光点（中心金色强光、明确关系按优先级取关系色、仅共演为中性色）；布局改为「网络图在上 + 信息卡片分栏在下」（两列网格，移动端单列），解决左右长短不匹配；信息顺序调整为 关系→所属团体→参演剧目→常共演搭档；间距与标题层级（Cormorant 小节标题、卡片化分区）优化
 - [x] 关系色优先级（2026-08-07）：多关系并存时按 伴侣>情侣>前任>CP>同学>好友>师生>同公司 取点亮颜色（CP 高于同学）
 - [x] 聚焦点亮优化（2026-08-07）：点击演员进入聚焦态后，与其相关的演员点亮（0.85 亮度+姓名）并沿用关系色点亮（CP/同学/伴侣等明确关系用对应类型颜色，仅共演仍为金色），无关演员保持暗淡（≈0.05）；hover 追光同步支持关系色
-- [ ] Supabase 迁移（可选；已改用本地 PocketBase 作为后端，见 docs/POCKETBASE.md）
+- [ ] Supabase 迁移（2026-08-23 已确定为当前方案；执行步骤见 docs/DEPLOY_SUPABASE.md；PocketBase 已归档到 archive/pocketbase/）
 - [ ] Next.js 前端搭建（可选升级路线；web/ MVP 已实现搜索 + 演员详情页）
 - [ ] Cytoscape.js 关系图谱可视化（可选升级路线）
 
 ## 🟢 低优先级（V1 增强 / 长期）
 
 - [x] 用户提交 + 管理员审核工作流（2026-08-12：PocketBase 后端完成；用户账号体系待后续）
-- [x] PocketBase 后端内容管理系统（2026-08-12）：正式集合 + submissions 提交 + 审核自动入库钩子 + 前端 API 优先数据层 + Contribute 四类提交 + 备份；回归与后端 E2E 全部通过（见 docs/POCKETBASE.md）
+- [x] PocketBase 后端内容管理系统（2026-08-12）：正式集合 + submissions 提交 + 审核自动入库钩子 + 前端 API 优先数据层 + Contribute 四类提交 + 备份；回归与后端 E2E 全部通过（见 archive/pocketbase/POCKETBASE.md，已归档）
 - [x] 静态前端 demo 部署完成（2026-08-18：公网链接 https://musicalgraph.vercel.app/）
 - [ ] GitHub Actions 每日同步启用（2026-08-18：用户确认上线时执行——推送到 GitHub + 启用 .github/workflows/sync.yml，每日 06:00 自动爬取 y.saoju 排期并刷新网页数据）
 - [ ] 建立 docs/LESSONS.md 的持续更新习惯（同问题出现两次以上必须记录）

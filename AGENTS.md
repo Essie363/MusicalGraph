@@ -75,14 +75,14 @@ E:\AI VibeCoding Project\MusicGraph\
 ├── make_profile_template.py  ← 生成档案补齐模板 data/profile_template.csv
 ├── fetch_baike.py            ← 百度百科抓取（2026-08 起被反爬拦截，暂不可用）
 └── refresh_all.py             ← 一键刷新：快照 + 网页数据
-├── pb/                       ← PocketBase 后端（pocketbase.exe 不入库）
-│   ├── pb_migrations/        ← 建表迁移（首次启动自动执行）
+├── archive/pocketbase/       ← PocketBase 后端存档（已归档备选；pocketbase.exe/pb_data 不入库）
+│   ├── pb_migrations/        ← 建表迁移（恢复后首次启动自动执行）
 │   └── pb_hooks/             ← 审核自动入库钩子（净转换器）
-├── setup_pocketbase.ps1      ← 安装后端（下载 + 建管理员）
-├── start_all.bat             ← 一键启动：后端 + 网页
-├── backup_pocketbase.ps1     ← 后端数据库备份（保留 30 份）
-├── import_pocketbase.py      ← SQLite → PocketBase 全量导入（幂等）
-└── apply_pocketbase.py       ← 已审核内容回写 SQLite（可选）
+│   ├── setup_pocketbase.ps1  ← 安装后端（下载 + 建管理员）
+│   ├── start_all.bat         ← 一键启动：后端 + 网页
+│   ├── backup_pocketbase.ps1 ← 后端数据库备份（保留 30 份）
+│   ├── import_pocketbase.py  ← SQLite → PocketBase 全量导入（幂等）
+│   └── apply_pocketbase.py   ← 已审核内容回写 SQLite（可选）
 ```
 
 ## 数据库核心表
@@ -170,14 +170,15 @@ python check_gaps.py
 # 手动同步（当前无自动定时；上线启用 GitHub Actions 后自动跑）
 python sync.py
 
-# 启动后端与网页（首次先跑 setup_pocketbase.ps1）
-start_all.bat
+# 当前线上后端为 Supabase；以下为 PocketBase 国内回退用法（已归档）
+# 启动后端与网页（首次先跑 archive/pocketbase/setup_pocketbase.ps1）
+archive\pocketbase\start_all.bat
 
-# 导入现有数据到后端（管理员后台 http://127.0.0.1:8090/_/ 审核提交）
-python import_pocketbase.py
+# 导入现有数据（管理员后台 http://127.0.0.1:8090/_/ 审核提交）
+python archive\pocketbase\import_pocketbase.py
 
 # 已审核内容回写本地库（保持离线快照一致，可选）
-python apply_pocketbase.py
+python archive\pocketbase\apply_pocketbase.py
 
 # 导入新的一批演员资料（tab 分隔格式）
 # 修改 import_profiles_v3.py 或 import_from_file.py 中的 raw 字符串，然后运行
@@ -203,7 +204,7 @@ python apply_pocketbase.py
 - [x] CP 关系入库（123 条，type=cp 粉丝组合；couple 真实情侣暂空待补充）
 - [x] 团体表建设（33 个团体，69 人次）
 
-- [x] **PocketBase 后端内容管理系统（2026-08-12）**：正式数据集合 actors/musicals/actor_roles/relations/moments + submissions 提交流程；管理员在 /_/ 后台审核，通过后钩子自动入库（纯转换，不判断内容）；前端数据层 API 优先 + 静态回退；Contribute 四类提交（含精彩片段，来源必填，关系仅限合作/同学/师生/同公司）；备份脚本 backup_pocketbase.ps1；参见 docs/POCKETBASE.md；回归与后端 E2E 全部通过
+- [x] **PocketBase 后端内容管理系统（2026-08-12）**：正式数据集合 actors/musicals/actor_roles/relations/moments + submissions 提交流程；管理员在 /_/ 后台审核，通过后钩子自动入库（纯转换，不判断内容）；前端数据层 API 优先 + 静态回退；Contribute 四类提交（含精彩片段，来源必填，关系仅限合作/同学/师生/同公司）；备份脚本 backup_pocketbase.ps1；参见 archive/pocketbase/POCKETBASE.md（已归档）；回归与后端 E2E 全部通过；2026-08-23 起线上后端定为 Supabase
 
 ### 待完成
 - [ ] 继续补演员档案（覆盖率仅 9%，参见 `uncovered_actors.csv`）
