@@ -1,4 +1,4 @@
-﻿"""Apply approved PocketBase submissions back into music_graph.db (SQLite).
+"""Apply approved PocketBase submissions back into music_graph.db (SQLite).
 
 Purpose: keep the offline static snapshot (web/data.js via refresh_all.py)
 consistent with admin-approved user contributions.
@@ -22,7 +22,7 @@ import urllib.request
 from datetime import datetime
 from pathlib import Path
 
-BASE = Path(__file__).resolve().parent
+BASE = Path(__file__).resolve().parents[2]
 DB = Path(os.environ.get("MG_SQLITE_DB", str(BASE / "music_graph.db")))
 PER_PAGE = 500
 ACTOR_FIELDS = ["nickname", "birth_date", "major", "school", "hometown", "enrollment_year", "height", "note", "role"]

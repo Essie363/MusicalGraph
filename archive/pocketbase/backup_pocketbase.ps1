@@ -1,15 +1,16 @@
-﻿# CAST LIGHT - PocketBase database backup script
+# CAST LIGHT - PocketBase database backup script
 # Usage: powershell -ExecutionPolicy Bypass -File backup_pocketbase.ps1
 # Note: for a fully consistent snapshot, stop PocketBase first (or accept the
 #       small risk of copying while the service is running).
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
+$ProjectRoot = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $DataDb = Join-Path $Root "pb\pb_data\data.db"
 if (-not (Test-Path $DataDb)) {
     Write-Host "Not found: $DataDb  (start PocketBase once first)."
     exit 1
 }
-$BackupDir = Join-Path $Root "data\backups"
+$BackupDir = Join-Path $ProjectRoot "data\backups"
 New-Item -ItemType Directory -Force -Path $BackupDir | Out-Null
 $stamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $dest = Join-Path $BackupDir "pb_$stamp.db"

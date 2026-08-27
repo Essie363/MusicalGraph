@@ -30,10 +30,10 @@ Thumbs.db
 # 数据库备份（Git 本身就是版本管理，备份不入库）
 music_graph_backup_*.db
 
-# PocketBase 本地数据与二进制（不入库，由 setup_pocketbase.ps1 下载生成）
-pb/pb_data/
-pb/pocketbase.exe
-pb/*.log
+# PocketBase 存档本地数据与二进制（不入库，恢复时由 setup_pocketbase.ps1 生成）
+archive/pocketbase/pb/pb_data/
+archive/pocketbase/pb/pocketbase.exe
+archive/pocketbase/pb/*.log
 data/backups/
 
 # 本地 AI 工具目录（不入库）

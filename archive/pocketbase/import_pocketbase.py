@@ -1,4 +1,4 @@
-﻿"""Import music_graph.db (SQLite) data into PocketBase collections.
+"""Import music_graph.db (SQLite) data into PocketBase collections.
 
 Collections imported (idempotent, keyed by legacy_id):
   actors / musicals / actor_roles / relations / moments
@@ -19,7 +19,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-BASE = Path(__file__).resolve().parent
+BASE = Path(__file__).resolve().parents[2]
 DB = BASE / "music_graph.db"
 PER_PAGE = 500
 
