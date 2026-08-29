@@ -213,7 +213,9 @@
   var s = document.createElement("script");
   s.src = "app.js";
   document.head.appendChild(s);
-  window.MG_loadSiteData().then(function (data) {
-    if (data && data !== window.MUSIC_GRAPH && window.MG_UPGRADE) window.MG_UPGRADE(data);
+  window.MG_loadSiteData().then(function (mode) {
+    if (mode === "api" && window.MG_UPGRADE && window.MUSIC_GRAPH) {
+      window.MG_UPGRADE(window.MUSIC_GRAPH);
+    }
   });
 })();
