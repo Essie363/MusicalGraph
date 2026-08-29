@@ -368,8 +368,20 @@
     <div class="c-group hidden" id="c-fix-relation">
       <label>人物 A *<input type="text" name="actorA" data-label="人物 A" required placeholder="必填" autocomplete="off"></label>
       <label>人物 B *<input type="text" name="actorB" data-label="人物 B" required placeholder="必填" autocomplete="off"></label>
-      <label>当前关系 / 描述（如已知）<input type="text" name="wrong" data-label="当前关系/描述" placeholder="可选" autocomplete="off"></label>
-      <label>正确关系 / 说明 *<input type="text" name="correct" data-label="正确关系/说明" required placeholder="必填" autocomplete="off"></label>
+      <label>他们现在的关系 *
+        <select name="curType" data-label="当前关系类型">
+          <option value="co_work">合作演出</option>
+          <option value="classmate">同学</option>
+          <option value="cp">CP</option>
+          <option value="couple">情侣</option>
+          <option value="married">伴侣</option>
+          <option value="ex">前任</option>
+          <option value="roommate">室友</option>
+        </select>
+      </label>
+      <label>当前内容 / 当前 CP 名（如已知）<input type="text" name="wrong" data-label="当前内容/当前CP名" placeholder="可选" autocomplete="off"></label>
+      <label class="fix-correct-generic">正确的关系说明 *<input type="text" name="correct" data-label="正确关系说明" required placeholder="必填" autocomplete="off"></label>
+      <label class="fix-correct-cp hidden">正确的 CP 名 *<input type="text" name="correctCpName" data-label="正确CP名" placeholder="必填" autocomplete="off"></label>
     </div>
 
     <!-- 精彩片段（无补充/勘误之分） -->

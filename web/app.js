@@ -2766,7 +2766,7 @@
   var REL_GROUPS = {
     co_work: [{ code: "co_work", label: "合作演出" }],
     love: [{ code: "married", label: "伴侣" }, { code: "couple", label: "情侣" }, { code: "ex", label: "前任" }],
-    group: [{ code: "classmate", label: "同学" }, { code: "roommate", label: "室友" }, { code: "friend", label: "好友" }],
+    group: [{ code: "classmate", label: "同学" }, { code: "roommate", label: "室友" }],
     fan: [{ code: "cp", label: "CP" }]
   };
   function fillRelTypes(catKey) {
@@ -2785,6 +2785,20 @@
   if (relCat) {
     fillRelTypes(relCat.value);
     relCat.addEventListener("change", function () { fillRelTypes(relCat.value); });
+  }
+  function syncFixRelationCp() {
+    var sel = document.querySelector('#c-fix-relation select[name="curType"]');
+    if (!sel) return;
+    var isCp = sel.value === "cp";
+    var generic = document.querySelector('#c-fix-relation .fix-correct-generic');
+    var cpBox = document.querySelector('#c-fix-relation .fix-correct-cp');
+    if (generic) generic.classList.toggle("hidden", isCp);
+    if (cpBox) cpBox.classList.toggle("hidden", !isCp);
+  }
+  var fixCurType = document.querySelector('#c-fix-relation select[name="curType"]');
+  if (fixCurType) {
+    syncFixRelationCp();
+    fixCurType.addEventListener("change", syncFixRelationCp);
   }
 
   // ---- 联系与反馈：卡片式流程（一级入口 → 内容类型 → 表单 / 意见反馈）----
@@ -2880,6 +2894,7 @@
     fbCat.value = d.category;
     fbCat.dispatchEvent(new Event("change", { bubbles: true }));
     if (d.category === "relation" && d.values && d.values.relCat) fillRelTypes(d.values.relCat);
+    if (d.category === "relation" && d.values && d.values.curType) syncFixRelationCp();
     var group = activeFormGroup();
     if (group && d.values) {
       Object.keys(d.values).forEach(function (k) {
@@ -2970,7 +2985,10 @@
     if (category === "relation" && (!fields.actorA || !fields.actorB)) { showToast("请填写关系双方姓名"); return null; }
     if (mode === "fix") {
       var castFixOk = category === "musical" && fields.castActor && fields.correctCastRole;
-      if (!castFixOk && !fields.correct) { showToast("请填写正确角色或正确内容"); return null; }
+      var relFixOk;
+      if (category === "relation") relFixOk = fields.curType === "cp" ? !!fields.correctCpName : !!fields.correct;
+      else relFixOk = castFixOk || !!fields.correct;
+      if (!relFixOk) { showToast("请填写正确的 CP 名或关系说明"); return null; }
     }
     return item;
   }
@@ -3026,11 +3044,15 @@
       p.submission_type = "relation_update";
       p.actor_a = f.actorA;
       p.actor_b = f.actorB;
-      p.relation_type = f.relType || "co_work";
+      p.relation_type = f.curType || f.relType || "co_work";
       var desc = f.detail || "";
-      if (item.mode === "fix" && f.correct) desc = (desc ? desc + "；" : "") + "勘误：" + f.correct;
+      if (item.mode === "fix") {
+        var newVal = p.relation_type === "cp" ? f.correctCpName : f.correct;
+        if (f.wrong) desc = (desc ? desc + "；" : "") + "原内容：" + f.wrong;
+        if (newVal) desc = (desc ? desc + "；" : "") + "改为：" + newVal;
+        if (newVal) p.details = JSON.stringify({ fix: { field: "detail", correct: newVal } });
+      }
       if (desc) p.description = desc;
-      if (item.mode === "fix" && f.correct) p.details = JSON.stringify({ fix: { field: "detail", correct: f.correct } });
     } else if (item.category === "moment") {
       p.submission_type = "moment_submission";
       p.actor_a = f.actorName;

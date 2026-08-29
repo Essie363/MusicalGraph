@@ -145,7 +145,7 @@ create table if not exists submissions (
   actor_a text,
   actor_b text,
   musical_name text,
-  relation_type text check (relation_type in ('co_work','classmate','teacher_student','same_company')),
+  relation_type text check (relation_type in ('co_work','classmate','friend','couple','teacher_student','same_company','cp','married','ex','roommate')),
   title text,
   url text,
   platform text check (platform in ('bilibili','netease','youtube','xiaohongshu')),

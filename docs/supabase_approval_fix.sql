@@ -1,25 +1,8 @@
--- Supabase 反馈 + 勘误闭环升级（一次性执行）
--- 1) submissions 增加 feedback 类型
--- 2) 关系类型允许 cp/couple/married/ex（用于感情/CP 的补充与勘误）
--- 3) 审核触发器升级：补充新增，勘误更新已有数据
-
-do $$
-begin
-  if exists (select 1 from pg_constraint where conname = 'submissions_submission_type_check' and conrelid = 'submissions'::regclass) then
-    alter table submissions drop constraint submissions_submission_type_check;
-  end if;
-end $$;
-alter table submissions add constraint submissions_submission_type_check check (
-  submission_type in ('actor_update','musical_update','relation_update','moment_submission','schedule_submission','feedback'));
-
-do $$
-begin
-  if exists (select 1 from pg_constraint where conname = 'submissions_relation_type_check' and conrelid = 'submissions'::regclass) then
-    alter table submissions drop constraint submissions_relation_type_check;
-  end if;
-end $$;
-alter table submissions add constraint submissions_relation_type_check check (
-  relation_type in ('co_work','classmate','friend','couple','teacher_student','same_company','cp','married','ex','roommate'));
+-- Supabase 审核触发器修正版（一次性执行）
+-- 修复：note 字符串拼接与 jsonb ->> 运算符优先级冲突，导致"演员改名"等
+-- 勘误在通过时报 operator does not exist: text ->> unknown。
+-- 本文件整体重建 apply_approved_submission，包含：反馈标记、勘误自动入库、
+-- 幂等防重复、排期提交后自动重算共演边。可直接粘贴到 Supabase SQL Editor 运行。
 
 create or replace function apply_approved_submission() returns trigger language plpgsql as $$
 declare
@@ -170,9 +153,12 @@ begin
         end loop;
       end if;
     end loop;
-    perform rebuild_co_work();
   end if;
 
+  -- 涉及排期的审核通过后，自动重算共演边（同场卡司）
+  if new.submission_type = 'schedule_submission' then
+    perform rebuild_co_work();
+  end if;
   new.applied := true;
   new.reviewed_at := now();
   new.review_note := coalesce(note, '已写入正式库');
