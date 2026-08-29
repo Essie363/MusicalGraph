@@ -1,0 +1,5 @@
+name = "musicalgraph"
+compatibility_date = "2026-08-29"
+
+# 把 web/ 目录作为 Worker 静态资源发布，保持现有 workers.dev 地址不变
+assets = { directory = "./web", not_found_handling = "single-page-application" }
