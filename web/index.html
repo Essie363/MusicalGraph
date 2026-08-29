@@ -279,6 +279,7 @@
 
     <!-- 补充 · 剧目 -->
     <div class="c-group hidden" id="c-supplement-musical">
+      <div class="c-split-title">方式一 · 单条提交</div>
       <label>剧目名称 *<input type="text" name="name" data-label="剧目名称" required placeholder="必填" autocomplete="off"></label>
       <div class="c-sub-sec">
         <span class="c-sub-title">卡司 / 角色表</span>
@@ -301,17 +302,6 @@
         <label>演出日期<input type="text" name="date" data-label="演出日期" placeholder="如 2026/8/7（可选）" autocomplete="off"></label>
         <label>城市<input type="text" name="city" data-label="城市" placeholder="可选" autocomplete="off"></label>
         <label>剧院<input type="text" name="theatre" data-label="剧院" placeholder="可选" autocomplete="off"></label>
-      </div>
-      <div class="c-sub-sec">
-        <span class="c-sub-title">演出排期批量上传</span>
-        <span class="c-sub-hint">多场排期可一次粘贴表格或上传 CSV；请按模板的每一列填一个字段（每个字段一格）。导入时会按 日期/时间/城市/剧场/剧目 自动去重。</span>
-        <div class="batch-tools">
-          <a class="c-link" id="sched-template" href="javascript:void(0)">下载表格模板</a>
-          <label class="c-link c-file">上传表格<input id="sched-file" type="file" accept=".csv,.tsv,.txt"></label>
-        </div>
-        <textarea id="sched-bulk" rows="5" placeholder="把多行排期粘贴到这里，示例：&#10;2026-05-01,19:30,上海,文化广场,我，堂吉诃德,刘阳：堂吉诃德；党韫葳：阿尔东莎"></textarea>
-        <a class="c-link" id="sched-parse" href="javascript:void(0)">解析并预览</a>
-        <div id="sched-preview" class="hidden"></div>
       </div>
       <label>备注<textarea name="note" data-label="备注" rows="3" placeholder="可选"></textarea></label>
     </div>
@@ -404,6 +394,17 @@
     <label>Email（可选，用于反馈）<input id="c-email" type="email" placeholder="your@email.com" autocomplete="off"></label>
 
     <button type="submit" class="c-submit">提交</button>
+    <div id="c-batch-musical" class="hidden">
+      <div class="c-split-title">方式二 · 批量提交</div>
+      <span class="c-sub-hint">多场排期可一次粘贴表格或上传 CSV；请按模板的每一列填一个字段（每个字段一格）。导入时会按 日期/时间/城市/剧场/剧目 自动去重。</span>
+      <div class="batch-tools">
+        <a class="c-link" id="sched-template" href="javascript:void(0)">下载表格模板</a>
+        <label class="c-link c-file">上传表格<input id="sched-file" type="file" accept=".csv,.tsv,.txt"></label>
+      </div>
+      <textarea id="sched-bulk" rows="5" placeholder="把多行排期粘贴到这里，示例：&#10;2026-05-01,19:30,上海,文化广场,我，堂吉诃德,刘阳：堂吉诃德；党韫葳：阿尔东莎"></textarea>
+      <a class="c-link" id="sched-parse" href="javascript:void(0)">解析并预览</a>
+      <div id="sched-preview" class="hidden"></div>
+    </div>
       </form>
       <div class="hidden">
         <select id="c-mode" aria-hidden="true" tabindex="-1"><option value="supplement">补充信息</option><option value="fix">勘误（修正错误）</option></select>

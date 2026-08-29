@@ -2682,6 +2682,8 @@
     document.querySelectorAll(".c-group").forEach(function (g) {
       g.classList.toggle("hidden", g.id !== active);
     });
+    var batch = document.getElementById("c-batch-musical");
+    if (batch) batch.classList.toggle("hidden", !(category === "musical" && document.getElementById("c-mode").value === "supplement"));
   }
   document.getElementById("c-mode").addEventListener("change", syncContributeGroups);
   document.getElementById("c-category").addEventListener("change", syncContributeGroups);
@@ -3276,7 +3278,7 @@
         "<span class='sched-info'>" + escHtml((r.date || "?") + " · " + (r.musical || "?") + " · " + r.castCnt + " 位演员") + "</span>" +
         "<span class='sched-status'>" + (r.ok ? "可提交" : escHtml(r.msg)) + "</span></div>";
     });
-    if (ok) html += "<div class='sched-foot'><button type='button' class='c-btn' id='sched-submit'>提交 " + ok + " 条</button><button type='button' class='c-btn' id='sched-clear'>清空</button></div>";
+    if (ok) html += "<div class='sched-foot'><button type='button' class='c-submit' id='sched-submit'>提交 " + ok + " 条</button><button type='button' class='c-btn' id='sched-clear'>清空</button></div>";
     box.innerHTML = html;
     box.classList.remove("hidden");
     var sBtn = document.getElementById("sched-submit");
