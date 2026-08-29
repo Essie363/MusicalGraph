@@ -29,6 +29,13 @@ jobs:
           python sync.py
           python export_graph.py
           python refresh_all.py
+      - name: Sync SQLite to Supabase
+        if: ${{ secrets.SUPABASE_URL != '' && secrets.SUPABASE_SERVICE_KEY != '' }}
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          python migrate_supabase.py
 
       - name: Commit & push updates
         run: |
