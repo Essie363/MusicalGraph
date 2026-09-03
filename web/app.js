@@ -2360,7 +2360,7 @@
       if (common.length) {
         var sub = document.createElement("div");
         sub.className = "rel-detail";
-        sub.textContent = "共同作品：" + common.slice(0, 3).join("、") + (common.length > 3 ? " 等" + common.length + "部" : "");
+        sub.textContent = "共同作品：" + common.join("、");
         li.appendChild(sub);
       }
       ul.appendChild(li);
