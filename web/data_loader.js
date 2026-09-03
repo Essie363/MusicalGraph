@@ -150,7 +150,9 @@
       actorCounts: staticD.actorCounts || {},
       musicalStats: staticD.musicalStats || {},
       groups: staticD.groups || [],
-      moments: moments
+      moments: moments,
+      actorRoleOptions: {},
+      ratings: { actors: [], roles: [] }
     };
   }
 

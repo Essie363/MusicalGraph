@@ -91,6 +91,8 @@ function check(name, cond, extra) {
     return document.body.classList.contains("side-open") &&
            document.getElementById("fc-name").textContent === "郑云龙";
   }));
+  check("静态模式图谱评分摘要存在", await page.$eval("#fc-rating", el => !el.classList.contains("hidden") && el.textContent.includes("暂无评分")));
+  check("静态模式图谱评分入口隐藏", await page.$eval("#fc-rate", el => el.classList.contains("hidden")));
   await page.click("#fc-detail");
   await page.waitForTimeout(800);
   check("点击查看详情进入详情页", await page.$eval("#actor-view", el => !el.classList.contains("hidden")));
@@ -98,6 +100,51 @@ function check(name, cond, extra) {
   console.log("== 搜索演员 -> 详情页 ==");
   await openActor("郑云龙");
   check("详情页打开", await page.$eval("#actor-view", el => !el.classList.contains("hidden")));
+  check("静态模式详情评分模块存在", await page.$eval("#ap-rating-body", el => el.textContent.includes("暂无评分")));
+  check("静态模式详情评分入口隐藏", await page.$eval("#ap-rate", el => el.classList.contains("hidden")));
+
+  console.log("== 评分在线流程（模拟 RPC）==");
+  await page.evaluate(() => {
+    const actorId = window.__apCenterId();
+    window.__ratingRpcCalls = [];
+    window.fetch = (url, init) => {
+      const body = init && init.body ? JSON.parse(init.body) : {};
+      window.__ratingRpcCalls.push({ url: String(url), body });
+      let data = {};
+      if (String(url).includes("get_rating_performances")) data = [{ id: 300, date: "2026-09-03", time: "19:30", city: "上海", theatre: "测试剧场", role_confirmed: false, cast: [{ actor_id: body.p_actor_id, actor_name: "郑云龙", role_name: "角色待补充" }] }];
+      if (String(url).includes("get_my_rating")) data = { singing_score: 4.5, dancing_score: null, acting_score: 5 };
+      if (String(url).includes("get_rating_summary")) data = { actors: [], roles: [] };
+      return Promise.resolve(new Response(JSON.stringify(data), { status: 200, headers: { "Content-Type": "application/json" } }));
+    };
+    window.MG_SUPABASE = { url: "https://example.test", anonKey: "test", timeoutMs: 1000 };
+    history.replaceState(null, "", location.pathname + "#/actor/" + actorId);
+    window.MG_UPGRADE(Object.assign({}, window.MUSIC_GRAPH, {
+      actorRoleOptions: { [actorId]: [{ musicalId: "100", musicalName: "测试剧目", roleId: "200", roleName: "测试角色" }] },
+      ratings: { actors: [], roles: [] }
+    }));
+  });
+  check("在线模式显示评分入口", await page.$eval("#ap-rate", el => !el.classList.contains("hidden")));
+  await page.click("#ap-rate");
+  await page.$eval("#rating-musical", el => { el.value = "100"; el.dispatchEvent(new Event("change", { bubbles: true })); });
+  await page.$eval("#rating-role", el => { el.value = "200"; el.dispatchEvent(new Event("change", { bubbles: true })); });
+  await page.$eval("#rating-date", el => { el.value = "2026-09-03"; el.dispatchEvent(new Event("change", { bubbles: true })); });
+  await page.waitForTimeout(100);
+  check("场次按日期读取", await page.$eval("#rating-performance-results", el => el.textContent.includes("19:30")));
+  await page.click(".rating-performance-choice");
+  check("待补充角色不阻断评分", await page.$eval("#rating-performance-confirm", el => el.textContent.includes("待核验")));
+  await page.waitForTimeout(100);
+  check("旧评分会回填", await page.$eval("[data-dimension='singing'] .rating-value", el => el.textContent === "4.5 星") && await page.$eval("[data-dimension='acting'] .rating-value", el => el.textContent === "5.0 星"));
+  await page.setViewportSize({ width: 390, height: 844 });
+  check("手机端评分弹窗不横向溢出", await page.$eval(".rating-dialog", el => {
+    const r = el.getBoundingClientRect();
+    return r.left >= 0 && r.right <= window.innerWidth && document.documentElement.scrollWidth <= window.innerWidth;
+  }));
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.click("#rating-submit");
+  await page.waitForTimeout(100);
+  check("重复评分调用覆盖 RPC", await page.evaluate(() => window.__ratingRpcCalls.some(x => x.url.includes("upsert_actor_rating") && x.body.p_performance_id === 300 && x.body.p_singing_score === 4.5 && x.body.p_acting_score === 5)));
+  check("提交后关闭评分弹窗", await page.$eval("#rating-modal", el => el.classList.contains("hidden")));
+
   check("详情页姓名", (await page.textContent("#ap-name")) === "郑云龙", await page.textContent("#ap-name"));
   check("关系列表有内容", await page.$$eval("#ap-relations li", els => els.length) >= 1);
   check("常共演有内容", await page.$$eval("#ap-cowork li", els => els.length) >= 1);
@@ -800,6 +847,17 @@ function check(name, cond, extra) {
   await page.click('#scene-filter button[data-scene="moments"]');
   await page.waitForTimeout(1500);
   check("筛选条再次点击退出", await page.evaluate(() => window.__homeScene() === null));
+
+  console.log("== 评分演示模式 ==");
+  const demoPage = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  await demoPage.goto("file:///E:/AI%20VibeCoding%20Project/MusicGraph/web/index.html?mode=rating-demo&v=" + Date.now(), { waitUntil: "load" });
+  await demoPage.waitForTimeout(1200);
+  check("演示模式生成模拟聚合评分", await demoPage.evaluate(() => (window.MUSIC_GRAPH.ratings || {}).actors.length > 100));
+  await demoPage.evaluate(() => { location.hash = "#/actor/" + Object.keys(window.MUSIC_GRAPH.actorRoleOptions)[0]; });
+  await demoPage.waitForTimeout(500);
+  check("演示模式详情页标注模拟评分", await demoPage.$eval("#ap-rating-body", el => el.textContent.includes("模拟评分")));
+  check("演示模式保留体验评分入口", await demoPage.$eval("#ap-rate", el => !el.classList.contains("hidden")));
+  await demoPage.close();
 
   console.log("== JS 错误 ==");
   check("无 JS 错误", errors.length === 0, errors.slice(0, 3).join("; "));

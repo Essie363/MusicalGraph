@@ -152,7 +152,9 @@
         <div id="fc-stats" class="fc-stats"></div>
         <div id="fc-tags" class="fc-tags"></div>
         <div id="fc-moments" class="fc-moments hidden"></div>
+        <div id="fc-rating" class="fc-rating"></div>
         <div class="fc-actions">
+          <button id="fc-rate" class="fc-btn">给 TA 打分</button>
           <button id="fc-detail" class="fc-btn primary">查看详情</button>
         </div>
       </section>
@@ -454,6 +456,15 @@
 
   <dl id="ap-fields"></dl>
 
+  <section id="ap-rating-sec" class="ap-rating">
+    <div class="ap-rating-head">
+      <h3>观众评分</h3>
+      <button id="ap-rate" class="fc-btn">给 TA 打分</button>
+    </div>
+    <div id="ap-rating-body"></div>
+    <div id="ap-rating-detail"></div>
+  </section>
+
   <section class="ap-net">
     <h3>关系网络</h3>
     <div id="ap-graph-wrap"><canvas id="ap-graph"></canvas></div>
@@ -489,9 +500,57 @@
 
 </main>
 <div id="toast" class="toast hidden"></div>
+<div id="rating-modal" class="rating-modal hidden" role="dialog" aria-modal="true" aria-labelledby="rating-title">
+  <div class="rating-dialog">
+    <div class="rating-dialog-head">
+      <div><h2 id="rating-title">给演员打分</h2><p id="rating-actor-name"></p></div>
+      <button id="rating-close" class="rating-close" type="button" title="关闭" aria-label="关闭">×</button>
+    </div>
+    <div class="rating-selects">
+      <label>你看过 TA 的哪部剧？<select id="rating-musical"><option value="">请选择剧目</option></select></label>
+      <label>TA 在这部剧中饰演的角色<select id="rating-role" disabled><option value="">请先选择剧目</option></select></label>
+      <div id="rating-date-wrap" class="rating-date-wrap hidden">
+        <span>你看的是哪一天？</span>
+        <div class="rating-calendar-control">
+          <button id="rating-date-trigger" class="rating-date-trigger" type="button" disabled aria-haspopup="dialog" aria-expanded="false">选择日期</button>
+          <div id="rating-calendar" class="rating-calendar hidden" role="dialog" aria-label="选择演出日期">
+            <div class="rating-calendar-head">
+              <button id="rating-calendar-prev" type="button" title="上个月" aria-label="上个月">‹</button>
+              <button id="rating-calendar-title" type="button" aria-label="选择年份"></button>
+              <button id="rating-calendar-next" type="button" title="下个月" aria-label="下个月">›</button>
+            </div>
+            <div class="rating-calendar-weekdays"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+            <div id="rating-calendar-days" class="rating-calendar-days"></div>
+            <div id="rating-calendar-years" class="rating-calendar-years hidden"></div>
+          </div>
+        </div>
+        <input id="rating-date" type="hidden">
+      </div>
+    </div>
+    <div id="rating-performance-results" class="rating-performance-results hidden"></div>
+    <div id="rating-performance-confirm" class="rating-performance-confirm hidden"></div>
+    <div id="rating-dimensions" class="rating-dimensions hidden">
+      <div class="rating-dimension" data-dimension="singing"><b class="rating-dimension-label">唱</b><div class="rating-star-picker" role="group" aria-label="唱评分"></div><span class="rating-value">未评分</span><button type="button" class="rating-clear">未评分</button></div>
+      <div class="rating-dimension" data-dimension="acting"><b class="rating-dimension-label">演</b><div class="rating-star-picker" role="group" aria-label="演评分"></div><span class="rating-value">未评分</span><button type="button" class="rating-clear">未评分</button></div>
+      <div class="rating-dimension" data-dimension="dancing"><b class="rating-dimension-label">跳</b><div class="rating-star-picker" role="group" aria-label="跳评分"></div><span class="rating-value">未评分</span><button type="button" class="rating-clear">未评分</button></div>
+    </div>
+    <p id="rating-hint" class="rating-hint">请选择剧目与角色。</p>
+    <div class="rating-dialog-actions"><button id="rating-submit" type="button" class="fc-btn primary" disabled>提交评分</button></div>
+  </div>
+</div>
+<div id="rating-details-modal" class="rating-modal hidden" role="dialog" aria-modal="true" aria-labelledby="rating-details-title">
+  <div class="rating-dialog rating-details-dialog">
+    <div class="rating-dialog-head">
+      <div><h2 id="rating-details-title">详细评分</h2><p id="rating-details-actor-name"></p></div>
+      <button id="rating-details-close" class="rating-close" type="button" title="关闭" aria-label="关闭">×</button>
+    </div>
+    <div id="rating-details-content"></div>
+  </div>
+</div>
 <script src="supabase_config.js"></script>
 <script src="supabase_loader.js"></script>
 <script src="data.js"></script>
+<script src="rating_demo_data.js"></script>
 
 <script src="data_loader.js"></script>
 <!-- app.js 由 data_loader.js 在数据就绪后注入 -->
