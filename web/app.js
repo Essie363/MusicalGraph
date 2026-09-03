@@ -2936,10 +2936,15 @@
     ratingPerformanceConfirm.classList.remove("hidden");
     document.getElementById("rating-performance-change").addEventListener("click", loadRatingPerformances);
   }
+  function ratingNoPerformanceMessage() {
+    var year = Number((ratingDate.value || "").slice(0, 4));
+    if (year && year < 2023) return "2023 年以前的历史排期覆盖有限，未查询到这一天的场次";
+    return "暂未查询到 TA 在这一天的已录入场次";
+  }
   function renderRatingPerformances(performances) {
     ratingPerformanceResults.innerHTML = "";
     if (!performances.length) {
-      ratingPerformanceResults.innerHTML = "<div class='rating-manual-performance'><p>没有找到 TA 在这一天的已录入场次</p><label>开始时间<input id='rating-manual-time' type='time' required></label><button type='button' class='fc-btn' id='rating-manual-performance-use'>继续评分</button></div>";
+      ratingPerformanceResults.innerHTML = "<div class='rating-manual-performance'><p>" + ratingNoPerformanceMessage() + "。补充开始时间后仍可直接评分。</p><label>开始时间<input id='rating-manual-time' type='time' required></label><button type='button' class='fc-btn' id='rating-manual-performance-use'>继续评分</button></div>";
       ratingPerformanceResults.classList.remove("hidden");
       document.getElementById("rating-manual-performance-use").addEventListener("click", function () {
         var time = document.getElementById("rating-manual-time").value;
