@@ -77,16 +77,63 @@ create table if not exists public.ratings (
   constraint ratings_acting_score_range check (acting_score is null or (acting_score between 0.5 and 5.0 and acting_score * 2 = floor(acting_score * 2)))
 );
 
--- 兼容已执行过 V1 的项目。历史 V1 记录可暂时为空；V1.1 的 RPC 始终写入 performance_id，且聚合不会纳入旧记录。
+-- 兼容已执行过 V1 的项目。无已录入排期的评分允许 performance_id 为空，场次信息另存为用户补充资料。
 alter table public.ratings
   add column if not exists performance_id integer references public.shows(id) on delete restrict;
+alter table public.ratings alter column performance_id drop not null;
 drop index if exists public.ratings_one_per_user_actor_musical_role;
 create unique index if not exists ratings_one_per_user_performance_actor_role
   on public.ratings (anonymous_user_id, performance_id, actor_id, role_id)
   where performance_id is not null;
-create index if not exists ratings_actor_valid_idx on public.ratings (actor_id) where status = 'valid' and performance_id is not null;
-create index if not exists ratings_role_valid_idx on public.ratings (actor_id, musical_id, role_id) where status = 'valid' and performance_id is not null;
+create unique index if not exists ratings_one_per_user_subject_without_performance
+  on public.ratings (anonymous_user_id, actor_id, musical_id, role_id)
+  where performance_id is null;
+drop index if exists public.ratings_actor_valid_idx;
+drop index if exists public.ratings_role_valid_idx;
+create index if not exists ratings_actor_valid_idx on public.ratings (actor_id) where status = 'valid';
+create index if not exists ratings_role_valid_idx on public.ratings (actor_id, musical_id, role_id) where status = 'valid';
 create index if not exists ratings_user_updated_idx on public.ratings (anonymous_user_id, updated_at desc);
+
+-- 找不到排期时，只记录用户记得的演出日期与时段；不伪造精确开演时间。
+create table if not exists public.rating_performance_submissions (
+  rating_id bigint primary key references public.ratings(id) on delete cascade,
+  performance_date date not null,
+  session_period text not null check (session_period in ('matinee', 'evening', 'night')),
+  status text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+-- 自由填写的剧目/角色可立即计入演员总分，但只有映射到正式资料后才进入角色详情分。
+create table if not exists public.rating_subject_submissions (
+  id bigint generated always as identity primary key,
+  anonymous_user_id text not null,
+  actor_id integer not null references public.artists(id) on delete restrict,
+  musical_name text not null check (char_length(trim(musical_name)) between 1 and 80),
+  role_name text not null check (char_length(trim(role_name)) between 1 and 80),
+  performance_date date not null,
+  session_period text not null check (session_period in ('matinee', 'evening', 'night')),
+  singing_score numeric(2,1),
+  dancing_score numeric(2,1),
+  acting_score numeric(2,1),
+  status text not null default 'pending_mapping' check (status in ('pending_mapping', 'mapped', 'rejected')),
+  musical_id integer references public.musicals(id) on delete restrict,
+  role_id integer references public.roles(id) on delete restrict,
+  mapped_rating_id bigint references public.ratings(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint rating_subject_submissions_user_id_length check (char_length(anonymous_user_id) between 8 and 120),
+  constraint rating_subject_submissions_two_dimensions check ((case when singing_score is null then 0 else 1 end) + (case when dancing_score is null then 0 else 1 end) + (case when acting_score is null then 0 else 1 end) >= 2),
+  constraint rating_subject_submissions_singing_range check (singing_score is null or (singing_score between 0.5 and 5.0 and singing_score * 2 = floor(singing_score * 2))),
+  constraint rating_subject_submissions_dancing_range check (dancing_score is null or (dancing_score between 0.5 and 5.0 and dancing_score * 2 = floor(dancing_score * 2))),
+  constraint rating_subject_submissions_acting_range check (acting_score is null or (acting_score between 0.5 and 5.0 and acting_score * 2 = floor(acting_score * 2)))
+);
+create unique index if not exists rating_subject_submissions_one_per_user_subject
+  on public.rating_subject_submissions (anonymous_user_id, actor_id, lower(trim(musical_name)), lower(trim(role_name)));
+create index if not exists rating_subject_submissions_actor_pending_idx
+  on public.rating_subject_submissions (actor_id, status);
+alter table public.rating_subject_submissions
+  add column if not exists mapped_rating_id bigint references public.ratings(id) on delete set null;
 
 create or replace function public.set_rating_updated_at()
 returns trigger language plpgsql as $$
@@ -99,11 +146,21 @@ for each row execute function public.set_rating_updated_at();
 drop trigger if exists show_cast_role_submissions_set_updated_at on public.show_cast_role_submissions;
 create trigger show_cast_role_submissions_set_updated_at before update on public.show_cast_role_submissions
 for each row execute function public.set_rating_updated_at();
+drop trigger if exists rating_performance_submissions_set_updated_at on public.rating_performance_submissions;
+create trigger rating_performance_submissions_set_updated_at before update on public.rating_performance_submissions
+for each row execute function public.set_rating_updated_at();
+drop trigger if exists rating_subject_submissions_set_updated_at on public.rating_subject_submissions;
+create trigger rating_subject_submissions_set_updated_at before update on public.rating_subject_submissions
+for each row execute function public.set_rating_updated_at();
 
 alter table public.ratings enable row level security;
 alter table public.show_cast_role_submissions enable row level security;
+alter table public.rating_performance_submissions enable row level security;
+alter table public.rating_subject_submissions enable row level security;
 revoke all on table public.ratings from anon, authenticated;
 revoke all on table public.show_cast_role_submissions from anon, authenticated;
+revoke all on table public.rating_performance_submissions from anon, authenticated;
+revoke all on table public.rating_subject_submissions from anon, authenticated;
 
 -- 管理员在 Studio 将补充记录改为 approved 时，才写回正式场次卡司。
 create or replace function public.apply_approved_show_cast_role_submission()
@@ -127,6 +184,36 @@ $$;
 drop trigger if exists show_cast_role_submissions_apply on public.show_cast_role_submissions;
 create trigger show_cast_role_submissions_apply before update of status on public.show_cast_role_submissions
 for each row execute function public.apply_approved_show_cast_role_submission();
+
+-- 审核人员完成剧目与角色映射后，将原评分幂等写进正式评分表。
+create or replace function public.apply_mapped_rating_subject_submission()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare v_rating_id bigint;
+begin
+  if new.status = 'mapped' then
+    if new.musical_id is null or new.role_id is null
+       or not exists(select 1 from public.actor_roles where artist_id=new.actor_id and musical_id=new.musical_id and role_id=new.role_id) then
+      raise exception 'mapped subject must be a valid actor, musical and role relation';
+    end if;
+    insert into public.ratings(anonymous_user_id,performance_id,actor_id,musical_id,role_id,singing_score,dancing_score,acting_score,status)
+    values(new.anonymous_user_id,null,new.actor_id,new.musical_id,new.role_id,new.singing_score,new.dancing_score,new.acting_score,'valid')
+    on conflict(anonymous_user_id,actor_id,musical_id,role_id) where performance_id is null do update set
+      singing_score=excluded.singing_score,dancing_score=excluded.dancing_score,acting_score=excluded.acting_score,status='valid'
+    returning id into v_rating_id;
+    insert into public.rating_performance_submissions(rating_id,performance_date,session_period,status)
+    values(v_rating_id,new.performance_date,new.session_period,'pending')
+    on conflict(rating_id) do update set performance_date=excluded.performance_date,session_period=excluded.session_period,updated_at=now();
+    new.mapped_rating_id := v_rating_id;
+  elsif new.status = 'rejected' and old.status = 'mapped' and old.mapped_rating_id is not null then
+    update public.ratings set status='rejected' where id=old.mapped_rating_id;
+    new.mapped_rating_id := old.mapped_rating_id;
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists rating_subject_submissions_apply on public.rating_subject_submissions;
+create trigger rating_subject_submissions_apply before update of status on public.rating_subject_submissions
+for each row execute function public.apply_mapped_rating_subject_submission();
 
 create or replace function public.get_rating_performances(
   p_actor_id integer, p_musical_id integer, p_role_id integer, p_date text
@@ -152,10 +239,10 @@ $$;
 create or replace function public.upsert_actor_rating(
   p_anonymous_user_id text, p_performance_id integer, p_actor_id integer, p_musical_id integer, p_role_id integer,
   p_singing_score numeric default null, p_dancing_score numeric default null, p_acting_score numeric default null,
-  p_performance_date text default null, p_performance_time text default null
+  p_performance_date text default null, p_session_period text default null
 )
 returns jsonb language plpgsql security definer set search_path = public as $$
-declare v_rating public.ratings; v_recent_count integer; v_dimension_count integer; v_role_confirmed boolean; v_musical_name text;
+declare v_rating public.ratings; v_recent_count integer; v_dimension_count integer; v_role_confirmed boolean;
 begin
   if p_anonymous_user_id is null or char_length(p_anonymous_user_id) not between 8 and 120 then raise exception 'anonymous_user_id is invalid'; end if;
   v_dimension_count := (case when p_singing_score is null then 0 else 1 end) + (case when p_dancing_score is null then 0 else 1 end) + (case when p_acting_score is null then 0 else 1 end);
@@ -167,30 +254,38 @@ begin
   select count(*) into v_recent_count from public.ratings where anonymous_user_id=p_anonymous_user_id and updated_at > now()-interval '1 hour';
   if v_recent_count >= 30 then raise exception 'rating submission rate limit exceeded'; end if;
   if p_performance_id is null then
-    if p_performance_date is null or p_performance_time is null or p_performance_date !~ '^\\d{4}-\\d{2}-\\d{2}$' or p_performance_time !~ '^([01]\\d|2[0-3]):[0-5]\\d$' then raise exception 'performance date and time are invalid'; end if;
-    select name into v_musical_name from public.musicals where id=p_musical_id;
-    select id into p_performance_id from public.shows where date=p_performance_date and time=p_performance_time and musical=v_musical_name and city='' and theatre='' limit 1;
-    if p_performance_id is null then
-      insert into public.shows(date,time,city,musical,theatre) values(p_performance_date,p_performance_time,'',v_musical_name,'') returning id into p_performance_id;
-    end if;
-    insert into public.show_casts(show_id,artist_id,role) values(p_performance_id,p_actor_id,'') on conflict do nothing;
+    if p_performance_date is null or p_performance_date !~ '^\\d{4}-\\d{2}-\\d{2}$' or p_session_period not in ('matinee','evening','night') then raise exception 'performance date and session period are invalid'; end if;
+    v_role_confirmed := false;
   else
     if not exists (select 1 from public.shows s join public.musicals m on m.name=s.musical where s.id=p_performance_id and m.id=p_musical_id) then raise exception 'performance does not match musical'; end if;
     if not exists (select 1 from public.show_casts where show_id=p_performance_id and artist_id=p_actor_id) then raise exception 'actor is not listed in this performance'; end if;
   end if;
-  if exists (select 1 from public.show_casts where show_id=p_performance_id and artist_id=p_actor_id and role_id is not null)
+  if p_performance_id is not null and exists (select 1 from public.show_casts where show_id=p_performance_id and artist_id=p_actor_id and role_id is not null)
      and not exists (select 1 from public.show_casts where show_id=p_performance_id and artist_id=p_actor_id and role_id=p_role_id) then raise exception 'selected role conflicts with confirmed performance cast'; end if;
-  select exists(select 1 from public.show_casts where show_id=p_performance_id and artist_id=p_actor_id and role_id=p_role_id) into v_role_confirmed;
-  if not v_role_confirmed then
+  if p_performance_id is not null then
+    select exists(select 1 from public.show_casts where show_id=p_performance_id and artist_id=p_actor_id and role_id=p_role_id) into v_role_confirmed;
+  end if;
+  if p_performance_id is not null and not v_role_confirmed then
     insert into public.show_cast_role_submissions(show_id,artist_id,role_id,anonymous_user_id,status)
     values(p_performance_id,p_actor_id,p_role_id,p_anonymous_user_id,'pending')
     on conflict(show_id,artist_id,role_id) do update set updated_at=now();
   end if;
-  insert into public.ratings(anonymous_user_id,performance_id,actor_id,musical_id,role_id,singing_score,dancing_score,acting_score,status)
-  values(p_anonymous_user_id,p_performance_id,p_actor_id,p_musical_id,p_role_id,p_singing_score,p_dancing_score,p_acting_score,'valid')
-  on conflict(anonymous_user_id,performance_id,actor_id,role_id) where performance_id is not null do update set
-    singing_score=excluded.singing_score,dancing_score=excluded.dancing_score,acting_score=excluded.acting_score,status='valid'
-  returning * into v_rating;
+  if p_performance_id is null then
+    insert into public.ratings(anonymous_user_id,performance_id,actor_id,musical_id,role_id,singing_score,dancing_score,acting_score,status)
+    values(p_anonymous_user_id,null,p_actor_id,p_musical_id,p_role_id,p_singing_score,p_dancing_score,p_acting_score,'valid')
+    on conflict(anonymous_user_id,actor_id,musical_id,role_id) where performance_id is null do update set
+      singing_score=excluded.singing_score,dancing_score=excluded.dancing_score,acting_score=excluded.acting_score,status='valid'
+    returning * into v_rating;
+    insert into public.rating_performance_submissions(rating_id,performance_date,session_period,status)
+    values(v_rating.id,p_performance_date::date,p_session_period,'pending')
+    on conflict(rating_id) do update set performance_date=excluded.performance_date,session_period=excluded.session_period,updated_at=now();
+  else
+    insert into public.ratings(anonymous_user_id,performance_id,actor_id,musical_id,role_id,singing_score,dancing_score,acting_score,status)
+    values(p_anonymous_user_id,p_performance_id,p_actor_id,p_musical_id,p_role_id,p_singing_score,p_dancing_score,p_acting_score,'valid')
+    on conflict(anonymous_user_id,performance_id,actor_id,role_id) where performance_id is not null do update set
+      singing_score=excluded.singing_score,dancing_score=excluded.dancing_score,acting_score=excluded.acting_score,status='valid'
+    returning * into v_rating;
+  end if;
   return jsonb_build_object('id',v_rating.id,'status',v_rating.status,'updated_at',v_rating.updated_at,'cast_mapping_status',case when v_role_confirmed then 'confirmed' else 'pending' end);
 end;
 $$;
@@ -199,14 +294,58 @@ $$;
 drop function if exists public.upsert_actor_rating(text,integer,integer,integer,integer,numeric,numeric,numeric);
 drop function if exists public.upsert_actor_rating(text,integer,integer,integer,numeric,numeric,numeric);
 
+create or replace function public.upsert_manual_actor_rating(
+  p_anonymous_user_id text, p_actor_id integer, p_musical_name text, p_role_name text,
+  p_performance_date text, p_session_period text,
+  p_singing_score numeric default null, p_dancing_score numeric default null, p_acting_score numeric default null
+)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare v_submission public.rating_subject_submissions; v_recent_count integer; v_dimension_count integer;
+begin
+  if p_anonymous_user_id is null or char_length(p_anonymous_user_id) not between 8 and 120 then raise exception 'anonymous_user_id is invalid'; end if;
+  if not exists(select 1 from public.artists where id=p_actor_id) then raise exception 'actor does not exist'; end if;
+  if p_musical_name is null or char_length(trim(p_musical_name)) not between 1 and 80 or p_role_name is null or char_length(trim(p_role_name)) not between 1 and 80 then raise exception 'musical and role names are required'; end if;
+  if p_performance_date is null or p_performance_date !~ '^\\d{4}-\\d{2}-\\d{2}$' or p_session_period not in ('matinee','evening','night') then raise exception 'performance date and session period are invalid'; end if;
+  v_dimension_count := (case when p_singing_score is null then 0 else 1 end) + (case when p_dancing_score is null then 0 else 1 end) + (case when p_acting_score is null then 0 else 1 end);
+  if v_dimension_count < 2 then raise exception 'at least two dimensions are required'; end if;
+  if (p_singing_score is not null and (p_singing_score < .5 or p_singing_score > 5 or p_singing_score * 2 <> floor(p_singing_score * 2)))
+     or (p_dancing_score is not null and (p_dancing_score < .5 or p_dancing_score > 5 or p_dancing_score * 2 <> floor(p_dancing_score * 2)))
+     or (p_acting_score is not null and (p_acting_score < .5 or p_acting_score > 5 or p_acting_score * 2 <> floor(p_acting_score * 2))) then raise exception 'scores must be between 0.5 and 5.0 in 0.5 steps'; end if;
+  select count(*) into v_recent_count from (
+    select updated_at from public.ratings where anonymous_user_id=p_anonymous_user_id and updated_at > now()-interval '1 hour'
+    union all
+    select updated_at from public.rating_subject_submissions where anonymous_user_id=p_anonymous_user_id and updated_at > now()-interval '1 hour'
+  ) recent;
+  if v_recent_count >= 30 then raise exception 'rating submission rate limit exceeded'; end if;
+  insert into public.rating_subject_submissions(anonymous_user_id,actor_id,musical_name,role_name,performance_date,session_period,singing_score,dancing_score,acting_score,status)
+  values(p_anonymous_user_id,p_actor_id,trim(p_musical_name),trim(p_role_name),p_performance_date::date,p_session_period,p_singing_score,p_dancing_score,p_acting_score,'pending_mapping')
+  on conflict(anonymous_user_id,actor_id,lower(trim(musical_name)),lower(trim(role_name))) do update set
+    musical_name=excluded.musical_name,role_name=excluded.role_name,performance_date=excluded.performance_date,session_period=excluded.session_period,
+    singing_score=excluded.singing_score,dancing_score=excluded.dancing_score,acting_score=excluded.acting_score,
+    status=case when public.rating_subject_submissions.status='mapped' then 'mapped' else 'pending_mapping' end
+  returning * into v_submission;
+  return jsonb_build_object('id',v_submission.id,'status',v_submission.status,'updated_at',v_submission.updated_at);
+end;
+$$;
+
 create or replace function public.get_my_rating(
   p_anonymous_user_id text, p_performance_id integer, p_actor_id integer, p_musical_id integer, p_role_id integer
 )
 returns jsonb language sql security definer set search_path = public stable as $$
   select coalesce(jsonb_agg(jsonb_build_object('singing_score',singing_score,'dancing_score',dancing_score,'acting_score',acting_score,'status',status,'updated_at',updated_at))->0,'null'::jsonb)
-  from public.ratings where anonymous_user_id=p_anonymous_user_id and performance_id=p_performance_id and actor_id=p_actor_id and musical_id=p_musical_id and role_id=p_role_id;
+  from public.ratings where anonymous_user_id=p_anonymous_user_id and performance_id is not distinct from p_performance_id and actor_id=p_actor_id and musical_id=p_musical_id and role_id=p_role_id;
 $$;
 drop function if exists public.get_my_rating(text,integer,integer,integer);
+
+create or replace function public.get_my_manual_rating(
+  p_anonymous_user_id text, p_actor_id integer, p_musical_name text, p_role_name text
+)
+returns jsonb language sql security definer set search_path = public stable as $$
+  select coalesce(jsonb_agg(jsonb_build_object('singing_score',singing_score,'dancing_score',dancing_score,'acting_score',acting_score,'status',status,'updated_at',updated_at))->0,'null'::jsonb)
+  from public.rating_subject_submissions
+  where anonymous_user_id=p_anonymous_user_id and actor_id=p_actor_id
+    and lower(trim(musical_name))=lower(trim(p_musical_name)) and lower(trim(role_name))=lower(trim(p_role_name));
+$$;
 
 -- 同一用户看过同角色多场时，先在“用户 × 演员 × 剧目 × 角色”内求平均，避免多场提交放大其权重。
 create or replace function public.get_rating_summary()
@@ -216,11 +355,23 @@ returns jsonb language sql security definer set search_path = public stable as $
       avg(singing_score) filter(where singing_score is not null) singing_avg,
       avg(dancing_score) filter(where dancing_score is not null) dancing_avg,
       avg(acting_score) filter(where acting_score is not null) acting_avg
-    from public.ratings where status='valid' and performance_id is not null
+    from public.ratings where status='valid'
     group by anonymous_user_id,actor_id,musical_id,role_id
+  ), pending_subject_scores as (
+    select anonymous_user_id,actor_id,
+      avg(singing_score) filter(where singing_score is not null) singing_avg,
+      avg(dancing_score) filter(where dancing_score is not null) dancing_avg,
+      avg(acting_score) filter(where acting_score is not null) acting_avg
+    from public.rating_subject_submissions
+    where status='pending_mapping'
+    group by anonymous_user_id,actor_id,lower(trim(musical_name)),lower(trim(role_name))
+  ), actor_inputs as (
+    select anonymous_user_id,actor_id,singing_avg,dancing_avg,acting_avg from user_role_scores
+    union all
+    select anonymous_user_id,actor_id,singing_avg,dancing_avg,acting_avg from pending_subject_scores
   ), actor_stats as (
     select actor_id,count(distinct anonymous_user_id) user_count,avg(singing_avg) filter(where singing_avg is not null) singing_avg,avg(dancing_avg) filter(where dancing_avg is not null) dancing_avg,avg(acting_avg) filter(where acting_avg is not null) acting_avg
-    from user_role_scores group by actor_id
+    from actor_inputs group by actor_id
   ), role_stats as (
     select actor_id,musical_id,role_id,count(*) user_count,avg(singing_avg) filter(where singing_avg is not null) singing_avg,avg(dancing_avg) filter(where dancing_avg is not null) dancing_avg,avg(acting_avg) filter(where acting_avg is not null) acting_avg
     from user_role_scores group by actor_id,musical_id,role_id
@@ -229,9 +380,13 @@ $$;
 
 revoke all on function public.get_rating_performances(integer,integer,integer,text) from public;
 revoke all on function public.upsert_actor_rating(text,integer,integer,integer,integer,numeric,numeric,numeric,text,text) from public;
+revoke all on function public.upsert_manual_actor_rating(text,integer,text,text,text,text,numeric,numeric,numeric) from public;
 revoke all on function public.get_my_rating(text,integer,integer,integer,integer) from public;
+revoke all on function public.get_my_manual_rating(text,integer,text,text) from public;
 revoke all on function public.get_rating_summary() from public;
 grant execute on function public.get_rating_performances(integer,integer,integer,text) to anon,authenticated;
 grant execute on function public.upsert_actor_rating(text,integer,integer,integer,integer,numeric,numeric,numeric,text,text) to anon,authenticated;
+grant execute on function public.upsert_manual_actor_rating(text,integer,text,text,text,text,numeric,numeric,numeric) to anon,authenticated;
 grant execute on function public.get_my_rating(text,integer,integer,integer,integer) to anon,authenticated;
+grant execute on function public.get_my_manual_rating(text,integer,text,text) to anon,authenticated;
 grant execute on function public.get_rating_summary() to anon,authenticated;

@@ -498,6 +498,26 @@
   </div>
 </div>
 
+<!-- ============ 剧目独立详情页 ============ -->
+<div id="musical-view" class="hidden">
+  <div class="ap-head">
+    <button id="mp-back" title="返回图谱" aria-label="返回图谱">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="ap-crumbs">Graph / 剧目 / <span id="mp-crumb"></span></div>
+    <a id="mp-graph-link" class="ap-graph-link" href="#/graph">在图谱中查看</a>
+  </div>
+  <div class="ap-title">
+    <h1 id="mp-name"></h1>
+    <div id="mp-subtitle" class="sub">剧目卡司评分</div>
+  </div>
+  <div id="mp-overview" class="ap-overview"></div>
+  <section class="mp-cast-section">
+    <div class="mp-cast-head"><h2>卡司评分</h2><span>按角色表现总分排序</span></div>
+    <div id="mp-cast-ranking"></div>
+  </section>
+</div>
+
 </main>
 <div id="toast" class="toast hidden"></div>
 <div id="rating-modal" class="rating-modal hidden" role="dialog" aria-modal="true" aria-labelledby="rating-title">
@@ -506,11 +526,24 @@
       <div><h2 id="rating-title">给演员打分</h2><p id="rating-actor-name"></p></div>
       <button id="rating-close" class="rating-close" type="button" title="关闭" aria-label="关闭">×</button>
     </div>
-    <div class="rating-selects">
-      <label>你看过 TA 的哪部剧？<select id="rating-musical"><option value="">请选择剧目</option></select></label>
-      <label>TA 在这部剧中饰演的角色<select id="rating-role" disabled><option value="">请先选择剧目</option></select></label>
-      <div id="rating-date-wrap" class="rating-date-wrap hidden">
-        <span>你看的是哪一天？</span>
+    <section class="rating-stage rating-subject-stage">
+      <div class="rating-stage-head"><span>01</span><h3>演出信息</h3></div>
+      <div id="rating-known-subject" class="rating-selects">
+        <label>剧目<select id="rating-musical"><option value="">请选择剧目</option></select></label>
+        <label>角色<select id="rating-role" disabled><option value="">请先选择剧目</option></select></label>
+      </div>
+      <button id="rating-manual-subject-toggle" class="rating-manual-subject-toggle" type="button">没找到剧目或角色？手动补充</button>
+      <div id="rating-manual-subject" class="rating-manual-subject hidden">
+        <div class="rating-manual-subject-head"><span>补充剧目与角色</span><button id="rating-use-known-subject" type="button">从已有资料选择</button></div>
+        <div class="rating-selects">
+          <label>剧目名称<input id="rating-manual-musical" type="text" maxlength="80" autocomplete="off" placeholder="例如：某某音乐剧"></label>
+          <label>角色名称<input id="rating-manual-role" type="text" maxlength="80" autocomplete="off" placeholder="例如：某角色"></label>
+        </div>
+      </div>
+    </section>
+    <section id="rating-performance-stage" class="rating-stage rating-performance-stage hidden">
+      <div class="rating-stage-head"><span>02</span><h3>观演时间</h3></div>
+      <div id="rating-date-wrap" class="rating-date-wrap">
         <div class="rating-calendar-control">
           <button id="rating-date-trigger" class="rating-date-trigger" type="button" disabled aria-haspopup="dialog" aria-expanded="false">选择日期</button>
           <div id="rating-calendar" class="rating-calendar hidden" role="dialog" aria-label="选择演出日期">
@@ -526,16 +559,19 @@
         </div>
         <input id="rating-date" type="hidden">
       </div>
-    </div>
-    <div id="rating-performance-results" class="rating-performance-results hidden"></div>
-    <div id="rating-performance-confirm" class="rating-performance-confirm hidden"></div>
-    <div id="rating-dimensions" class="rating-dimensions hidden">
-      <div class="rating-dimension" data-dimension="singing"><b class="rating-dimension-label">唱</b><div class="rating-star-picker" role="group" aria-label="唱评分"></div><span class="rating-value">未评分</span><button type="button" class="rating-clear">未评分</button></div>
-      <div class="rating-dimension" data-dimension="acting"><b class="rating-dimension-label">演</b><div class="rating-star-picker" role="group" aria-label="演评分"></div><span class="rating-value">未评分</span><button type="button" class="rating-clear">未评分</button></div>
-      <div class="rating-dimension" data-dimension="dancing"><b class="rating-dimension-label">跳</b><div class="rating-star-picker" role="group" aria-label="跳评分"></div><span class="rating-value">未评分</span><button type="button" class="rating-clear">未评分</button></div>
-    </div>
-    <p id="rating-hint" class="rating-hint">请选择剧目与角色。</p>
-    <div class="rating-dialog-actions"><button id="rating-submit" type="button" class="fc-btn primary" disabled>提交评分</button></div>
+      <div id="rating-performance-results" class="rating-performance-results hidden"></div>
+      <div id="rating-performance-confirm" class="rating-performance-confirm hidden"></div>
+    </section>
+    <section id="rating-score-stage" class="rating-stage rating-score-stage hidden">
+      <div class="rating-stage-head"><span>03</span><h3>评分</h3><small>至少选择两项</small></div>
+      <div id="rating-dimensions" class="rating-dimensions hidden">
+        <div class="rating-dimension" data-dimension="singing"><b class="rating-dimension-label">唱</b><div class="rating-star-picker" role="group" aria-label="唱评分"></div><span class="rating-value">未评分</span><button type="button" class="rating-clear">未评分</button></div>
+        <div class="rating-dimension" data-dimension="acting"><b class="rating-dimension-label">演</b><div class="rating-star-picker" role="group" aria-label="演评分"></div><span class="rating-value">未评分</span><button type="button" class="rating-clear">未评分</button></div>
+        <div class="rating-dimension" data-dimension="dancing"><b class="rating-dimension-label">跳</b><div class="rating-star-picker" role="group" aria-label="跳评分"></div><span class="rating-value">未评分</span><button type="button" class="rating-clear">未评分</button></div>
+      </div>
+      <p id="rating-hint" class="rating-hint">请选择剧目与角色。</p>
+      <div class="rating-dialog-actions"><button id="rating-submit" type="button" class="fc-btn primary" disabled>提交评分</button></div>
+    </section>
   </div>
 </div>
 <div id="rating-details-modal" class="rating-modal hidden" role="dialog" aria-modal="true" aria-labelledby="rating-details-title">

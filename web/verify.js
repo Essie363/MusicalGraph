@@ -15,7 +15,7 @@ const CHROME_CANDIDATES = [
   "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
   "C:/Program Files/Microsoft/Edge/Application/msedge.exe",
 ];
-const FILE_URL = "file:///E:/AI%20VibeCoding%20Project/MusicGraph/web/index.html?mode=static";   // force offline snapshot for deterministic regression
+const FILE_URL = "file:///" + __dirname.replace(/\\/g, "/").split("/").map(encodeURIComponent).join("/") + "/index.html?mode=static";   // force this worktree's offline snapshot for deterministic regression
 
 let passed = 0, failed = 0;
 function check(name, cond, extra) {
@@ -110,8 +110,9 @@ function check(name, cond, extra) {
     window.fetch = (url, init) => {
       const body = init && init.body ? JSON.parse(init.body) : {};
       window.__ratingRpcCalls.push({ url: String(url), body });
+      if (String(url).includes("get_rating_performances") && body.p_date === "2021-03-04") return Promise.reject(new Error("simulated schedule lookup failure"));
       let data = {};
-      if (String(url).includes("get_rating_performances")) data = [{ id: 300, date: "2026-09-03", time: "19:30", city: "上海", theatre: "测试剧场", role_confirmed: false, cast: [{ actor_id: body.p_actor_id, actor_name: "郑云龙", role_name: "角色待补充" }] }];
+      if (String(url).includes("get_rating_performances")) data = body.p_date === "2022-03-04" ? [] : [{ id: 300, date: "2026-09-03", time: "19:30", city: "上海", theatre: "测试剧场", role_confirmed: false, cast: [{ actor_id: body.p_actor_id, actor_name: "郑云龙", role_name: "角色待补充" }] }];
       if (String(url).includes("get_my_rating")) data = { singing_score: 4.5, dancing_score: null, acting_score: 5 };
       if (String(url).includes("get_rating_summary")) data = { actors: [], roles: [] };
       return Promise.resolve(new Response(JSON.stringify(data), { status: 200, headers: { "Content-Type": "application/json" } }));
@@ -133,7 +134,7 @@ function check(name, cond, extra) {
   await page.click(".rating-performance-choice");
   check("待补充角色不阻断评分", await page.$eval("#rating-performance-confirm", el => el.textContent.includes("待核验")));
   await page.waitForTimeout(100);
-  check("旧评分会回填", await page.$eval("[data-dimension='singing'] .rating-value", el => el.textContent === "4.5 星") && await page.$eval("[data-dimension='acting'] .rating-value", el => el.textContent === "5.0 星"));
+  check("旧评分以 10 分制回填", await page.$eval("[data-dimension='singing'] .rating-value", el => el.textContent === "9.0") && await page.$eval("[data-dimension='acting'] .rating-value", el => el.textContent === "10.0"));
   await page.setViewportSize({ width: 390, height: 844 });
   check("手机端评分弹窗不横向溢出", await page.$eval(".rating-dialog", el => {
     const r = el.getBoundingClientRect();
@@ -144,6 +145,36 @@ function check(name, cond, extra) {
   await page.waitForTimeout(100);
   check("重复评分调用覆盖 RPC", await page.evaluate(() => window.__ratingRpcCalls.some(x => x.url.includes("upsert_actor_rating") && x.body.p_performance_id === 300 && x.body.p_singing_score === 4.5 && x.body.p_acting_score === 5)));
   check("提交后关闭评分弹窗", await page.$eval("#rating-modal", el => el.classList.contains("hidden")));
+
+  await page.click("#ap-rate");
+  await page.$eval("#rating-musical", el => { el.value = "100"; el.dispatchEvent(new Event("change", { bubbles: true })); });
+  await page.$eval("#rating-role", el => { el.value = "200"; el.dispatchEvent(new Event("change", { bubbles: true })); });
+  await page.$eval("#rating-date", el => { el.value = "2022-03-04"; el.dispatchEvent(new Event("change", { bubbles: true })); });
+  await page.waitForTimeout(100);
+  check("已知剧目角色缺排期时仍显示演出时间选择", await page.$eval("#rating-performance-results", el => el.textContent.includes("演出时间") && el.textContent.includes("午场") && el.textContent.includes("夕场") && el.textContent.includes("晚场")));
+  await page.click("#rating-close");
+
+  await page.click("#ap-rate");
+  await page.$eval("#rating-musical", el => { el.value = "100"; el.dispatchEvent(new Event("change", { bubbles: true })); });
+  await page.$eval("#rating-role", el => { el.value = "200"; el.dispatchEvent(new Event("change", { bubbles: true })); });
+  await page.$eval("#rating-date", el => { el.value = "2021-03-04"; el.dispatchEvent(new Event("change", { bubbles: true })); });
+  await page.waitForTimeout(100);
+  check("场次读取失败时仍可选择演出时间", await page.$eval("#rating-performance-results", el => el.textContent.includes("暂未能读取当天排期") && el.textContent.includes("午场") && el.textContent.includes("夕场") && el.textContent.includes("晚场")));
+  await page.click("#rating-close");
+
+  await page.click("#ap-rate");
+  await page.click("#rating-manual-subject-toggle");
+  await page.fill("#rating-manual-musical", "未收录测试剧目");
+  await page.fill("#rating-manual-role", "未收录测试角色");
+  await page.$eval("#rating-date", el => { el.value = "2022-03-04"; el.dispatchEvent(new Event("change", { bubbles: true })); });
+  check("手动补充显示演出时间选择", await page.$eval("#rating-performance-results", el => el.textContent.includes("演出时间") && el.textContent.includes("午场") && el.textContent.includes("夕场") && el.textContent.includes("晚场")));
+  await page.click(".rating-session-picker [data-session='night']");
+  check("手动补充说明只进入演员整体评分", await page.$eval("#rating-performance-confirm", el => el.textContent.includes("演员整体评价") && el.textContent.includes("详细评分")));
+  await page.click("[data-dimension='singing'] .rating-star-hit[data-score='4.5']");
+  await page.click("[data-dimension='acting'] .rating-star-hit[data-score='5.0']");
+  await page.click("#rating-submit");
+  await page.waitForTimeout(100);
+  check("手动补充调用独立评分 RPC", await page.evaluate(() => window.__ratingRpcCalls.some(x => x.url.includes("upsert_manual_actor_rating") && x.body.p_musical_name === "未收录测试剧目" && x.body.p_role_name === "未收录测试角色" && x.body.p_session_period === "night" && x.body.p_singing_score === 4.5 && x.body.p_acting_score === 5)));
 
   check("详情页姓名", (await page.textContent("#ap-name")) === "郑云龙", await page.textContent("#ap-name"));
   check("关系列表有内容", await page.$$eval("#ap-relations li", els => els.length) >= 1);
@@ -627,6 +658,24 @@ function check(name, cond, extra) {
   check("作品演员表", await page.$$eval("#fc-moments .role-group .c", els => els.length) >= 5);
   const roleGroups = await page.$$eval("#fc-moments .role-group", els => els.length);
   check("作品演员表按角色分组", roleGroups >= 2, "角色组数=" + roleGroups);
+  await page.click("#fc-detail");
+  await page.waitForTimeout(700);
+  check("剧目右栏可进入详情页", await page.evaluate(() => {
+    return !document.getElementById("musical-view").classList.contains("hidden") &&
+      /^#\/musical\//.test(location.hash) && document.getElementById("mp-cast-ranking").children.length > 0;
+  }));
+  await page.click("#mp-graph-link");
+  await page.waitForTimeout(900);
+  check("剧目详情可返回图谱并保留聚焦", await page.evaluate(() => {
+    return !document.getElementById("view-graph").classList.contains("hidden") &&
+      !document.getElementById("focus-card").classList.contains("hidden") &&
+      document.body.classList.contains("side-open");
+  }));
+  await page.click("#fc-detail");
+  await page.waitForTimeout(500);
+  check("静态模式卡司保留暂无评分", await page.$$eval("#mp-cast-ranking .mp-unrated", els => els.length > 0));
+  await page.click("#mp-graph-link");
+  await page.waitForTimeout(700);
 
   await page.keyboard.press("Escape");   // 关闭作品弹窗
   await page.waitForTimeout(500);   // 等顶部搜索收起动画结束（320ms 后挂 hidden）
@@ -857,6 +906,47 @@ function check(name, cond, extra) {
   await demoPage.waitForTimeout(500);
   check("演示模式详情页标注模拟评分", await demoPage.$eval("#ap-rating-body", el => el.textContent.includes("模拟评分")));
   check("演示模式保留体验评分入口", await demoPage.$eval("#ap-rate", el => !el.classList.contains("hidden")));
+  const demoMusicalId = await demoPage.evaluate(() => {
+    const roles = (window.MUSIC_GRAPH.ratings || {}).roles || [];
+    const counts = {};
+    roles.forEach(item => { counts[item.musical_id] = (counts[item.musical_id] || 0) + 1; });
+    return Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0] || null;
+  });
+  if (demoMusicalId) {
+    await demoPage.evaluate(mid => { location.hash = "#/musical/" + mid; }, demoMusicalId);
+    await demoPage.waitForTimeout(700);
+    check("演示模式剧目详情展示角色榜单", await demoPage.$eval("#mp-cast-ranking", el => el.querySelectorAll(".mp-role-group").length > 0));
+    check("角色榜单已评分演员优先且按分数降序", await demoPage.evaluate(() => {
+      const rows = [...document.querySelectorAll(".mp-role-group")]
+        .map(group => [...group.querySelectorAll(".mp-cast-row")])
+        .find(list => list.length >= 2 && list.some(row => row.querySelector(".rating-score")));
+      if (!rows) return false;
+      const scores = rows.map(row => {
+        const el = row.querySelector(".rating-score");
+        return el ? Number(el.textContent) : null;
+      });
+      const firstUnrated = scores.findIndex(score => score === null);
+      const rated = (firstUnrated < 0 ? scores : scores.slice(0, firstUnrated));
+      return rated.length >= 1 && rated.every((score, index) => index === 0 || rated[index - 1] >= score) &&
+        (firstUnrated < 0 || scores.slice(firstUnrated).every(score => score === null));
+    }));
+    const detail = await demoPage.$("details.mp-cast-row");
+    if (detail) {
+      check("角色分项默认折叠", await detail.evaluate(el => !el.open));
+      const expandMark = await detail.$(".mp-expand-mark");
+      if (expandMark) await expandMark.click();
+      await demoPage.waitForTimeout(100);
+      check("展开后显示唱演跳分项", !!expandMark && await detail.evaluate(el => el.open && el.textContent.includes("唱") && el.textContent.includes("演") && el.textContent.includes("跳")));
+    } else {
+      check("角色分项默认折叠", false, "未找到已评分演员");
+      check("展开后显示唱演跳分项", false, "未找到已评分演员");
+    }
+  } else {
+    check("演示模式剧目详情展示角色榜单", false, "无模拟角色评分");
+    check("角色榜单已评分演员优先且按分数降序", false, "无模拟角色评分");
+    check("角色分项默认折叠", false, "无模拟角色评分");
+    check("展开后显示唱演跳分项", false, "无模拟角色评分");
+  }
   await demoPage.close();
 
   console.log("== JS 错误 ==");
