@@ -17,6 +17,8 @@ import sqlite3
 from collections import defaultdict
 from pathlib import Path
 
+from generate_search_index import write_search_index
+
 BASE = Path(__file__).resolve().parent  # 脚本所在目录 = 项目根
 DB = BASE / "music_graph.db"
 OUT = BASE / "web" / "data.js"
@@ -44,6 +46,7 @@ def main():
             if r[k] not in (None, ""):
                 a[k] = str(r[k])
         actors[r["id"]] = a
+    write_search_index(actors)
 
     # --- relation types ---
     types = {}
@@ -68,8 +71,10 @@ def main():
 
     # --- 参演剧目 + 角色（actor_roles + roles） ---
     musicals = {}
-    for r in cur.execute("SELECT id, name FROM musicals"):
+    musical_info = {}
+    for r in cur.execute("SELECT id, name, info FROM musicals"):
         musicals[r["id"]] = r["name"]
+        musical_info[r["id"]] = r["info"] or ""
     roles = {}
     for r in cur.execute("SELECT id, musical_id, name FROM roles"):
         roles[r["id"]] = {"musical_id": r["musical_id"], "name": r["name"]}
@@ -88,7 +93,7 @@ def main():
     # --- 作品与演员表（musicals 视图，成员带角色） ---
     musical_cast = {}
     for r in cur.execute("SELECT id, name FROM musicals"):
-        musical_cast[r["id"]] = {"name": r["name"], "cast": [], "roles": {}}
+        musical_cast[r["id"]] = {"name": r["name"], "info": musical_info.get(r["id"], ""), "cast": [], "roles": {}}
     for r in cur.execute("SELECT artist_id, musical_id, role_id FROM actor_roles"):
         if r["musical_id"] not in musical_cast:
             continue

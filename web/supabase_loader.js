@@ -97,7 +97,8 @@
       r = musicalsRaw[i];
       id = String(r.id);
       musicalMap[id] = id;
-      musicals[id] = { id: id, name: r.name, cast: [], roles: {} };
+      var fallbackInfo = staticD && staticD.musicals && staticD.musicals[id] ? staticD.musicals[id].info : "";
+      musicals[id] = { id: id, name: r.name, info: r.info ? String(r.info) : (fallbackInfo ? String(fallbackInfo) : ""), cast: [], roles: {} };
     }
 
     var roleMap = {};
@@ -223,7 +224,7 @@
       if (window.__MG_DEBUG) window.__MG_DEBUG.rpcError = err && err.message ? err.message : String(err);
       return Promise.all([
         pageAll("artists", "id,name," + PROFILE_FIELDS.join(",")),
-        pageAll("musicals", "id,name"),
+        pageAll("musicals", "id,name,info"),
         pageAll("roles", "id,musical_id,name"),
         pageAll("actor_roles", "artist_id,musical_id,role_id"),
         pageAll("relations", "id,actor_a,actor_b,type_id,detail"),

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MusicGraph · 音乐剧演员关系图谱</title>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=20260913-ui-sync-27">
 </head>
 <body>
 <a class="skip-link" href="#main">跳转到主要内容</a>
@@ -50,9 +50,9 @@
     <svg class="hero-curtain" viewBox="0 0 1440 120" preserveAspectRatio="none" aria-hidden="true">
       <defs>
         <linearGradient id="curtain-grad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#0a0a0a" stop-opacity="0"></stop>
-          <stop offset="0.55" stop-color="#0a0a0a" stop-opacity="0.85"></stop>
-          <stop offset="1" stop-color="#0a0a0a" stop-opacity="1"></stop>
+          <stop offset="0" stop-color="#121212" stop-opacity="0"></stop>
+          <stop offset="0.55" stop-color="#121212" stop-opacity="0.85"></stop>
+          <stop offset="1" stop-color="#121212" stop-opacity="1"></stop>
         </linearGradient>
       </defs>
       <path d="M0,30 C72,14 132,4 204,14 C276,24 336,44 408,34 C480,24 540,8 612,16 C684,24 744,44 816,34 C888,24 948,10 1020,18 C1092,26 1152,40 1224,32 C1296,24 1356,12 1428,18 L1440,18 L1440,120 L0,120 Z" fill="url(#curtain-grad)"></path>
@@ -439,83 +439,131 @@
 
 <!-- ============ 演员独立详情页 ============ -->
 <div id="actor-view" class="hidden">
-  <div class="ap-head">
-    <button id="ap-back" title="返回图谱" aria-label="返回图谱">
-      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </button>
-    <div class="ap-crumbs">Graph / 演员 / <span id="ap-crumb"></span></div>
-    <a id="ap-graph-link" class="ap-graph-link" href="#/graph">在图谱中查看</a>
-  </div>
-
+  <div class="ap-layout">
+    <aside class="ap-sidebar">
+      <div class="ap-head">
+        <button id="ap-back" title="返回图谱" aria-label="返回图谱">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="ap-crumbs">Graph / 演员 / <span id="ap-crumb"></span></div>
+        <a id="ap-graph-link" class="ap-graph-link ap-head-graph-link" href="#/graph">在图谱中查看</a>
+      </div>
   <div class="ap-title">
     <h1 id="ap-name"></h1>
     <div id="ap-nickname" class="sub"></div>
   </div>
 
-  <div id="ap-overview" class="ap-overview"></div>
+      <section class="ap-rating-brief">
+        <div class="section-title"><span class="section-kicker">RATINGS</span><h3>综合评分</h3></div>
+        <div id="ap-rating-brief-body"></div>
+      </section>
 
-  <dl id="ap-fields"></dl>
+  <section class="ap-info">
+    <div class="section-title"><span class="section-kicker">PROFILE</span><h3>个人信息</h3></div>
+    <dl id="ap-fields"></dl>
+  </section>
+      <a id="ap-sidebar-graph-link" class="ap-graph-link ap-sidebar-graph-link" href="#/graph">在图谱中查看</a>
+    </aside>
+
+    <main class="ap-content">
 
   <section id="ap-rating-sec" class="ap-rating">
     <div class="ap-rating-head">
-      <h3>观众评分</h3>
-      <button id="ap-rate" class="fc-btn">给 TA 打分</button>
+      <div class="section-title"><span class="section-kicker">RATINGS</span><h3>观众评分</h3></div>
     </div>
-    <div id="ap-rating-body"></div>
-    <div id="ap-rating-detail"></div>
+    <div class="rating-dashboard">
+      <div id="ap-rating-body" class="rating-score-card"></div>
+      <section id="ap-rating-detail" class="rating-role-preview" aria-label="演员角色详细评分"></section>
+      <button id="ap-rate" class="rating-cta" type="button">
+        <span class="rating-cta-icon" aria-hidden="true"><img src="assets/rating-ticket.png" alt=""></span>
+        <span>给 TA 打分</span>
+      </button>
+    </div>
   </section>
 
   <section class="ap-net">
-    <h3>关系网络</h3>
+    <div class="section-title"><span class="section-kicker">NETWORK</span><h3>关系网络</h3></div>
     <div id="ap-graph-wrap"><canvas id="ap-graph"></canvas></div>
   </section>
 
   <div class="ap-sections">
     <section class="ap-card ap-lite">
-      <h3>关系</h3><ul id="ap-relations"></ul>
+      <div class="section-title"><span class="section-kicker">RELATIONS</span><h3>关系</h3></div><ul id="ap-relations"></ul>
     </section>
     <section class="ap-card ap-lite">
-      <h3>所属团体</h3><ul id="ap-groups"></ul>
+      <div class="section-title"><span class="section-kicker">GROUPS</span><h3>所属团体</h3></div><ul id="ap-groups"></ul>
     </section>
     <section class="ap-card ap-wide">
-      <h3>参演剧目</h3><ul id="ap-musicals" class="cols-2"></ul>
+      <div class="section-title"><span class="section-kicker">CREDITS</span><h3>参演剧目</h3></div><ul id="ap-musicals" class="cols-2"></ul>
     </section>
     <section class="ap-card ap-wide moments-sec hidden" id="ap-moments-sec">
-      <h3>精彩片段</h3>
+      <div class="section-title"><span class="section-kicker">MOMENTS</span><h3>精彩片段</h3></div>
       <ul id="ap-moments" class="moments-list"></ul>
     </section>
     <section class="ap-card ap-wide">
       <div class="cw-title-row">
-        <h3>常共演搭档</h3>
-        <div class="cw-query">
-          <input id="cw-q" type="text" placeholder="输入其它演员姓名查询合作" autocomplete="off">
-          <button id="cw-go" type="button" title="查合作" aria-label="查合作"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M10.5 3a7.5 7.5 0 1 0 4.55 13.4l4.3 4.3 1.42-1.42-4.3-4.3A7.5 7.5 0 0 0 10.5 3zm0 2a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11z" fill="currentColor"/></svg></button>
-        </div>
+        <div class="section-title"><span class="section-kicker">COLLABORATION</span><h3>常共演搭档</h3></div>
+          <div class="cw-query">
+            <input id="cw-q" type="text" placeholder="输入其它演员姓名查询合作" autocomplete="off">
+            <button id="cw-go" type="button" title="查合作" aria-label="查合作"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M10.5 3a7.5 7.5 0 1 0 4.55 13.4l4.3 4.3 1.42-1.42-4.3-4.3A7.5 7.5 0 0 0 10.5 3zm0 2a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11z" fill="currentColor"/></svg></button>
+            <div id="cw-dropdown" class="dropdown cw-dropdown hidden"></div>
+          </div>
       </div>
       <div id="cw-result" class="cw-result hidden"></div>
       <ul id="ap-cowork" class="cols-2"></ul>
     </section>
   </div>
+    </main>
+  </div>
 </div>
 
 <!-- ============ 剧目独立详情页 ============ -->
 <div id="musical-view" class="hidden">
-  <div class="ap-head">
-    <button id="mp-back" title="返回图谱" aria-label="返回图谱">
-      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </button>
-    <div class="ap-crumbs">Graph / 剧目 / <span id="mp-crumb"></span></div>
-    <a id="mp-graph-link" class="ap-graph-link" href="#/graph">在图谱中查看</a>
+  <div class="mp-layout">
+    <aside class="mp-sidebar">
+      <div class="ap-head">
+        <button id="mp-back" title="返回图谱" aria-label="返回图谱">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="ap-crumbs">Graph / 剧目 / <span id="mp-crumb"></span></div>
+      </div>
+      <div class="ap-title">
+        <h1 id="mp-name"></h1>
+      </div>
+      <section id="mp-intro-section" class="mp-sidebar-section hidden">
+        <h2 class="mp-sidebar-section-title">剧目简介</h2>
+        <p id="mp-intro" class="mp-intro"></p>
+      </section>
+      <section class="mp-sidebar-section">
+        <h2 class="mp-sidebar-section-title">演出信息</h2>
+        <div id="mp-overview" class="ap-overview"></div>
+      </section>
+      <a id="mp-graph-link" class="ap-graph-link mp-sidebar-graph-link" href="#/graph">在图谱中查看</a>
+    </aside>
+    <div id="mp-content" class="mp-content">
+      <div class="mp-cast-head mp-cast-page-head">
+        <div class="section-title"><span class="section-kicker">CAST RATINGS</span><h2>卡司评分</h2></div>
+        <details class="mp-sort-info">
+          <summary aria-label="查看卡司评分排序规则" title="查看排序规则">i</summary>
+          <div class="mp-sort-popover">
+            <strong>排序规则</strong>
+            <p>仅统计该演员在本剧目、该角色下达到公开门槛的有效评分。</p>
+            <p>总分由唱、演、跳三项平均分等权计算，并转换为 10 分制展示。</p>
+            <p>已公开评分按总分从高到低排列；总分相同则评分人数较多者在前。暂无公开评分的演员保留展示，并排在最后。</p>
+          </div>
+        </details>
+      </div>
+      <nav id="mp-role-tabs" class="mp-role-tabs" aria-label="角色评分导航">
+        <span class="mp-role-tab-label">剧目角色</span>
+        <button id="mp-role-tab-prev" class="mp-role-tab-control mp-role-tab-prev" type="button" aria-label="查看前面的角色" title="查看前面的角色">‹</button>
+        <div id="mp-role-tab-list" class="mp-role-tab-list"></div>
+        <button id="mp-role-tab-next" class="mp-role-tab-control mp-role-tab-next" type="button" aria-label="查看后面的角色" title="查看后面的角色">›</button>
+      </nav>
+      <section class="mp-cast-section">
+        <div id="mp-cast-ranking"></div>
+      </section>
+    </div>
   </div>
-  <div class="ap-title">
-    <h1 id="mp-name"></h1>
-    <div id="mp-subtitle" class="sub">剧目卡司评分</div>
-  </div>
-  <div id="mp-overview" class="ap-overview"></div>
-  <section class="mp-cast-section">
-    <div class="mp-cast-head"><h2>卡司评分</h2><span>按角色表现总分排序</span></div>
-    <div id="mp-cast-ranking"></div>
-  </section>
 </div>
 
 </main>
@@ -583,12 +631,13 @@
     <div id="rating-details-content"></div>
   </div>
 </div>
-<script src="supabase_config.js"></script>
-<script src="supabase_loader.js"></script>
-<script src="data.js"></script>
-<script src="rating_demo_data.js"></script>
+<script src="supabase_config.js?v=20260913-ui-sync-27"></script>
+<script src="supabase_loader.js?v=20260913-ui-sync-27"></script>
+<script src="data.js?v=20260913-ui-sync-27"></script>
+<script src="search_index.js?v=20260913-ui-sync-27"></script>
+<script src="rating_demo_data.js?v=20260913-ui-sync-27"></script>
 
-<script src="data_loader.js"></script>
+<script src="data_loader.js?v=20260913-ui-sync-27"></script>
 <!-- app.js 由 data_loader.js 在数据就绪后注入 -->
 </body>
 </html>

@@ -39,6 +39,7 @@ data/backups/
 # 本地 AI 工具目录（不入库）
 .opencode/
 .codex/
+.tools/
 
 # 一次性维护脚本（本地保留，不入库；旧版本见 git 历史）
 build_graph.py
