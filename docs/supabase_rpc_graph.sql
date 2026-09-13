@@ -16,8 +16,7 @@ returns jsonb language sql stable as $$
     'relation_types', (select coalesce(jsonb_agg(to_jsonb(rt) order by rt.id), '[]'::jsonb) from (
       select id, code from relation_types) rt),
     'moments', (select coalesce(jsonb_agg(to_jsonb(mm) order by mm.id), '[]'::jsonb) from (
-      select id, actor_id, title, url, source from moments) mm),
-    'rating_summary', public.get_rating_summary()
+      select id, actor_id, title, url, source from moments) mm)
   );
 $$;
 grant execute on function get_music_graph() to anon;
