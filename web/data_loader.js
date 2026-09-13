@@ -87,7 +87,8 @@
       r = musicalsRaw[i];
       id = r.legacy_id ? String(r.legacy_id) : r.id;
       musicalMap[r.id] = id;
-      musicals[id] = { id: id, name: r.name, cast: [], roles: {} };
+      var fallbackInfo = staticD && staticD.musicals && staticD.musicals[id] ? staticD.musicals[id].info : "";
+      musicals[id] = { id: id, name: r.name, info: r.info ? String(r.info) : (fallbackInfo ? String(fallbackInfo) : ""), cast: [], roles: {} };
     }
 
     var actorMusicals = {}, actorMusicalIds = {}, aid, mid, m, role;
@@ -150,7 +151,9 @@
       actorCounts: staticD.actorCounts || {},
       musicalStats: staticD.musicalStats || {},
       groups: staticD.groups || [],
-      moments: moments
+      moments: moments,
+      actorRoleOptions: {},
+      ratings: { actors: [], roles: [] }
     };
   }
 
@@ -177,7 +180,7 @@
   function fetchCollections() {
     return Promise.all([
       pageAll("actors", "id,legacy_id,name," + ACTOR_PROFILE_FIELDS.join(",")),
-      pageAll("musicals", "id,legacy_id,name"),
+      pageAll("musicals", "id,legacy_id,name,info"),
       pageAll("actor_roles", "id,actor,musical,role"),
       pageAll("relations", "id,actor_a,actor_b,relation_type,description"),
       pageAll("moments", "id,legacy_id,actor,title,url,platform")
@@ -211,7 +214,7 @@
 
   // 先用静态快照立即渲染首页；Supabase 数据就绪后由 MG_UPGRADE 热替换
   var s = document.createElement("script");
-  s.src = "app.js";
+  s.src = "app.js?v=20260913-ui-sync-27";
   document.head.appendChild(s);
   window.MG_loadSiteData().then(function (mode) {
     if (mode === "api" && window.MG_UPGRADE && window.MUSIC_GRAPH) {

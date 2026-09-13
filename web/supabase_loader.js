@@ -78,7 +78,7 @@
     return out;
   }
 
-  function build(actorsRaw, musicalsRaw, rolesRaw, actorRolesRaw, relationsRaw, typesRaw, momentsRaw, staticD) {
+  function build(actorsRaw, musicalsRaw, rolesRaw, actorRolesRaw, relationsRaw, typesRaw, momentsRaw, staticD, ratingSummary) {
     var actorMap = {}, actors = {}, i, r, id, a, k;
     for (i = 0; i < actorsRaw.length; i++) {
       r = actorsRaw[i];
@@ -97,7 +97,8 @@
       r = musicalsRaw[i];
       id = String(r.id);
       musicalMap[id] = id;
-      musicals[id] = { id: id, name: r.name, cast: [], roles: {} };
+      var fallbackInfo = staticD && staticD.musicals && staticD.musicals[id] ? staticD.musicals[id].info : "";
+      musicals[id] = { id: id, name: r.name, info: r.info ? String(r.info) : (fallbackInfo ? String(fallbackInfo) : ""), cast: [], roles: {} };
     }
 
     var roleMap = {};
@@ -106,7 +107,7 @@
       roleMap[String(r.id)] = r.name || "";
     }
 
-    var actorMusicals = {}, actorMusicalIds = {}, aid, mid, m, role;
+    var actorMusicals = {}, actorMusicalIds = {}, actorRoleOptions = {}, aid, mid, m, role;
     for (i = 0; i < actorRolesRaw.length; i++) {
       r = actorRolesRaw[i];
       aid = actorMap[String(r.artist_id)];
@@ -125,6 +126,18 @@
       if (role && actorMusicals[aid][m.name].indexOf(role) < 0) actorMusicals[aid][m.name].push(role);
       if (!actorMusicalIds[aid]) actorMusicalIds[aid] = [];
       if (actorMusicalIds[aid].indexOf(mid) < 0) actorMusicalIds[aid].push(mid);
+      if (r.role_id != null && role) {
+        if (!actorRoleOptions[aid]) actorRoleOptions[aid] = [];
+        var optionKey = mid + "|" + String(r.role_id);
+        var exists = actorRoleOptions[aid].some(function (x) { return x.key === optionKey; });
+        if (!exists) actorRoleOptions[aid].push({
+          key: optionKey,
+          musicalId: mid,
+          musicalName: m.name,
+          roleId: String(r.role_id),
+          roleName: role
+        });
+      }
     }
 
     var typeMap = {};
@@ -173,7 +186,9 @@
       actorCounts: staticD.actorCounts || {},
       musicalStats: staticD.musicalStats || {},
       groups: staticD.groups || [],
-      moments: moments
+      moments: moments,
+      actorRoleOptions: actorRoleOptions,
+      ratings: ratingSummary || { actors: [], roles: [] }
     };
   }
 
@@ -185,23 +200,39 @@
       signal: AbortSignal.timeout(SB.timeoutMs || 8000)
     }).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); });
   }
+  function loadRatingSummary() {
+    return fetch(SB.url + "/rest/v1/rpc/get_rating_summary", {
+      method: "POST",
+      headers: Object.assign(headers(), { "Content-Type": "application/json" }),
+      body: "{}",
+      signal: AbortSignal.timeout(SB.timeoutMs || 8000)
+    }).then(function (r) {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    }).catch(function () {
+      // 评分 SQL 尚未部署时，基础图谱仍应正常加载。
+      return { actors: [], roles: [] };
+    });
+  }
   window.MG_supabaseLoadData = function (staticD) {
     if (!active() || !staticD) return Promise.resolve(null);
-    return loadRPC().then(function (p) {
+    return Promise.all([loadRPC(), loadRatingSummary()]).then(function (loaded) {
+      var p = loaded[0], ratingSummary = p.rating_summary || loaded[1];
       return build(p.artists || [], p.musicals || [], p.roles || [], p.actor_roles || [],
-                   p.relations || [], p.relation_types || [], p.moments || [], staticD);
+                   p.relations || [], p.relation_types || [], p.moments || [], staticD, ratingSummary);
     }).catch(function (err) {
       if (window.__MG_DEBUG) window.__MG_DEBUG.rpcError = err && err.message ? err.message : String(err);
       return Promise.all([
         pageAll("artists", "id,name," + PROFILE_FIELDS.join(",")),
-        pageAll("musicals", "id,name"),
+        pageAll("musicals", "id,name,info"),
         pageAll("roles", "id,musical_id,name"),
         pageAll("actor_roles", "artist_id,musical_id,role_id"),
         pageAll("relations", "id,actor_a,actor_b,type_id,detail"),
         pageAll("relation_types", "id,code"),
-        pageAll("moments", "id,actor_id,title,url,source")
+        pageAll("moments", "id,actor_id,title,url,source"),
+        loadRatingSummary()
       ]).then(function (all) {
-        return build(all[0], all[1], all[2], all[3], all[4], all[5], all[6], staticD);
+        return build(all[0], all[1], all[2], all[3], all[4], all[5], all[6], staticD, all[7]);
       }).catch(function (err2) {
         if (window.__MG_DEBUG) window.__MG_DEBUG.supabaseError = err2 && err2.message ? err2.message : String(err2);
         return null;

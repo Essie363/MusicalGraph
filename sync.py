@@ -18,6 +18,7 @@ import time
 import requests
 
 import graph_utils
+from derive_show_cast_roles import fill_unique_roles
 
 from pathlib import Path
 BASE = Path(__file__).resolve().parent  # 脚本所在目录 = 项目根
@@ -190,6 +191,9 @@ def main():
     print("== syncing show schedule ==", flush=True)
     new_dates = sync_shows(cur, conn)
 
+    print("== deriving unambiguous show-cast roles ==", flush=True)
+    filled_roles = fill_unique_roles(conn)
+
     print("== recomputing co-work edges ==", flush=True)
     n_edges = graph_utils.recompute_co_work_edges(conn)
 
@@ -201,7 +205,7 @@ def main():
     cur.execute("SELECT COUNT(*) FROM shows")
     total_shows = cur.fetchone()[0]
     conn.close()
-    print(f"done. base={base} new_dates={new_dates} edges={n_edges} total_shows={total_shows}", flush=True)
+    print(f"done. base={base} new_dates={new_dates} derived_roles={filled_roles} edges={n_edges} total_shows={total_shows}", flush=True)
 
 
 if __name__ == "__main__":
