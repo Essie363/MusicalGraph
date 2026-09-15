@@ -26,7 +26,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: pip install requests networkx
+        run: pip install requests networkx pypinyin
 
       # music_graph.db 已入库：checkout 后做增量同步（同步逻辑见 sync.py）
       - name: Sync schedules & refresh web data
