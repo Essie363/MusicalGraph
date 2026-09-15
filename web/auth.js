@@ -6,6 +6,7 @@
   var STORAGE_KEY = "mg_supabase_session_v1";
   var listeners = [];
   var state = { session: null, user: null };
+  var refreshPromise = null;
 
   function demoMode() { return /(^|[?&])mode=auth-demo(?:&|$)/.test(location.search); }
   function demoSession() {
@@ -48,7 +49,11 @@
     }).then(function (r) {
       return r.text().then(function (text) {
         var data = text ? JSON.parse(text) : {};
-        if (!r.ok) throw new Error(data.message || data.msg || data.error_description || data.error || ("HTTP " + r.status));
+        if (!r.ok) {
+          var error = new Error(data.message || data.msg || data.error_description || data.error || ("HTTP " + r.status));
+          error.status = r.status;
+          throw error;
+        }
         return data;
       });
     });
@@ -61,14 +66,26 @@
   function refresh() {
     var session = state.session || read();
     if (!session || !session.refresh_token) return Promise.resolve(null);
-    return authFetch("/token?grant_type=refresh_token", {
+    if (refreshPromise) return refreshPromise;
+    refreshPromise = authFetch("/token?grant_type=refresh_token", {
       method: "POST",
       body: JSON.stringify({ refresh_token: session.refresh_token })
     }).then(function (next) {
       next = normalize(next);
       if (next) save(next);
       return next;
-    }).catch(function () { save(null); return null; });
+    }).catch(function (error) {
+      // 只有服务端确认刷新令牌已失效时才退出；断网或短暂超时不丢失本地登录态。
+      if (error && (error.status === 400 || error.status === 401 || error.status === 403)) save(null);
+      return null;
+    });
+    return refreshPromise.then(function (result) {
+      refreshPromise = null;
+      return result;
+    }, function (error) {
+      refreshPromise = null;
+      throw error;
+    });
   }
   function getSession() {
     var session = state.session || read();
@@ -253,6 +270,13 @@
       // 恢复已有登录态时也通知页面，让匿名评分有机会自动归并到账号。
       if (session) save(session);
       else render();
+    });
+    function renewStoredSession() {
+      getSession().then(function (session) { if (session) save(session); });
+    }
+    window.addEventListener("online", renewStoredSession);
+    document.addEventListener("visibilitychange", function () {
+      if (!document.hidden) renewStoredSession();
     });
   });
 })();
