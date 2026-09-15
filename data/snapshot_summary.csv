@@ -1,8 +1,8 @@
 ﻿table,count
 artists (total),4620
 with profile,248
-shows,36370
-co_work_edges,49555
+shows,36404
+co_work_edges,49580
 relations (total),288
 relations (classmate),77
 relations (cp),123
