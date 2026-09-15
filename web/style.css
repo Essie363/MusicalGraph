@@ -1544,6 +1544,7 @@ body.side-open #graph-main { margin-right: 300px; }
   #view-graph { height: calc(100vh - 52px); }
   /* 抵消详情容器的顶部内边距，让角色 Tab 紧贴顶部导航吸住。 */
   #musical-view .mp-role-tabs {
+    position: sticky;
     top: calc(-1 * var(--space-4)); z-index: 24; isolation: isolate;
     margin-left: -14px; margin-right: -14px; padding-left: 14px; padding-right: 14px;
     background: #121212;

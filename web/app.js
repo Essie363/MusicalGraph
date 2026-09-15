@@ -2609,13 +2609,17 @@
         roleTabs.scrollTo({ left: Math.max(0, tabLeft), behavior: "smooth" });
       }
     }
+    function roleScrollHost() {
+      // 宽屏由右侧阅读列滚动；手机端则由整个剧目详情页滚动。
+      // 两种布局不能共用固定的 content.scrollTo，否则手机点标签不会跳转。
+      return content.scrollHeight > content.clientHeight + 2 ? content : document.getElementById("musical-view");
+    }
     function scrollToRole(index) {
       var panel = panels[index];
       if (!panel) return;
-      // The desktop musical page has its own scrolling reading column, so
-      // scroll that column explicitly instead of relying on scrollIntoView.
-      var panelTop = panel.getBoundingClientRect().top - content.getBoundingClientRect().top + content.scrollTop;
-      content.scrollTo({
+      var scrollHost = roleScrollHost();
+      var panelTop = panel.getBoundingClientRect().top - scrollHost.getBoundingClientRect().top + scrollHost.scrollTop;
+      scrollHost.scrollTo({
         top: Math.max(0, panelTop - roleTabsShell.offsetHeight - 12),
         behavior: "smooth"
       });
@@ -2674,7 +2678,7 @@
     roleOrder.forEach(function (roleName, index) { addGroup(roleName, roleName === "其他演员" ? noRole : groups[roleName], index); });
     if (panels.length) {
       setActiveRole(0);
-      var scrollHost = content.scrollHeight > content.clientHeight + 2 ? content : document.getElementById("musical-view");
+      var scrollHost = roleScrollHost();
       scrollHost.onscroll = function () {
         var threshold = roleTabsShell.offsetHeight + 24;
         var activeIndex = 0;
