@@ -1695,7 +1695,10 @@
   function ratingCanOpen() { return ratingOnline() || ratingDemoMode(); }
   function ratingAverage(item) {
     if (!item) return null;
-    return (Number(item.singing_avg) + Number(item.dancing_avg) + Number(item.acting_avg)) / 3;
+    var values = [item.singing_avg, item.dancing_avg, item.acting_avg].filter(function (value) {
+      return value != null && isFinite(Number(value));
+    }).map(Number);
+    return values.length ? values.reduce(function (sum, value) { return sum + value; }, 0) / values.length : null;
   }
   function ownRatingSummary(rows) {
     var latest = rows.slice().sort(function (a, b) { return String(b.updated_at || "").localeCompare(String(a.updated_at || "")); })[0];
