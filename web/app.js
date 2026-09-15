@@ -301,6 +301,7 @@
     if (location.hash !== "#/graph") { location.hash = "#/graph"; return; }
     showGraphView();
   }
+  var graphResumeVersion = 0;
   function showGraphView() {
     viewHome.classList.add("hidden");
     viewGraph.classList.remove("hidden");
@@ -312,18 +313,26 @@
     musicalView.classList.add("hidden");
     document.body.classList.remove("actor-mode");
     setNavActive("graph");
-    resizeHome();
-    if (!homeLaidOut) { homeLaidOut = true; buildGraph(); layoutAndCenter(); playEntrance(); }   // 图谱视图首次可见时，用真实画布尺寸正式布局
-    requestAnimationFrame(draw);
-    maybeShowFirstHint();
-    if (pendingGraphFocus) {
-      var f = pendingGraphFocus;
-      pendingGraphFocus = null;
-      if (scene) { scene = null; sceneHighlight = {}; hideSceneCard(); stripSceneFromHash(); }
-      restoreFocus(f);
-    } else {
-      handleSceneFromHash();
-    }
+    // 移动端从详情页返回时，浏览器需要一帧完成视图切换，下一帧才能读到真实画布尺寸。
+    // 等布局稳定后再恢复图谱，避免把隐藏状态的画布错误地重置为 100 × 100。
+    var resumeVersion = ++graphResumeVersion;
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        if (resumeVersion !== graphResumeVersion || homeView.classList.contains("hidden")) return;
+        resizeHome();
+        if (!homeLaidOut) { homeLaidOut = true; buildGraph(); layoutAndCenter(); playEntrance(); }
+        requestAnimationFrame(draw);
+        maybeShowFirstHint();
+        if (pendingGraphFocus) {
+          var f = pendingGraphFocus;
+          pendingGraphFocus = null;
+          if (scene) { scene = null; sceneHighlight = {}; hideSceneCard(); stripSceneFromHash(); }
+          restoreFocus(f);
+        } else {
+          handleSceneFromHash();
+        }
+      });
+    });
   }
   function showContributeView() {
     viewHome.classList.add("hidden");
@@ -1500,13 +1509,14 @@
   function screenToWorld(px, py) {
     return { x: (px - canvas.clientWidth / 2 - view.x) / view.zoom, y: (py - canvas.clientHeight / 2 - view.y) / view.zoom };
   }
-  function hitTest(px, py) {
+  function hitTest(px, py, minScreenRadius) {
     var p = screenToWorld(px, py);
     var hit = null, best = 1e9;
     Object.keys(nodes).forEach(function (k) {
       var n = nodes[k];
       var d = (n.x - p.x) * (n.x - p.x) + (n.y - p.y) * (n.y - p.y);
-      var hitR = n.hitR || 18;
+      // 手机上的可点击范围至少保持 28px，缩放时也不会变得难以点中。
+      var hitR = Math.max(n.hitR || 18, (minScreenRadius || 0) / Math.max(view.zoom, 0.01));
       if (d < hitR * hitR && d < best) { best = d; hit = k; }
     });
     return hit;
@@ -2249,6 +2259,41 @@
   if (sceneClose) sceneClose.addEventListener("click", function () {
     document.body.classList.remove("side-open");
   });
+
+  // 手机端的详情抽屉可从顶部把手调整高度，露出更多星图或详情内容。
+  var graphTools = document.getElementById("graph-tools");
+  var graphSheetHandle = document.getElementById("graph-sheet-handle");
+  var graphSheetDrag = null;
+  function isMobileGraphSheet() {
+    return window.matchMedia && window.matchMedia("(max-width: 760px)").matches;
+  }
+  if (graphTools && graphSheetHandle) {
+    graphSheetHandle.addEventListener("pointerdown", function (e) {
+      if (!isMobileGraphSheet() || !document.body.classList.contains("side-open")) return;
+      e.preventDefault();
+      graphSheetDrag = {
+        pointerId: e.pointerId,
+        startY: e.clientY,
+        startHeight: graphTools.getBoundingClientRect().height
+      };
+      graphSheetHandle.setPointerCapture(e.pointerId);
+    });
+    graphSheetHandle.addEventListener("pointermove", function (e) {
+      if (!graphSheetDrag || e.pointerId !== graphSheetDrag.pointerId) return;
+      var minHeight = 190;
+      var maxHeight = Math.max(minHeight, window.innerHeight - 72);
+      var height = graphSheetDrag.startHeight + (graphSheetDrag.startY - e.clientY);
+      height = Math.max(minHeight, Math.min(maxHeight, height));
+      graphTools.style.setProperty("--graph-sheet-height", Math.round(height) + "px");
+    });
+    function endGraphSheetDrag(e) {
+      if (!graphSheetDrag || e.pointerId !== graphSheetDrag.pointerId) return;
+      if (graphSheetHandle.hasPointerCapture(e.pointerId)) graphSheetHandle.releasePointerCapture(e.pointerId);
+      graphSheetDrag = null;
+    }
+    graphSheetHandle.addEventListener("pointerup", endGraphSheetDrag);
+    graphSheetHandle.addEventListener("pointercancel", endGraphSheetDrag);
+  }
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape") {
       var ratingRecordPickerModal = document.getElementById("rating-record-picker-modal");
@@ -2275,10 +2320,10 @@
     if (e.touches.length === 1) {
       var t = e.touches[0];
       var px = t.clientX - rect.left, py = t.clientY - rect.top;
-      var hit = hitTest(px, py);
+      var hit = hitTest(px, py, 28);
       touchMoved = false;
       touches = hit
-        ? { mode: "drag", id: t.identifier, nodeId: hit, startX: px, startY: py }
+        ? { mode: "tap", id: t.identifier, nodeId: hit, startX: t.clientX, startY: t.clientY, startViewX: view.x, startViewY: view.y }
         : { mode: "pan", id: t.identifier, startX: t.clientX, startY: t.clientY, startViewX: view.x, startViewY: view.y };
     } else if (e.touches.length === 2) {
       var a = e.touches[0], b = e.touches[1];
@@ -2311,32 +2356,30 @@
       touchMoved = true;
       return;
     }
-    if (touches.mode === "drag" && nodes[touches.nodeId]) {
-      var p = screenToWorld(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
-      nodes[touches.nodeId].x = p.x; nodes[touches.nodeId].y = p.y;
-      touchMoved = true;
-    } else if (touches.mode === "pan") {
+    var t = e.touches[0];
+    var moveX = t.clientX - touches.startX;
+    var moveY = t.clientY - touches.startY;
+    // 轻点节点优先于拖动：只有手指离开 10px 以上才开始平移图谱。
+    if (touches.mode === "tap" && Math.hypot(moveX, moveY) > 10) touches.mode = "pan";
+    if (touches.mode === "pan") {
       // 画面跟随手指同向移动
-      view.x = touches.startViewX + (e.touches[0].clientX - touches.startX);
-      view.y = touches.startViewY + (e.touches[0].clientY - touches.startY);
-      touchMoved = true;
+      view.x = touches.startViewX + moveX;
+      view.y = touches.startViewY + moveY;
+      if (Math.hypot(moveX, moveY) > 10) touchMoved = true;
     }
   }, { passive: false });
   canvas.addEventListener("touchend", function (e) {
     e.preventDefault();
     if (!touches) return;
     var tapNode = null;
-    if (touches.mode === "drag" && nodes[touches.nodeId]) {
-      nodes[touches.nodeId].fixed = false;
-      tapNode = touches.nodeId;
-    }
+    if (touches.mode === "tap") tapNode = touches.nodeId;
     touches = null;
     if (e.changedTouches && e.changedTouches.length === 1 && !touchMoved) {
       if (tapNode) { onNodeClick(tapNode); }
       else {
         var rect = canvas.getBoundingClientRect();
         var t = e.changedTouches[0];
-        var hit = hitTest(t.clientX - rect.left, t.clientY - rect.top);
+        var hit = hitTest(t.clientX - rect.left, t.clientY - rect.top, 28);
         if (hit) onNodeClick(hit);
         else if (focusId || scene) backOne();   // 单击空白 -> 返回上一级
       }

@@ -383,6 +383,7 @@ canvas { display: block; width: 100%; height: 100%; background: transparent; }
   pointer-events: none;
   transition: transform 280ms cubic-bezier(0.16, 1, 0.3, 1), opacity 200ms ease;
 }
+#graph-sheet-handle { display: none; }
 body.side-open #graph-tools { transform: translateX(0); opacity: 1; pointer-events: auto; }
 body.side-open #graph-main { margin-right: 300px; }
 .gt-block { display: flex; flex-direction: column; gap: var(--space-2); }
@@ -1550,17 +1551,23 @@ body.side-open #graph-main { margin-right: 300px; }
   #actor-view, #musical-view { height: calc(100vh - 52px); padding: var(--space-4) 14px var(--space-8); }
   #graph-tools {
     position: fixed; left: 0; right: 0; bottom: 0; top: auto;
-    width: 100%; max-width: none; max-height: 62vh;
+    width: 100%; max-width: none;
+    height: var(--graph-sheet-height, 46vh);
+    min-height: 190px; max-height: calc(100dvh - 72px);
     border-left: none; border-top: 1px solid var(--border-subtle);
     border-radius: 8px 8px 0 0;
     box-shadow: 0 -12px 32px rgba(0, 0, 0, .45);
     transform: translateY(101%);
     padding-bottom: calc(var(--space-4) + env(safe-area-inset-bottom));
   }
-  #graph-tools::before {
-    content: ""; display: block; width: 40px; height: 4px;
-    border-radius: 2px; margin: 0 auto 8px; background: var(--border-strong);
-    flex: none;
+  #graph-tools::before { display: none; }
+  #graph-sheet-handle {
+    display: block; position: relative; height: 24px; margin: -4px 0 0;
+    flex: none; cursor: ns-resize; touch-action: none;
+  }
+  #graph-sheet-handle::before {
+    content: ""; position: absolute; top: 8px; left: 50%; width: 40px; height: 4px;
+    border-radius: 2px; transform: translateX(-50%); background: var(--border-strong);
   }
   body.side-open #graph-tools { transform: translateY(0); }
   body.side-open #graph-main { margin-right: 0; }   /* 移动端：星图不收缩，卡片底部上滑覆盖 */
