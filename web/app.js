@@ -3769,8 +3769,11 @@
     }
     return ratingRpcWithToken(name, payload, null);
   }
-  function ratingIdentityPayload() {
-    return window.MG_AUTH && window.MG_AUTH.currentUser() ? {} : { p_anonymous_user_id: mgClientId() };
+  function ratingIdentityPayload(includeDeviceId) {
+    var payload = window.MG_AUTH && window.MG_AUTH.currentUser() ? {} : { p_anonymous_user_id: mgClientId() };
+    // 复用匿名评分已有的浏览器标识，避免另建不透明的设备指纹。
+    if (includeDeviceId) payload.p_device_id = mgClientId();
+    return payload;
   }
   var anonymousRatingClaimUserId = "";
   var anonymousRatingClaimPromise = null;
@@ -4217,13 +4220,13 @@
     if (!option || !ratingPerformance || !ratingPerformanceConfirmed) return;
     ratingSubmit.disabled = true;
     ratingHint.textContent = "正在保存评分...";
-    var request = option.manual ? ratingRpc("upsert_manual_actor_rating", Object.assign(ratingIdentityPayload(), {
+    var request = option.manual ? ratingRpc("upsert_manual_actor_rating", Object.assign(ratingIdentityPayload(true), {
       p_actor_id: Number(ratingActorId), p_musical_name: option.musicalName, p_role_name: option.roleName,
       p_performance_date: ratingPerformance.date, p_session_period: ratingPerformance.session_period,
       p_singing_score: scores.singing, p_dancing_score: scores.dancing, p_acting_score: scores.acting
-    })) : ratingRpc("upsert_actor_rating", Object.assign(ratingIdentityPayload(), {
+    })) : ratingRpc("upsert_actor_rating", Object.assign(ratingIdentityPayload(true), {
       p_performance_id: ratingPerformance.id == null ? null : Number(ratingPerformance.id), p_actor_id: Number(ratingActorId), p_musical_id: Number(option.musicalId), p_role_id: Number(option.roleId),
-      p_performance_date: ratingPerformance.id == null ? ratingPerformance.date : null, p_session_period: ratingPerformance.id == null ? ratingPerformance.session_period : null,
+      p_performance_date: ratingPerformance.date, p_session_period: ratingPerformance.session_period,
       p_singing_score: scores.singing, p_dancing_score: scores.dancing, p_acting_score: scores.acting
     }));
     request.then(function (saved) {

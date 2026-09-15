@@ -5,6 +5,9 @@
 
 ## 🔴 高优先级
 
+- [x] **评分风控 V1（已完成 2026-09-15）**
+  - 已运行 `docs/supabase_rating_risk.sql`；评分提交会携带既有浏览器标识，短时高频、同设备多账号及异常集中评分会被标记为 `suspicious`。
+  - 可疑评分仍保留在用户自己的记录中，但不参与公开评分汇总；当前静态前端无法获得可信 IP，因此不做 IP 规则。
 - [x] **修复脚本硬编码路径问题（已完成 2026-08-07）**
   - 现状：`sync.py`、`run_sync.bat`、`check_gaps.py`、`import_*.py`、`fix_*.py` 等均硬编码 `C:\Users\Hp\Documents\Default Project`，与项目实际位置（`E:\AI VibeCoding Project\MusicGraph`）不一致，运行会读写错误位置。
   - 建议：改为基于脚本所在目录的相对路径（如 `os.path.dirname(__file__)`），符合"项目可迁移"原则。

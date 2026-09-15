@@ -166,7 +166,12 @@ function check(name, cond, extra) {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.click("#rating-submit");
   await page.waitForTimeout(100);
-  check("重复评分调用覆盖 RPC", await page.evaluate(() => window.__ratingRpcCalls.some(x => x.url.includes("upsert_actor_rating") && x.body.p_performance_id === 300 && x.body.p_singing_score === 4.5 && x.body.p_acting_score === 5)));
+  check("真实场次评分保存日期与场次 ID", await page.evaluate(() => window.__ratingRpcCalls.some(x =>
+    x.url.includes("upsert_actor_rating") && x.body.p_performance_id === 300 && x.body.p_performance_date === "2026-09-03" && x.body.p_singing_score === 4.5 && x.body.p_acting_score === 5
+  )));
+  check("评分提交携带浏览器标识", await page.evaluate(() => window.__ratingRpcCalls.some(x =>
+    x.url.includes("upsert_actor_rating") && typeof x.body.p_device_id === "string" && x.body.p_device_id.length > 0
+  )));
   check("提交后关闭评分弹窗", await page.$eval("#rating-modal", el => el.classList.contains("hidden")));
 
   await page.click("#ap-rate");
@@ -200,7 +205,7 @@ function check(name, cond, extra) {
   await page.click("[data-dimension='acting'] .rating-star-hit[data-score='5.0']");
   await page.click("#rating-submit");
   await page.waitForTimeout(100);
-  check("手动补充调用独立评分 RPC", await page.evaluate(() => window.__ratingRpcCalls.some(x => x.url.includes("upsert_manual_actor_rating") && x.body.p_musical_name === "未收录测试剧目" && x.body.p_role_name === "未收录测试角色" && x.body.p_session_period === "night" && x.body.p_singing_score === 4.5 && x.body.p_acting_score === 5)));
+  check("手动补充调用独立评分 RPC", await page.evaluate(() => window.__ratingRpcCalls.some(x => x.url.includes("upsert_manual_actor_rating") && x.body.p_musical_name === "未收录测试剧目" && x.body.p_role_name === "未收录测试角色" && x.body.p_session_period === "night" && x.body.p_singing_score === 4.5 && x.body.p_acting_score === 5 && typeof x.body.p_device_id === "string" && x.body.p_device_id.length > 0)));
 
   check("详情页姓名", (await page.textContent("#ap-name")) === "郑云龙", await page.textContent("#ap-name"));
   check("关系列表有内容", await page.$$eval("#ap-relations li", els => els.length) >= 1);
