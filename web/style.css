@@ -834,8 +834,10 @@ body.side-open #graph-main { margin-right: 300px; }
   box-shadow: 0 18px 52px rgba(0,0,0,.48);
 }
 .auth-menu-pop a, .auth-menu-pop button {
-  display: block;
+  display: flex;
+  align-items: center;
   width: 100%;
+  min-height: 34px;
   padding: 9px 10px;
   border: 0;
   border-radius: 8px;
@@ -843,7 +845,7 @@ body.side-open #graph-main { margin-right: 300px; }
   background: transparent;
   text-align: left;
   text-decoration: none;
-  font-size: 13px;
+  font: 13px/1.3 var(--font-sans);
 }
 .auth-menu-pop a:hover, .auth-menu-pop button:hover { color: var(--text-primary); background: transparent; }
 .auth-modal {
@@ -1137,12 +1139,20 @@ body.side-open #graph-main { margin-right: 300px; }
 .my-rating-day:first-child .my-rating-timeline-rail::before { top: 25px; }
 .my-rating-day:last-child .my-rating-timeline-rail::before { bottom: auto; height: 25px; }
 .my-rating-timeline-rail i { position: absolute; z-index: 1; top: 20px; left: 6px; width: 11px; height: 11px; border: 2px solid var(--text-secondary); border-radius: 50%; background: var(--bg); }
+.my-rating-day-carousel { position: relative; min-width: 0; }
 .my-rating-day-records {
-  display: flex; gap: 10px; min-width: 0; padding: 0 0 26px 14px; overflow-x: auto; overscroll-behavior-x: contain;
-  scrollbar-width: thin; scrollbar-color: #343434 transparent;
+  display: flex; gap: 10px; min-width: 0; padding: 0 30px 26px 14px; overflow-x: auto; overscroll-behavior-x: contain;
+  scrollbar-width: none;
 }
-.my-rating-day-records::-webkit-scrollbar { height: 6px; }
-.my-rating-day-records::-webkit-scrollbar-thumb { background: #343434; border-radius: 6px; }
+.my-rating-day-records::-webkit-scrollbar { display: none; }
+.my-rating-history-control {
+  position: absolute; z-index: 2; top: 0; bottom: 26px; width: 28px; border: 0; color: var(--text-secondary); font: 400 27px/1 var(--font-sans);
+  cursor: pointer; opacity: 0; pointer-events: none; transition: color 140ms ease, opacity 140ms ease;
+}
+.my-rating-history-prev { left: 0; background: linear-gradient(90deg, var(--bg) 20%, transparent); }
+.my-rating-history-next { right: 0; background: linear-gradient(270deg, var(--bg) 20%, transparent); }
+.my-rating-day-carousel.is-scrollable .my-rating-history-control:not(:disabled) { opacity: 1; pointer-events: auto; }
+.my-rating-history-control:hover { color: var(--text-primary); }
 .my-rating-history-card { flex: 0 0 min(292px, calc(100vw - 170px)); min-height: 148px; }
 @media (max-width: 1000px) {
   .my-rating-works { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -1529,9 +1539,16 @@ body.side-open #graph-main { margin-right: 300px; }
   }
   #top-search-box.open { transform: translateY(0); }
   #top-search-box .dropdown { left: 12px; right: 12px; }
-  .topnav { padding: 0 14px; }
-  .brand { font-size: 15px; }
-  .nav-links a { font-size: 13px; padding: 5px 8px; }
+  .topnav { gap: 8px; padding: 0 10px; }
+  .topnav .brand { flex: 0 0 auto; font-size: 13px; }
+  .top-search { flex: 0 0 auto; margin-left: auto; }
+  .nav-links { flex: 0 1 auto; min-width: 0; gap: 0; }
+  .nav-links > a { font-size: 12px; padding: 5px 6px; }
+  .auth-entry { flex: 0 0 auto; }
+  .auth-login-btn, .auth-user-btn { padding: 5px 6px; font-size: 12px; }
+  .auth-login-btn { font-size: 0; }
+  .auth-login-btn::after { content: "登录"; font-size: 12px; }
+  .auth-user-btn { display: block; max-width: 68px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .legal-view { padding: 28px 20px 64px; }
   .legal-document { width: 100%; max-width: none; }
   .legal-head h1 { font-size: 26px; }
@@ -1550,6 +1567,17 @@ body.side-open #graph-main { margin-right: 300px; }
     background: #121212;
   }
   #actor-view, #musical-view { height: calc(100vh - 52px); padding: var(--space-4) 14px var(--space-8); }
+  /* 手机端将页面级“在图谱中查看”固定在详情页右上角，避免占用信息区的纵向空间。 */
+  #actor-view, #musical-view { position: relative; }
+  #actor-view .ap-sidebar-graph-link, #musical-view .mp-sidebar-graph-link {
+    position: absolute; top: var(--space-4); right: 14px; z-index: 3;
+    display: inline-flex; margin: 0; padding: 7px 12px;
+  }
+  #actor-view #ap-name, #musical-view #mp-name { max-width: calc(100% - 132px); }
+  #musical-view #mp-overview { border-top: 0; border-bottom: 0; }
+  #musical-view .mp-sidebar-section { margin-bottom: var(--space-2); }
+  #musical-view #mp-overview { margin-bottom: var(--space-2); }
+  #musical-view .mp-cast-page-head { padding-top: var(--space-2); }
   #graph-tools {
     position: fixed; left: 0; right: 0; bottom: 0; top: auto;
     width: 100%; max-width: none;
@@ -1563,8 +1591,8 @@ body.side-open #graph-main { margin-right: 300px; }
   }
   #graph-tools::before { display: none; }
   #graph-sheet-handle {
-    display: block; position: relative; height: 24px; margin: -4px 0 0;
-    flex: none; cursor: ns-resize; touch-action: none;
+    display: block; position: sticky; top: -4px; z-index: 4; height: 24px; margin: -4px 0 0;
+    flex: none; cursor: ns-resize; touch-action: none; background: var(--surface-page);
   }
   #graph-sheet-handle::before {
     content: ""; position: absolute; top: 8px; left: 50%; width: 40px; height: 4px;

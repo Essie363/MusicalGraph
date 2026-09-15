@@ -158,6 +158,21 @@
     var target = document.getElementById(targetId);
     if (source && target) source.addEventListener("change", function () { target.checked = source.checked; });
   }
+  function startOtpResendCooldown(button) {
+    var remaining = 60;
+    button.disabled = true;
+    button.textContent = remaining + " 秒后可重发";
+    var timer = setInterval(function () {
+      remaining--;
+      if (remaining <= 0) {
+        clearInterval(timer);
+        button.disabled = false;
+        button.textContent = "重新发送验证码";
+        return;
+      }
+      button.textContent = remaining + " 秒后可重发";
+    }, 1000);
+  }
   function wire() {
     var currentEmail = "";
     var pop = document.getElementById("auth-menu-pop");
@@ -196,10 +211,9 @@
     });
     document.getElementById("auth-resend").addEventListener("click", function (e) {
       if (!currentEmail) return;
-      e.currentTarget.disabled = true;
+      startOtpResendCooldown(e.currentTarget);
       setMessage("正在重新发送…");
       sendOtp(currentEmail).then(function () { setMessage("验证码已重新发送"); }).catch(function (err) { setMessage(err.message || "发送失败", "error"); });
-      setTimeout(function () { e.currentTarget.disabled = false; }, 30000);
     });
     document.getElementById("auth-token-form").addEventListener("submit", function (e) {
       e.preventDefault();

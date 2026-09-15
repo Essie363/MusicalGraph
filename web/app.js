@@ -2040,8 +2040,22 @@
       var dayRows = byDay[day].slice().sort(function (a, b) {
         return String(b.updated_at || "").localeCompare(String(a.updated_at || ""));
       });
-      return "<li class='my-rating-day'><time class='my-rating-day-date' datetime='" + escHtml(day) + "'>" + escHtml(label) + "</time><span class='my-rating-timeline-rail' aria-hidden='true'><i></i></span><div class='my-rating-day-records'>" + dayRows.map(function (row) { return myRatingCard(row, { history: true }); }).join("") + "</div></li>";
+      return "<li class='my-rating-day'><time class='my-rating-day-date' datetime='" + escHtml(day) + "'>" + escHtml(label) + "</time><span class='my-rating-timeline-rail' aria-hidden='true'><i></i></span><div class='my-rating-day-carousel'><button class='my-rating-history-control my-rating-history-prev' type='button' aria-label='查看前一条评分' title='查看前一条评分'>‹</button><div class='my-rating-day-records'>" + dayRows.map(function (row) { return myRatingCard(row, { history: true }); }).join("") + "</div><button class='my-rating-history-control my-rating-history-next' type='button' aria-label='查看后一条评分' title='查看后一条评分'>›</button></div></li>";
     }).join("");
+    timeline.querySelectorAll(".my-rating-day-carousel").forEach(function (carousel) {
+      var track = carousel.querySelector(".my-rating-day-records");
+      var previous = carousel.querySelector(".my-rating-history-prev");
+      var next = carousel.querySelector(".my-rating-history-next");
+      function updateControls() {
+        previous.disabled = track.scrollLeft <= 2;
+        next.disabled = track.scrollLeft + track.clientWidth >= track.scrollWidth - 2;
+        carousel.classList.toggle("is-scrollable", track.scrollWidth > track.clientWidth + 2);
+      }
+      previous.addEventListener("click", function () { track.scrollBy({ left: -Math.max(180, track.clientWidth * .82), behavior: "smooth" }); });
+      next.addEventListener("click", function () { track.scrollBy({ left: Math.max(180, track.clientWidth * .82), behavior: "smooth" }); });
+      track.addEventListener("scroll", updateControls, { passive: true });
+      requestAnimationFrame(updateControls);
+    });
     bindMyRatingEditors(timeline, rows);
   }
   function renderMyRatingsPage() {
@@ -4266,14 +4280,25 @@
   });
   document.getElementById("rating-auth-resend").addEventListener("click", function (e) {
     if (!window.MG_AUTH || !window.MG_AUTH.sendOtp || !ratingAuthCurrentEmail) return;
+    var remaining = 60;
     e.currentTarget.disabled = true;
+    e.currentTarget.textContent = remaining + " 秒后可重发";
+    var timer = setInterval(function () {
+      remaining--;
+      if (remaining <= 0) {
+        clearInterval(timer);
+        e.currentTarget.disabled = false;
+        e.currentTarget.textContent = "重新发送验证码";
+        return;
+      }
+      e.currentTarget.textContent = remaining + " 秒后可重发";
+    }, 1000);
     setRatingAuthMessage("正在重新发送...");
     window.MG_AUTH.sendOtp(ratingAuthCurrentEmail).then(function () {
       setRatingAuthMessage("验证码已重新发送");
     }).catch(function (err) {
       setRatingAuthMessage(err.message || "发送失败", "error");
     });
-    setTimeout(function () { e.currentTarget.disabled = false; }, 30000);
   });
   document.getElementById("rating-auth-change-email").addEventListener("click", function () {
     ratingAuthTokenForm.classList.add("hidden");
