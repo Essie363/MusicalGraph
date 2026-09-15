@@ -3,7 +3,8 @@
 - Base tables (artists / musicals / roles / actor_roles) are merged incrementally.
   Manually added rows (自建演员/剧目，如《坏家伙》) are preserved and never deleted.
 - Show schedule synced day-by-day via /api/search_day/?date=YYYY-MM-DD.
-  Only dates not already in the DB are fetched, so reruns are cheap.
+  Recent dates are rechecked to pick up late-added performances and casts;
+  older dates are only fetched when absent so daily runs stay inexpensive.
 - After syncing, co_work_edges are recomputed.
 
 Usage: python sync.py
@@ -27,6 +28,7 @@ API = "https://y.saoju.net/yyj/api"
 HORIZON_DAYS = 420      # how far ahead to probe for new dates
 EMPTY_STREAK_LIMIT = 45 # stop probing after this many consecutive empty days
 FUTURE_DAYS = 700       # how far ahead search_day will be probed on the very first run
+REFRESH_DAYS = 120       # recheck this many upcoming days for source-site amendments
 
 SESSION = requests.Session()
 SESSION.headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
@@ -103,15 +105,14 @@ def upsert_base_tables(cur, conn):
 
 
 def sync_shows(cur, conn):
-    """Pull day-by-day schedule for dates not already in DB."""
+    """Pull schedules, rechecking the near term for newly added source records."""
     existing = {r[0] for r in cur.execute("SELECT DISTINCT date FROM shows")}
 
     today = dt.date.today()
-    # First run probe window vs subsequent incremental window
-    # We always probe from (today - 2) forward so same-day edits are caught.
+    # Recheck the immediate past and upcoming window. Beyond that, skip dates
+    # already stored locally and only probe gaps, keeping a daily run modest.
     start = today - dt.timedelta(days=2)
-    # find furthest existing date to know if we need the long window
-    max_existing = cur.execute("SELECT MAX(date) FROM shows").fetchone()[0]
+    refresh_end = today + dt.timedelta(days=REFRESH_DAYS)
 
     name2ids = {}
     for aid, name in cur.execute("SELECT id,name FROM artists"):
@@ -124,7 +125,8 @@ def sync_shows(cur, conn):
 
     while date <= end:
         ds = date.isoformat()
-        if ds in existing:
+        should_refresh = date <= refresh_end
+        if ds in existing and not should_refresh:
             date += dt.timedelta(days=1)
             empty_streak = 0
             continue
@@ -137,9 +139,12 @@ def sync_shows(cur, conn):
             continue
         shows = data.get("show_list", [])
         if not shows:
-            empty_streak += 1
-            if empty_streak >= EMPTY_STREAK_LIMIT:
-                break
+            # An empty response inside the refresh window should not stop the
+            # scan: a nearby date may receive a newly announced performance.
+            if not should_refresh:
+                empty_streak += 1
+                if empty_streak >= EMPTY_STREAK_LIMIT:
+                    break
         else:
             empty_streak = 0
             for s in shows:
@@ -163,7 +168,8 @@ def sync_shows(cur, conn):
                         (sid, aid, c.get("role", "")))
                     if aid is not None:
                         name2ids.setdefault(artist_name, [aid])
-            new_dates += 1
+            if ds not in existing:
+                new_dates += 1
             existing.add(ds)
         date += dt.timedelta(days=1)
         time.sleep(0.25)

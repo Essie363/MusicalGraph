@@ -9,8 +9,12 @@ def recompute_co_work_edges(conn):
     conn.commit()
 
     show_casts = defaultdict(set)
-    for row in cur.execute("SELECT show_id, artist_id FROM show_casts"):
-        show_casts[row[0]].add(row[1])
+    for show_id, artist_id in cur.execute("SELECT show_id, artist_id FROM show_casts"):
+        # The schedule source can contain an ambiguous cast name. Keep that
+        # record in unresolved_cast for review, but it cannot form a person-to-
+        # person co-work edge until it has a concrete artist id.
+        if artist_id is not None:
+            show_casts[show_id].add(artist_id)
 
     cur.execute("SELECT id, date, musical FROM shows")
     id_info = {}

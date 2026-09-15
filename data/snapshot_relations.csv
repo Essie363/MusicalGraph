@@ -1,63 +1,63 @@
 ﻿relation_id,type,actor_a,actor_b,detail,source,status,co_shows
 1,CP,徐杭,吴志军,军杭,user,approved,147
-2,CP,吴志军,赵钱龙,钱军出击,user,approved,145
+2,CP,吴志军,赵钱龙,钱军出击,user,approved,146
 3,CP,翟松,钟嘉诚,钟嘉夜,user,approved,28
-4,CP,叶麒圣,徐丽东,叶东,user,approved,28
+4,CP,叶麒圣,徐丽东,叶东,user,approved,31
 6,CP,郭嘉轩,钟嘉诚,钟花,user,approved,19
 7,CP,毛二,徐昊,昊耀,user,approved,77
-8,CP,汤佳明,许昌泰,国泰明安,user,approved,71
-9,CP,张智涵,徐杭,太杭,user,approved,63
+8,CP,汤佳明,许昌泰,国泰明安,user,approved,72
+9,CP,张智涵,徐杭,太杭,user,approved,64
 10,CP,张泽,叶麒圣,叶泽,user,approved,0
-11,CP,张智涵,邵玎,太打,user,approved,95
+11,CP,张智涵,邵玎,太打,user,approved,96
 12,CP,钟嘉诚,邵立君,君诚99,user,approved,45
-13,CP,相征,汤佳明,相汤,user,approved,53
+13,CP,相征,汤佳明,相汤,user,approved,56
 14,CP,纪晓坤,汤佳明,汤纪,user,approved,112
-15,CP,祝颂皓,李苏霖,祝苏,user,approved,53
-16,CP,张沁丹,胥子含,丫蛋,user,approved,91
-17,CP,赵洪博,余镇鳌,卜鳌,user,approved,77
-18,CP,郑艺彬,白倬铭,丿彬,user,approved,48
-19,CP,姜崃,朱亮,闪崃,user,approved,138
-20,CP,徐昊,李苏霖,昊苏,user,approved,44
+15,CP,祝颂皓,李苏霖,祝苏,user,approved,54
+16,CP,张沁丹,胥子含,丫蛋,user,approved,96
+17,CP,赵洪博,余镇鳌,卜鳌,user,approved,80
+18,CP,郑艺彬,白倬铭,丿彬,user,approved,51
+19,CP,姜崃,朱亮,闪崃,user,approved,139
+20,CP,徐昊,李苏霖,昊苏,user,approved,46
 21,CP,王培杰,冒海飞,瑁,user,approved,103
-22,CP,陈玉婷,丁辰西,婷西,user,approved,71
+22,CP,陈玉婷,丁辰西,婷西,user,approved,75
 23,CP,高杨,张会芳,羊芳,user,approved,92
 24,CP,毛二,钟嘉诚,钟二病,user,approved,25
 25,CP,于晓璘,冒海飞,冒村,user,approved,48
 26,CP,徐佳文,邵立君,文君,user,approved,49
-27,CP,徐佳文,吴盛祥,文锌,user,approved,58
+27,CP,徐佳文,吴盛祥,文锌,user,approved,62
 28,CP,钟嘉诚,钟舜傲,双钟,user,approved,33
-29,CP,王瀚宇,白倬铭,丿歪,user,approved,15
+29,CP,王瀚宇,白倬铭,丿歪,user,approved,16
 30,CP,王敏辉,白倬铭,丿娟,user,approved,41
 31,CP,赵雨卉,邓贤凌,邓卉,user,approved,81
 32,CP,郑艺彬,高雨晨,彬高,user,approved,20
 33,CP,刘令飞,钟嘉诚,飞诚,user,approved,32
-34,CP,赵奕然,刘朱烨,烨奕,user,approved,25
-35,CP,薛钦元,刘子赫,刘薛,user,approved,47
+34,CP,赵奕然,刘朱烨,烨奕,user,approved,27
+35,CP,薛钦元,刘子赫,刘薛,user,approved,48
 36,CP,邵奕磊,李存贤,楠贤,user,approved,45
-37,CP,于滨嘉,李珏,黑珏,user,approved,48
-38,CP,卢翰林,邱俊阳,卢邱,user,approved,28
+37,CP,于滨嘉,李珏,黑珏,user,approved,49
+38,CP,卢翰林,邱俊阳,卢邱,user,approved,30
 39,CP,毛二,汤佳明,汤猫,user,approved,24
-40,CP,朱亚洲,施博威,bo朱,user,approved,51
-41,CP,余镇鳌,许昌泰,余许,user,approved,25
-42,CP,赵雨卉,胥子含,丫卉,user,approved,51
+40,CP,朱亚洲,施博威,bo朱,user,approved,54
+41,CP,余镇鳌,许昌泰,余许,user,approved,26
+42,CP,赵雨卉,胥子含,丫卉,user,approved,52
 43,CP,余镇鳌,叶宇锋,锋里余里,user,approved,37
-44,CP,尤宣程,龙一豪,尤龙,user,approved,20
+44,CP,尤宣程,龙一豪,尤龙,user,approved,23
 45,CP,蔡淇,王敏辉,娟心蔡,user,approved,90
 46,CP,余思冉,崔恩尔,恩冉,user,approved,21
-47,CP,金圣权,高杨,权超羊,user,approved,20
+47,CP,金圣权,高杨,权超羊,user,approved,21
 48,CP,高杨,张超,权超羊,user,approved,0
 49,CP,金圣权,张超,权超羊,user,approved,0
 50,CP,高雨晨,叶筱玮,穹顶第一初恋,user,approved,16
 51,CP,郭虹旭,纪晓坤,纪旭,user,approved,44
 52,CP,郭虹旭,王敏辉,香娟,user,approved,42
-53,CP,徐瑶,蒋倩如,情瑶,user,approved,46
-54,CP,赵奕然,卢翰林,卢赵,user,approved,31
+53,CP,徐瑶,蒋倩如,情瑶,user,approved,53
+54,CP,赵奕然,卢翰林,卢赵,user,approved,35
 55,CP,汤佳明,邵立君,你的眼里只有朗和汤勺,user,approved,7
-56,CP,沈育奇,叶宇锋,沈叶,user,approved,42
-57,CP,薛钦元,孙一城,多元,user,approved,38
-58,CP,徐昊,汤佳明,昊汤,user,approved,11
-59,CP,王瀚宇,王敏辉,娟玉,user,approved,25
-60,CP,王瀚宇,祝颂皓,歪祝,user,approved,37
+56,CP,沈育奇,叶宇锋,沈叶,user,approved,47
+57,CP,薛钦元,孙一城,多元,user,approved,42
+58,CP,徐昊,汤佳明,昊汤,user,approved,13
+59,CP,王瀚宇,王敏辉,娟玉,user,approved,26
+60,CP,王瀚宇,祝颂皓,歪祝,user,approved,39
 61,CP,诸葛北辰,薛钦元,传祺,user,approved,6
 62,CP,徐杭,郑艺彬,杭彬,user,approved,3
 63,CP,叶嘉雯,赵嘉艳,烟叶,user,approved,26
@@ -66,60 +66,60 @@
 66,CP,赵伟钢,白倬铭,丿钢,user,approved,24
 67,CP,蔡淇,纪晓坤,鸡毛菜,user,approved,2
 68,CP,陈志,朱亮,闪导,user,approved,57
-69,CP,邓茹月,郭美冉,茹冉,user,approved,9
-70,CP,刘乙萱,郭耀嵘,郭萱,user,approved,25
+69,CP,邓茹月,郭美冉,茹冉,user,approved,12
+70,CP,刘乙萱,郭耀嵘,郭萱,user,approved,36
 71,CP,郝李英杰,陈志,郝南志时态,user,approved,117
 72,CP,黄雪煌,谭祖弘,谭黄,user,approved,0
 73,CP,金圣权,张超,权倾朝野,user,approved,0
 74,CP,郑艺彬,林大钦,饼面,user,approved,8
-75,CP,薛钦元,刘子赫,刘薛乔,user,approved,47
+75,CP,薛钦元,刘子赫,刘薛乔,user,approved,48
 76,CP,刘子赫,欧阳乔子,刘薛乔,user,approved,31
 77,CP,薛钦元,欧阳乔子,刘薛乔,user,approved,41
-78,CP,吴以瀚,李存贤,妹贤,user,approved,16
+78,CP,吴以瀚,李存贤,妹贤,user,approved,17
 79,CP,王颢珏,李珏,珏珏,user,approved,45
 80,CP,刘朱烨,卢翰林,卢烨,user,approved,12
-81,CP,赵奕然,卢翰林,卢赵庞,user,approved,31
-82,CP,庞东轩,卢翰林,卢赵庞,user,approved,18
-83,CP,赵奕然,庞东轩,卢赵庞,user,approved,23
-84,CP,张泽,毛二,泽猫,user,approved,34
+81,CP,赵奕然,卢翰林,卢赵庞,user,approved,35
+82,CP,庞东轩,卢翰林,卢赵庞,user,approved,19
+83,CP,赵奕然,庞东轩,卢赵庞,user,approved,25
+84,CP,张泽,毛二,泽猫,user,approved,35
 85,CP,钟嘉诚,汤佳明,诚明在wer,user,approved,6
-86,CP,赵雨卉,吴杭律,杭卉,user,approved,30
+86,CP,赵雨卉,吴杭律,杭卉,user,approved,33
 87,CP,许放星,张铎,铎星,user,approved,17
 88,CP,钟嘉诚,赵伟钢,钢铁长城,user,approved,17
 89,CP,刘令飞,白举纲,白令海峡,user,approved,89
-90,CP,叶嘉雯,郭耀嵘,叶郭,user,approved,12
-91,CP,顾易,纪晓坤,顾纪,user,approved,54
-92,CP,吴以瀚,姜崃,妹妹,user,approved,51
-93,CP,劳其森,梁景皓,景其,user,approved,2
+90,CP,叶嘉雯,郭耀嵘,叶郭,user,approved,15
+91,CP,顾易,纪晓坤,顾纪,user,approved,55
+92,CP,吴以瀚,姜崃,妹妹,user,approved,52
+93,CP,劳其森,梁景皓,景其,user,approved,4
 94,CP,劳其森,南枫,枫森,user,approved,2
 95,CP,毛二,杨皓晨,羊毛,user,approved,6
-96,CP,浦弘斐,张力夫,桃桶,user,approved,12
-97,CP,吴以瀚,邵奕磊,妹桶,user,approved,44
+96,CP,浦弘斐,张力夫,桃桶,user,approved,13
+97,CP,吴以瀚,邵奕磊,妹桶,user,approved,45
 98,CP,吴以瀚,王浩楠,妹桶,user,approved,34
 99,CP,徐泽辉,王敏辉,双辉,user,approved,3
 100,CP,郑棋元,徐均朔,元与均棋,user,approved,38
 101,CP,张沁丹,叶嘉雯,茶叶蛋,user,approved,57
 102,CP,钟嘉诚,张玮伦,玮你诚伦,user,approved,2
 103,CP,郑艺彬,高雨晨,彬高叶,user,approved,20
-104,CP,郑艺彬,叶筱玮,彬高叶,user,approved,36
+104,CP,郑艺彬,叶筱玮,彬高叶,user,approved,39
 105,CP,高雨晨,叶筱玮,彬高叶,user,approved,16
 106,CP,姜崃,卢翰林,缺卢不明,user,approved,5
 107,CP,相征,田野,野相,user,approved,91
 108,CP,田野,许昌泰,野泰,user,approved,42
 109,CP,许昌泰,卢翰林,星33动物园,user,approved,21
 110,CP,许昌泰,陈诗,星33动物园,user,approved,4
-111,CP,余镇鳌,许昌泰,星33动物园,user,approved,25
+111,CP,余镇鳌,许昌泰,星33动物园,user,approved,26
 112,CP,许昌泰,叶宇锋,星33动物园,user,approved,41
 113,CP,赵洪博,许昌泰,星33动物园,user,approved,10
 114,CP,陈诗,卢翰林,星33动物园,user,approved,0
-115,CP,余镇鳌,卢翰林,星33动物园,user,approved,28
-116,CP,卢翰林,叶宇锋,星33动物园,user,approved,32
+115,CP,余镇鳌,卢翰林,星33动物园,user,approved,29
+116,CP,卢翰林,叶宇锋,星33动物园,user,approved,34
 117,CP,赵洪博,卢翰林,星33动物园,user,approved,0
 118,CP,余镇鳌,陈诗,星33动物园,user,approved,0
 119,CP,陈诗,叶宇锋,星33动物园,user,approved,2
 120,CP,赵洪博,陈诗,星33动物园,user,approved,0
 121,CP,余镇鳌,叶宇锋,星33动物园,user,approved,37
-122,CP,赵洪博,余镇鳌,星33动物园,user,approved,77
+122,CP,赵洪博,余镇鳌,星33动物园,user,approved,80
 123,CP,赵洪博,叶宇锋,星33动物园,user,approved,7
 124,同学,张泽,郭耀嵘,上海戏剧学院 2012级同学,derived,approved,18
 125,同学,张泽,李珏,上海戏剧学院 2012级同学,derived,approved,0
@@ -131,19 +131,19 @@
 131,同学,郭嘉轩,张聪,上海戏剧学院 2017级同学,derived,approved,0
 132,同学,柳智彦,张聪,上海戏剧学院 2017级同学,derived,approved,0
 133,同学,相征,孙欣业,上海戏剧学院 2018级同学,derived,approved,0
-134,同学,钱蒙楠,汤佳明,上海视觉艺术学院 2019级同学,derived,approved,60
+134,同学,钱蒙楠,汤佳明,上海视觉艺术学院 2019级同学,derived,approved,61
 135,同学,钱蒙楠,邵立君,上海视觉艺术学院 2019级同学,derived,approved,23
-136,同学,钱蒙楠,万钰彬,上海视觉艺术学院 2019级同学,derived,approved,28
-137,同学,钱蒙楠,许昌泰,上海视觉艺术学院 2019级同学,derived,approved,39
+136,同学,钱蒙楠,万钰彬,上海视觉艺术学院 2019级同学,derived,approved,30
+137,同学,钱蒙楠,许昌泰,上海视觉艺术学院 2019级同学,derived,approved,42
 138,同学,钱蒙楠,刘子赫,上海视觉艺术学院 2019级同学,derived,approved,2
 139,同学,汤佳明,邵立君,上海视觉艺术学院 2019级同学,derived,approved,7
-140,同学,汤佳明,万钰彬,上海视觉艺术学院 2019级同学,derived,approved,30
-141,同学,汤佳明,许昌泰,上海视觉艺术学院 2019级同学,derived,approved,71
+140,同学,汤佳明,万钰彬,上海视觉艺术学院 2019级同学,derived,approved,32
+141,同学,汤佳明,许昌泰,上海视觉艺术学院 2019级同学,derived,approved,72
 142,同学,汤佳明,刘子赫,上海视觉艺术学院 2019级同学,derived,approved,5
 143,同学,邵立君,万钰彬,上海视觉艺术学院 2019级同学,derived,approved,1
 144,同学,邵立君,许昌泰,上海视觉艺术学院 2019级同学,derived,approved,24
 145,同学,邵立君,刘子赫,上海视觉艺术学院 2019级同学,derived,approved,0
-146,同学,万钰彬,许昌泰,上海视觉艺术学院 2019级同学,derived,approved,81
+146,同学,万钰彬,许昌泰,上海视觉艺术学院 2019级同学,derived,approved,82
 147,同学,万钰彬,刘子赫,上海视觉艺术学院 2019级同学,derived,approved,21
 148,同学,许昌泰,刘子赫,上海视觉艺术学院 2019级同学,derived,approved,2
 149,同学,叶宇锋,亓振源,上海视觉艺术学院 2020级同学,derived,approved,7
@@ -158,9 +158,9 @@
 158,同学,顾易,王敏辉,上海音乐学院 2015级同学,derived,approved,3
 159,同学,顾易,龚子棋,上海音乐学院 2015级同学,derived,approved,0
 160,同学,王敏辉,龚子棋,上海音乐学院 2015级同学,derived,approved,0
-161,同学,叶嘉雯,吴杭律,上海音乐学院 2017级同学,derived,approved,8
-162,同学,黄可,郑涵一,上海音乐学院 2020级同学,derived,approved,8
-163,同学,沈育奇,黎玥杉,上海音乐学院 2021级同学,derived,approved,0
+161,同学,叶嘉雯,吴杭律,上海音乐学院 2017级同学,derived,approved,11
+162,同学,黄可,郑涵一,上海音乐学院 2020级同学,derived,approved,11
+163,同学,沈育奇,黎玥杉,上海音乐学院 2021级同学,derived,approved,2
 164,同学,沈育奇,高崇,上海音乐学院 2021级同学,derived,approved,2
 165,同学,黎玥杉,高崇,上海音乐学院 2021级同学,derived,approved,2
 166,同学,邓欣锐,吴以瀚,中央戏剧学院 2017级同学,derived,approved,41
@@ -169,9 +169,9 @@
 169,同学,邓欣锐,李存贤,中央戏剧学院 2017级同学,derived,approved,1
 170,同学,邓欣锐,王天择,中央戏剧学院 2017级同学,derived,approved,4
 171,同学,邓欣锐,王浩楠,中央戏剧学院 2017级同学,derived,approved,0
-172,同学,吴以瀚,姜崃,中央戏剧学院 2017级同学,derived,approved,51
-173,同学,吴以瀚,邵奕磊,中央戏剧学院 2017级同学,derived,approved,44
-174,同学,吴以瀚,李存贤,中央戏剧学院 2017级同学,derived,approved,16
+172,同学,吴以瀚,姜崃,中央戏剧学院 2017级同学,derived,approved,52
+173,同学,吴以瀚,邵奕磊,中央戏剧学院 2017级同学,derived,approved,45
+174,同学,吴以瀚,李存贤,中央戏剧学院 2017级同学,derived,approved,17
 175,同学,吴以瀚,王天择,中央戏剧学院 2017级同学,derived,approved,13
 176,同学,吴以瀚,王浩楠,中央戏剧学院 2017级同学,derived,approved,34
 177,同学,姜崃,邵奕磊,中央戏剧学院 2017级同学,derived,approved,6
@@ -182,19 +182,19 @@
 182,同学,邵奕磊,王天择,中央戏剧学院 2017级同学,derived,approved,0
 183,同学,邵奕磊,王浩楠,中央戏剧学院 2017级同学,derived,approved,6
 184,同学,李存贤,王天择,中央戏剧学院 2017级同学,derived,approved,11
-185,同学,李存贤,王浩楠,中央戏剧学院 2017级同学,derived,approved,28
+185,同学,李存贤,王浩楠,中央戏剧学院 2017级同学,derived,approved,29
 186,同学,王天择,王浩楠,中央戏剧学院 2017级同学,derived,approved,11
 187,同学,高品,琚茂林,中央戏剧学院 2020级同学,derived,approved,5
 188,同学,陈檀雅,浦弘斐,中央戏剧学院 2021级同学,derived,approved,12
 189,同学,陈檀雅,张力夫,中央戏剧学院 2021级同学,derived,approved,3
-190,同学,浦弘斐,张力夫,中央戏剧学院 2021级同学,derived,approved,12
+190,同学,浦弘斐,张力夫,中央戏剧学院 2021级同学,derived,approved,13
 191,同学,阿云嘎,郑云龙,北京舞蹈学院 2009级同学,derived,approved,0
 192,同学,宋元明,孙一城,北京舞蹈学院 2018级同学,derived,approved,9
-193,同学,卢翰林,邱俊阳,浙江音乐学院 2021级同学,derived,approved,28
+193,同学,卢翰林,邱俊阳,浙江音乐学院 2021级同学,derived,approved,30
 194,同学,郭亢,李锐涵,上海音乐学院 2013级同学,derived,approved,0
 195,同学,徐泽辉,赵洪博,上海音乐学院 2015级同学,derived,approved,16
 196,同学,徐均朔,赵洪博,上海音乐学院 2015级同学,derived,approved,0
-197,同学,顾易,赵洪博,上海音乐学院 2015级同学,derived,approved,18
+197,同学,顾易,赵洪博,上海音乐学院 2015级同学,derived,approved,20
 198,同学,王敏辉,赵洪博,上海音乐学院 2015级同学,derived,approved,0
 199,同学,赵洪博,龚子棋,上海音乐学院 2015级同学,derived,approved,4
 200,伴侣,李秋盟,宁梦恬,,user,approved,47
@@ -212,13 +212,13 @@
 212,伴侣,戴宸,张桥亮,,user,approved,0
 213,伴侣,陈科铭,罗彦妮,,user,approved,0
 214,情侣,崔秀丽,王培杰,,user,approved,16
-215,情侣,黄可,顾易,,user,approved,74
-216,情侣,王洁璐,白倬铭,,user,approved,42
-217,情侣,刘官卫,杜钇樵,,user,approved,40
+215,情侣,黄可,顾易,,user,approved,76
+216,情侣,王洁璐,白倬铭,,user,approved,43
+217,情侣,刘官卫,杜钇樵,,user,approved,41
 218,情侣,李政绪,许佳露,,user,approved,0
-219,情侣,徐佳文,蔡馨怡,,user,approved,59
+219,情侣,徐佳文,蔡馨怡,,user,approved,60
 220,情侣,徐杭,邹子月,,user,approved,0
-221,情侣,赵钱龙,柳智彦,,user,approved,28
+221,情侣,赵钱龙,柳智彦,,user,approved,30
 222,情侣,盛可欣,钟汉良,,user,approved,0
 223,情侣,毛寅东,张艺,,user,approved,0
 224,情侣,姜均,何若水,,user,approved,22
@@ -228,16 +228,16 @@
 228,情侣,陈玉婷,胡楚浩,,user,approved,0
 229,情侣,邵玎,郑涵一,,user,approved,10
 230,情侣,余思冉,郭嘉轩,,user,approved,17
-231,情侣,王逸飞,于梦滢,,user,approved,57
+231,情侣,王逸飞,于梦滢,,user,approved,58
 232,情侣,赵超凡,娄艺潇,,user,approved,12
-233,情侣,巴文豪,安吉儿,,user,approved,12
-234,情侣,吴志军,冯镝霏,,user,approved,9
+233,情侣,巴文豪,安吉儿,,user,approved,13
+234,情侣,吴志军,冯镝霏,,user,approved,10
 235,情侣,纪晓坤,林梦艾,,user,approved,9
 236,情侣,孙乐仟,陈思扬,,user,approved,0
 237,情侣,马小乔,任洪乐,,user,approved,0
 238,情侣,徐郑凯伊,亓振源,,user,approved,0
 239,情侣,陈恬,庞东轩,,user,approved,0
-240,情侣,赵奕然,黄雨蝶,,user,approved,39
+240,情侣,赵奕然,黄雨蝶,,user,approved,40
 241,前任,祝颂皓,赵嘉艳,,user,approved,3
 242,前任,郭耀嵘,于晓璘,,user,approved,3
 243,前任,周文嘉,田野,,user,approved,1
@@ -252,7 +252,7 @@
 252,前任,张泽华,朱微之,,user,approved,0
 253,前任,张玮伦,许诗翊,,user,approved,0
 254,前任,余思冉,蛋蛋,,user,approved,15
-255,前任,李玉言,冯镝霏,,user,approved,11
+255,前任,李玉言,冯镝霏,,user,approved,12
 256,前任,霍泽安,蔡佳怡,,user,approved,0
 257,前任,王博睿,苏姿语,,user,approved,2
 258,前任,朱羿达,黄玟宇,,user,approved,2
@@ -276,10 +276,10 @@
 276,室友,琚茂林,高品,室友,user,approved,5
 277,室友,林子兴,高品,室友,user,approved,0
 278,室友,郑云龙,孙葛川野,室友,user,approved,0
-279,室友,卢翰林,邱俊阳,室友,user,approved,28
+279,室友,卢翰林,邱俊阳,室友,user,approved,30
 280,室友,毛二,邵奕磊,室友,user,approved,7
 281,室友,毛二,吴以瀚,室友,user,approved,0
-283,室友,邵奕磊,吴以瀚,室友,user,approved,44
+283,室友,邵奕磊,吴以瀚,室友,user,approved,45
 286,室友,张新成,周默涵,室友,user,approved,3
 287,室友,张新成,冯军,室友,user,approved,0
 288,室友,周默涵,冯军,室友,user,approved,0
