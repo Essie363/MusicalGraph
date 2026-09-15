@@ -13,6 +13,11 @@ permissions:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    # Secrets cannot be referenced directly in an `if:` expression. Expose them
+    # as job environment variables, then only run the optional migration when set.
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
     steps:
       - uses: actions/checkout@v4
 
@@ -30,10 +35,7 @@ jobs:
           python export_graph.py
           python refresh_all.py
       - name: Sync SQLite to Supabase
-        if: ${{ secrets.SUPABASE_URL != '' && secrets.SUPABASE_SERVICE_KEY != '' }}
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        if: ${{ env.SUPABASE_URL != '' && env.SUPABASE_SERVICE_KEY != '' }}
         run: |
           python migrate_supabase.py
 
