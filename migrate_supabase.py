@@ -109,6 +109,16 @@ def get_count(cur, table, where=""):
     return cur.execute(sql).fetchone()[0]
 
 
+def get_logical_count(cur, table, cols):
+    """Count unique join-table rows using the same columns as Supabase."""
+    if table not in NON_PK_TABLES:
+        return get_count(cur, table)
+    select = ",".join("`{}`".format(c) for c in cols)
+    sql = "SELECT COUNT(*) FROM (SELECT {} FROM {} GROUP BY {})".format(
+        select, table, select)
+    return cur.execute(sql).fetchone()[0]
+
+
 def to_batches(rows, n=BATCH):
     for i in range(0, len(rows), n):
         yield rows[i:i + n]
@@ -181,12 +191,29 @@ NON_PK_TABLES = {"actor_roles", "group_members", "show_casts"}
 def canon(row, cols):
     return json.dumps([row.get(c) for c in cols], ensure_ascii=False, sort_keys=True)
 
+
+def dedupe_rows(rows, cols):
+    """Keep one copy of a logical row before inserting a join-table batch."""
+    unique = []
+    seen = set()
+    for row in rows:
+        key = canon(row, cols)
+        if key not in seen:
+            seen.add(key)
+            unique.append(row)
+    return unique
+
 def fetch_existing(url, key, table, cols):
     select = ",".join(cols)
     out = set()
     offset = 0
     while True:
-        qs = urllib.parse.urlencode({"select": select, "limit": "1000", "offset": str(offset)})
+        qs = urllib.parse.urlencode({
+            "select": select,
+            "order": ",".join("{}.asc".format(c) for c in cols),
+            "limit": "1000",
+            "offset": str(offset),
+        })
         req = urllib.request.Request(url + "/rest/v1/" + table + "?" + qs,
                                      headers=sb_headers(key), method="GET")
         with open_retry(req) as resp:
@@ -260,7 +287,8 @@ def dry_run(cur):
     print("== SQLite 离线自检（--dry-run） ==")
     for table, cols in TABLES:
         n = get_count(cur, table)
-        total += n
+        logical_n = get_logical_count(cur, table, cols)
+        total += logical_n
         meta = VERIFY.get(table, {})
         pkinfo = ""
         if meta.get("pk"):
@@ -270,7 +298,11 @@ def dry_run(cur):
                 parts.append("{} 空值 {}".format(pk, nulls))
             pkinfo = " | PK: " + ", ".join(parts)
         sample = local_sample(cur, table, meta.get("sample", cols[:4]))
-        print("[{}] {} 行{} | 抽样 {} 条".format(table, n, pkinfo, len(sample)))
+        duplicate_note = ""
+        if logical_n != n:
+            duplicate_note = " | 去重后 {} 行（过滤 {} 条重复）".format(logical_n, n - logical_n)
+        print("[{}] {} 行{}{} | 抽样 {} 条".format(
+            table, n, pkinfo, duplicate_note, len(sample)))
         if sample:
             for r in sample:
                 print("   ", r)
@@ -283,7 +315,7 @@ def dry_run(cur):
             print("FK 问题:", e)
     else:
         print("FK 检查：无孤儿引用")
-    print("共 {} 行将导入".format(total))
+    print("共 {} 行将导入（连接表按唯一组合计）".format(total))
     if errors:
         print("自检未通过：{} 个问题".format(len(errors)))
         return False
@@ -295,7 +327,7 @@ def verify_supabase(url, key, cur):
     errors = []
     print("== Supabase 核对（--verify） ==")
     for table, cols in TABLES:
-        lcount = get_count(cur, table)
+        lcount = get_logical_count(cur, table, cols)
         scount = sb_count(url, key, table)
         if lcount != scount:
             errors.append("{} 行数不一致：SQLite {} vs Supabase {}".format(
@@ -415,9 +447,15 @@ def main():
         if not rows:
             continue
         if table in NON_PK_TABLES:
+            raw_count = len(rows)
+            rows = dedupe_rows(rows, cols)
+            local_duplicates = raw_count - len(rows)
             existing = fetch_existing(url, key, table, cols)
             rows = [r for r in rows if canon(r, cols) not in existing]
-            print("  在线已有 {} 行，本次待新增 {} 行".format(len(existing), len(rows)))
+            print("  在线已有 {} 行，本次待新增 {} 行{}".format(
+                len(existing), len(rows),
+                "（过滤本地重复 {} 条）".format(local_duplicates)
+                if local_duplicates else ""))
             if not rows:
                 continue
         for batch in to_batches(rows):
