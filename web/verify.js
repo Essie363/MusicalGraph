@@ -133,7 +133,7 @@ function check(name, cond, extra) {
       window.__ratingRpcCalls.push({ url: String(url), body });
       if (String(url).includes("get_rating_performances") && body.p_date === "2021-03-04") return Promise.reject(new Error("simulated schedule lookup failure"));
       let data = {};
-      if (String(url).includes("get_rating_performances")) data = body.p_date === "2022-03-04" ? [] : [{ id: 300, date: "2026-09-03", time: "19:30", city: "上海", theatre: "测试剧场", role_confirmed: false, cast: [{ actor_id: body.p_actor_id, actor_name: "郑云龙", role_name: "角色待补充" }] }];
+      if (String(url).includes("get_rating_performances")) data = body.p_date === "2022-03-04" ? [] : [{ id: 300, date: "2026-09-03", time: "14:30", city: "上海", theatre: "测试剧场", role_confirmed: false, cast: [{ actor_id: body.p_actor_id, actor_name: "郑云龙", role_name: "角色待补充" }] }];
       if (String(url).includes("get_my_rating")) data = { singing_score: 4.5, dancing_score: null, acting_score: 5 };
       if (String(url).includes("get_rating_summary")) data = { actors: [], roles: [] };
       return Promise.resolve(new Response(JSON.stringify(data), { status: 200, headers: { "Content-Type": "application/json" } }));
@@ -153,7 +153,7 @@ function check(name, cond, extra) {
   await page.$eval("#rating-role", el => { el.value = "200"; el.dispatchEvent(new Event("change", { bubbles: true })); });
   await page.$eval("#rating-date", el => { el.value = "2026-09-03"; el.dispatchEvent(new Event("change", { bubbles: true })); });
   await page.waitForTimeout(100);
-  check("场次按日期读取", await page.$eval("#rating-performance-results", el => el.textContent.includes("晚场")));
+  check("场次按日期读取", await page.$eval("#rating-performance-results", el => el.textContent.includes("午场")));
   await page.click(".rating-performance-choice");
   check("待补充角色不阻断评分", await page.$eval("#rating-performance-confirm", el => el.textContent.includes("待核验")));
   await page.waitForTimeout(100);
@@ -167,7 +167,7 @@ function check(name, cond, extra) {
   await page.click("#rating-submit");
   await page.waitForTimeout(100);
   check("真实场次评分保存日期与场次 ID", await page.evaluate(() => window.__ratingRpcCalls.some(x =>
-    x.url.includes("upsert_actor_rating") && x.body.p_performance_id === 300 && x.body.p_performance_date === "2026-09-03" && x.body.p_singing_score === 4.5 && x.body.p_acting_score === 5
+    x.url.includes("upsert_actor_rating") && x.body.p_performance_id === 300 && x.body.p_performance_date === "2026-09-03" && x.body.p_session_period === "matinee" && x.body.p_singing_score === 4.5 && x.body.p_acting_score === 5
   )));
   check("评分提交携带浏览器标识", await page.evaluate(() => window.__ratingRpcCalls.some(x =>
     x.url.includes("upsert_actor_rating") && typeof x.body.p_device_id === "string" && x.body.p_device_id.length > 0

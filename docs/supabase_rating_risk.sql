@@ -18,27 +18,40 @@ set risk_status = coalesce(risk_status, 'normal'),
 where risk_status is null or risk_reason is null;
 
 -- 早期评分只保存了 performance_id。回填对应场次日期，避免“我的评分”误显示场次待补充。
+-- 真实场次的“午 / 夕 / 晚场”以 shows.time 为唯一来源。
+-- 统一在数据库判断，避免前端和迁移脚本采用不同的分界规则。
+create or replace function rating_session_from_show_time(p_time text)
+returns text
+language sql
+immutable
+set search_path = public
+as $$
+  select case
+    when lower(coalesce(p_time, '')) ~ '(晚|夜|night)' then 'night'
+    when lower(coalesce(p_time, '')) ~ '(夕|傍晚|黄昏)' then 'evening'
+    when lower(coalesce(p_time, '')) ~ '(^|[^0-9])(0?[0-9]|1[0-5])(:[0-9]{2})?([^0-9]|$)' then 'matinee'
+    when lower(coalesce(p_time, '')) ~ '(^|[^0-9])(1[6-7])(:[0-9]{2})?([^0-9]|$)' then 'evening'
+    when lower(coalesce(p_time, '')) ~ '(^|[^0-9])(1[8-9]|2[0-3])(:[0-9]{2})?([^0-9]|$)' then 'night'
+    else null
+  end;
+$$;
+
+-- 回填早期评分的场次日期，并修复历史上被错误归为“夕场”的午场记录。
 update ratings r
 set performance_date = case
       when coalesce(s.date, '') ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' then s.date::date
       else r.performance_date
     end,
-    session_period = coalesce(
-      nullif(r.session_period, ''),
-      case
-        when lower(coalesce(s.time, '')) ~ '(晚|夜|night)' then 'night'
-        when lower(coalesce(s.time, '')) ~ '(夕|傍晚|黄昏)' then 'evening'
-        when lower(coalesce(s.time, '')) ~ '(^|[^0-9])(0?[0-9]|1[0-1])(:[0-9]{2})?([^0-9]|$)' then 'matinee'
-        when lower(coalesce(s.time, '')) ~ '(^|[^0-9])(1[2-7])(:[0-9]{2})?([^0-9]|$)' then 'evening'
-        when lower(coalesce(s.time, '')) ~ '(^|[^0-9])(1[8-9]|2[0-3])(:[0-9]{2})?([^0-9]|$)' then 'night'
-        else null
-      end
-    )
+    session_period = coalesce(rating_session_from_show_time(s.time), r.session_period)
 from shows s
 where r.performance_id = s.id
-  and r.performance_date is null
-  -- shows.date is a text column. Do not let one malformed import abort this migration.
-  and coalesce(s.date, '') ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$';
+  and (
+    r.performance_date is null
+    or (
+      rating_session_from_show_time(s.time) is not null
+      and r.session_period is distinct from rating_session_from_show_time(s.time)
+    )
+  );
 
 -- 所有阈值集中在这一行，后续只需 update 本表即可调整，不要改业务函数。
 create table if not exists rating_risk_config (
@@ -425,17 +438,7 @@ begin
              when coalesce(s.date, '') ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' then s.date::date
              else null
            end,
-           coalesce(
-             nullif(v_session_period, ''),
-             case
-               when lower(coalesce(s.time, '')) ~ '(晚|夜|night)' then 'night'
-               when lower(coalesce(s.time, '')) ~ '(夕|傍晚|黄昏)' then 'evening'
-               when lower(coalesce(s.time, '')) ~ '(^|[^0-9])(0?[0-9]|1[0-1])(:[0-9]{2})?([^0-9]|$)' then 'matinee'
-               when lower(coalesce(s.time, '')) ~ '(^|[^0-9])(1[2-7])(:[0-9]{2})?([^0-9]|$)' then 'evening'
-               when lower(coalesce(s.time, '')) ~ '(^|[^0-9])(1[8-9]|2[0-3])(:[0-9]{2})?([^0-9]|$)' then 'night'
-               else null
-             end
-           )
+           coalesce(rating_session_from_show_time(s.time), nullif(v_session_period, ''))
     into v_performance_date, v_session_period
     from shows s
     where s.id = p_performance_id;
@@ -672,6 +675,7 @@ $$;
 -- 对外只保留现有的读取/写入 RPC；内部风控函数不能被浏览器直接调用。
 revoke all on function mark_rating_suspicious(bigint, jsonb) from public;
 revoke all on function apply_rating_risk(bigint) from public;
+revoke all on function rating_session_from_show_time(text) from public;
 revoke all on function upsert_actor_rating(text, integer, integer, integer, integer, date, text, numeric, numeric, numeric, text) from public;
 revoke all on function upsert_manual_actor_rating(text, integer, text, text, date, text, numeric, numeric, numeric, text) from public;
 

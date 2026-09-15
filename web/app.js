@@ -3843,7 +3843,7 @@
     if (!match) return "";
     var hour = Number(match[1]);
     if (/(下午|pm|p\.m\.)/.test(raw) && hour < 12) hour += 12;
-    if (hour >= 12 && hour < 16) return "matinee";
+    if (hour < 16) return "matinee";
     if (hour >= 18) return "night";
     return "evening";
   }
