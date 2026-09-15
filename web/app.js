@@ -85,7 +85,7 @@
   function authDemoRatings() {
     return [
       { id: 1, actor_id: 29, actor_name: "阿云嘎", manual_musical_name: "剧院魅影", manual_role_name: "魅影", performance_date: "2025-07-12", session_period: "night", singing_score: 4.8, acting_score: 4.9, dancing_score: 4.2, updated_at: "2025-07-13T08:00:00Z" },
-      { id: 2, actor_id: 29, actor_name: "阿云嘎", manual_musical_name: "剧院魅影", manual_role_name: "魅影", performance_date: "2025-06-20", session_period: "matinee", singing_score: 4.4, acting_score: 4.6, dancing_score: 4.0, updated_at: "2025-06-21T08:00:00Z" },
+      { id: 2, actor_id: 29, actor_name: "阿云嘎", manual_musical_name: "剧院魅影", manual_role_name: "魅影", performance_date: "2025-06-20", session_period: "matinee", singing_score: 4.4, acting_score: 4.6, dancing_score: null, updated_at: "2025-06-21T08:00:00Z" },
       { id: 3, actor_id: 29, actor_name: "阿云嘎", manual_musical_name: "基督山伯爵", manual_role_name: "爱德蒙·唐泰斯", performance_date: "2025-05-03", session_period: "matinee", singing_score: 4.7, acting_score: 4.8, dancing_score: 4.5, updated_at: "2025-05-04T08:00:00Z" },
       { id: 4, actor_id: 29, actor_name: "阿云嘎", manual_musical_name: "伊丽莎白", manual_role_name: "死神", performance_date: "2025-03-22", session_period: "night", singing_score: 4.9, acting_score: 4.7, dancing_score: 4.4, updated_at: "2025-03-23T08:00:00Z" },
       { id: 5, actor_id: 30, actor_name: "刘令飞", manual_musical_name: "摇滚莫扎特", manual_role_name: "莫扎特", performance_date: "2025-07-12", session_period: "night", singing_score: 4.6, acting_score: 4.9, dancing_score: 4.1, updated_at: "2025-07-13T09:00:00Z" },
@@ -1703,13 +1703,17 @@
   function ownRatingSummary(rows) {
     var latest = rows.slice().sort(function (a, b) { return String(b.updated_at || "").localeCompare(String(a.updated_at || "")); })[0];
     function average(field) {
-      var values = rows.map(function (row) { return Number(row[field]); }).filter(function (value) { return isFinite(value); });
+      var values = rows.map(function (row) { return row[field]; }).filter(function (value) {
+        return value != null && isFinite(Number(value));
+      }).map(Number);
       return values.length ? values.reduce(function (sum, value) { return sum + value; }, 0) / values.length : null;
     }
+    var overallValues = rows.map(myRatingAverage).filter(function (value) { return isFinite(value); });
     return {
       singing_score: average("singing_score"),
       dancing_score: average("dancing_score"),
       acting_score: average("acting_score"),
+      overall_score: overallValues.length ? overallValues.reduce(function (sum, value) { return sum + value; }, 0) / overallValues.length : null,
       performance_count: rows.length,
       latest_rating: latest
     };
@@ -1822,7 +1826,7 @@
     var mine = "";
     if (ownRow) {
       var ownValues = [ownRow.singing_score, ownRow.acting_score, ownRow.dancing_score].filter(function (value) { return value != null && isFinite(Number(value)); }).map(Number);
-      var ownAverage = ownValues.reduce(function (total, value) { return total + value; }, 0) / ownValues.length;
+      var ownAverage = ownRow.overall_score != null ? Number(ownRow.overall_score) : ownValues.reduce(function (total, value) { return total + value; }, 0) / ownValues.length;
       var ownRows = [["唱", ownRow.singing_score], ["演", ownRow.acting_score], ["跳", ownRow.dancing_score]].map(function (row) {
         return row[1] == null ? "" : "<span>" + row[0] + " " + ratingScore10(Number(row[1])) + "</span>";
       }).join("");
@@ -1886,7 +1890,9 @@
       : item ? [item.singing_avg, item.acting_avg, item.dancing_avg] : [];
     var valid = values.filter(function (value) { return value != null && isFinite(Number(value)); }).map(Number);
     if (!valid.length) return "";
-    var average = valid.reduce(function (sum, value) { return sum + value; }, 0) / valid.length;
+    var average = isMine && ownRow.overall_score != null
+      ? Number(ownRow.overall_score)
+      : valid.reduce(function (sum, value) { return sum + value; }, 0) / valid.length;
     var metrics = [["唱", values[0]], ["演", values[1]], ["跳", values[2]]].filter(function (row) { return row[1] != null; }).map(function (row) {
       return "<span>" + row[0] + " " + ratingScore10(Number(row[1])) + "</span>";
     }).join("");
@@ -1957,7 +1963,7 @@
     var role = row.role_name || row.manual_role_name || "角色待补充";
     var count = Number(row.performance_count) || 1;
     var meta = options.history ? "观演：" + myRatingPerformanceLabel(row) : "基于 " + count + " 场评分";
-    var average = myRatingAverage(row);
+    var average = row.overall_score != null ? Number(row.overall_score) : myRatingAverage(row);
     var selectRecord = !!options.subjectKey;
     var multipleRecords = !!options.multipleRecords;
     var editAttribute = selectRecord

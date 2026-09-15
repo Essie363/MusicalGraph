@@ -1002,6 +1002,7 @@ function check(name, cond, extra) {
       document.querySelectorAll(".my-rating-row").length === 5 &&
       [...document.querySelectorAll(".my-rating-row")].some(el => el.textContent.includes("基于 2 场评分"));
   }));
+  check("两维场次按两项平均后再汇总", await authPage.locator(".my-rating-row", { hasText: "基于 2 场评分" }).locator(".my-rating-overall strong").textContent() === "9.1");
   await authPage.locator(".my-rating-row", { hasText: "基于 2 场评分" }).locator(".my-rating-edit").click();
   await authPage.waitForTimeout(100);
   check("多场评分编辑先选择具体场次", await authPage.evaluate(() => {
