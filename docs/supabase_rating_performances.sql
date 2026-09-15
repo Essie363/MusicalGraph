@@ -27,14 +27,14 @@ as $$
     select m.name as musical_name, r.name as role_name
     from musicals m
     join roles r on r.id = p_role_id and r.musical_id = m.id
-    join actor_roles ar on ar.actor_id = p_actor_id
+    join actor_roles ar on ar.artist_id = p_actor_id
                        and ar.musical_id = m.id
                        and ar.role_id = r.id
     where m.id = p_musical_id
   )
   select
     s.id,
-    s.date,
+    s.date::date as date,
     s.time as "time",
     s.city,
     s.theatre,
@@ -45,7 +45,7 @@ as $$
       'role_name', coalesce(nullif(btrim(sc.role), ''), subject.role_name)
     )) as "cast"
   from subject
-  join shows s on s.date = p_date
+  join shows s on s.date = p_date::text
              and lower(btrim(s.musical)) = lower(btrim(subject.musical_name))
   join show_casts sc on sc.show_id = s.id and sc.artist_id = p_actor_id
   join artists a on a.id = sc.artist_id
