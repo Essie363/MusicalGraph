@@ -68,6 +68,33 @@ create index if not exists idx_moments_actor on moments(actor_id);
 
 3. 再执行下面的 `submissions` 表与安全对象。
 
+4. 要启用演员评分与邮箱登录，继续执行 [`supabase_auth_ratings.sql`](supabase_auth_ratings.sql)，再执行 [`supabase_rpc_graph.sql`](supabase_rpc_graph.sql)。匿名评分使用浏览器本地随机 `client_id`，不是硬件设备 ID；用户在同一浏览器登录后，匿名评分会自动归并到 `auth.uid()` 账号。相同评分对象与场次发生冲突时，保留更新时间较晚的一份。不同场次分别保存；公开汇总会先取该用户在同一角色的多场均值，再按每位用户一票计算。
+
+> 已经配置过评分功能的项目，只需额外执行 [`supabase_claim_anonymous_ratings.sql`](supabase_claim_anonymous_ratings.sql)，不必重跑整份评分建表脚本。
+
+5. 邮箱登录需要在 Supabase Dashboard 的 Authentication 中启用 Email OTP，并配置 Brevo SMTP。SMTP 密钥只填写在 Supabase Dashboard，不要写入前端文件或仓库。
+
+### 邮箱验证码与评分上线顺序
+
+评分 SQL 和邮件模板缺一不可。当前前端请求的是 Supabase 的 Email OTP 接口；Supabase 是否发出验证码，取决于邮件模板中是否使用 `{{ .Token }}`。本项目当前 Supabase 配置发送 8 位验证码；若模板保留默认链接变量，用户收到的会是 Magic Link，而不是验证码。
+
+1. 在 SQL Editor 完整执行 [`supabase_auth_ratings.sql`](supabase_auth_ratings.sql)。脚本可重复执行；它会创建 `ratings`、唯一索引、RLS 策略与评分 RPC。
+2. 打开 Dashboard -> Authentication -> Providers -> Email，确认 Email 已启用，且 Allow new users / signup 没有关闭。
+3. 打开 Dashboard -> Authentication -> Email Templates -> Magic Link，将正文改为只展示验证码。可直接使用：
+
+   ```html
+   <p>你的 MusicGraph 登录验证码是：</p>
+   <p style="font-size:28px;font-weight:700;letter-spacing:4px">{{ .Token }}</p>
+   <p>验证码 10 分钟内有效，请勿转发给他人。</p>
+   ```
+
+   不要在这个模板中使用 `{{ .ConfirmationURL }}`，否则会回到 Magic Link 模式。
+4. 在 Dashboard -> Authentication -> SMTP Settings 填入 Brevo 控制台提供的 SMTP host、port、login、SMTP key 和已验证发件人。SMTP key 是秘密，只能保存在 Dashboard；不要放入 `.env`、前端配置或截图。
+5. 在 Dashboard -> Authentication -> URL Configuration 填入正式站 Site URL，并添加本地预览和生产域名为 Redirect URLs。验证码模式不依赖跳转链接，但这能避免日后其他认证邮件落到错误地址。
+6. 本地执行 `powershell -ExecutionPolicy Bypass -File .\verify_supabase_auth_ratings.ps1`。它只读取认证设置并调用一个公开评分汇总 RPC，不发送邮件、不写入数据。通过后，再在网页输入一个你能收信的邮箱，完成“发送验证码 -> 输入 8 位码 -> 同一场提交并修改一次 -> 换一场再提交”的人工验收。
+
+验收时应确认：首次提交后评分人数增加 1；编辑同一场时记录数量不增加；换一场后「我的评分」出现两条场次记录，但公开评分人数仍只增加 1；登出后“我的评分”不再显示；匿名评分不出现在“我的评分”中。
+
 ```sql
 -- 用户提交表（四类 + 排期批量）
 create table if not exists submissions (

@@ -53,6 +53,45 @@
   var ratingsByActor = {}, ratingsByRole = {};
   function ratingRoleKey(actorId, musicalId, roleId) { return s(actorId) + "|" + s(musicalId) + "|" + s(roleId); }
   function ratingDemoMode() { return /(^|[?&])mode=rating-demo(?:&|$)/.test(location.search); }
+  function authDemoMode() { return /(^|[?&])mode=auth-demo(?:&|$)/.test(location.search); }
+  function ratingPreviewMode() { return ratingDemoMode() || authDemoMode(); }
+  document.querySelectorAll("#faq .faq-item").forEach(function (item) {
+    item.addEventListener("toggle", function () {
+      if (!item.open) return;
+      document.querySelectorAll("#faq .faq-item[open]").forEach(function (other) {
+        if (other !== item) other.open = false;
+      });
+      requestAnimationFrame(function () {
+        item.querySelectorAll(".copy-reveal").forEach(function (copy) { copy.classList.add("is-revealed"); });
+      });
+    });
+  });
+  function initHomeCopyReveal() {
+    if (!window.IntersectionObserver || (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches)) return;
+    var targets = document.querySelectorAll("#view-home .intro-heading > *, #view-home .feature-copy > *, #view-home .faq-head > *, #view-home .faq-item summary, #view-home .faq-answer p, #view-home .home-foot > *");
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add("is-revealed");
+        observer.unobserve(entry.target);
+      });
+    }, { threshold: 0.15 });
+    targets.forEach(function (target) {
+      target.classList.add("copy-reveal");
+      observer.observe(target);
+    });
+  }
+  initHomeCopyReveal();
+  function authDemoRatings() {
+    return [
+      { id: 1, actor_id: 29, actor_name: "阿云嘎", manual_musical_name: "剧院魅影", manual_role_name: "魅影", performance_date: "2025-07-12", session_period: "night", singing_score: 4.8, acting_score: 4.9, dancing_score: 4.2, updated_at: "2025-07-13T08:00:00Z" },
+      { id: 2, actor_id: 29, actor_name: "阿云嘎", manual_musical_name: "剧院魅影", manual_role_name: "魅影", performance_date: "2025-06-20", session_period: "matinee", singing_score: 4.4, acting_score: 4.6, dancing_score: 4.0, updated_at: "2025-06-21T08:00:00Z" },
+      { id: 3, actor_id: 29, actor_name: "阿云嘎", manual_musical_name: "基督山伯爵", manual_role_name: "爱德蒙·唐泰斯", performance_date: "2025-05-03", session_period: "matinee", singing_score: 4.7, acting_score: 4.8, dancing_score: 4.5, updated_at: "2025-05-04T08:00:00Z" },
+      { id: 4, actor_id: 29, actor_name: "阿云嘎", manual_musical_name: "伊丽莎白", manual_role_name: "死神", performance_date: "2025-03-22", session_period: "night", singing_score: 4.9, acting_score: 4.7, dancing_score: 4.4, updated_at: "2025-03-23T08:00:00Z" },
+      { id: 5, actor_id: 30, actor_name: "刘令飞", manual_musical_name: "摇滚莫扎特", manual_role_name: "莫扎特", performance_date: "2025-07-12", session_period: "night", singing_score: 4.6, acting_score: 4.9, dancing_score: 4.1, updated_at: "2025-07-13T09:00:00Z" },
+      { id: 6, actor_id: 30, actor_name: "刘令飞", manual_musical_name: "近乎正常", manual_role_name: "盖布", performance_date: "2025-04-19", session_period: "matinee", singing_score: 4.5, acting_score: 4.8, dancing_score: 4.0, updated_at: "2025-04-20T08:00:00Z" }
+    ];
+  }
   function ratingDemoNumber(text, offset) {
     var total = offset || 0;
     String(text).split("").forEach(function (ch) { total = (total * 31 + ch.charCodeAt(0)) % 997; });
@@ -168,18 +207,22 @@
 
   // ============ hash 路由 ============
   function currentActorId() {
-    var m = location.hash.match(/^#\/actor\/(.+)$/);
+    var m = location.hash.match(/^#\/actor\/([^/]+)(?:\/ratings)?$/);
     return m ? decodeURIComponent(m[1]) : null;
   }
   function currentMusicalId() {
     var m = location.hash.match(/^#\/musical\/(.+)$/);
     return m ? decodeURIComponent(m[1]) : null;
   }
-  // 路由：home / graph / contribute / actor / musical
+  // 路由：home / graph / contribute / actor / musical / ratings / legal
   function currentRoute() {
     var h = location.hash || "";
+    if (/^#\/terms/.test(h)) return "terms";
+    if (/^#\/privacy/.test(h)) return "privacy";
+    if (/^#\/actor\/[^/]+\/ratings$/.test(h)) return "actor-ratings";
     if (/^#\/actor\//.test(h)) return "actor";
     if (/^#\/musical\//.test(h)) return "musical";
+    if (/^#\/my-ratings/.test(h)) return "my-ratings";
     if (/^#\/contribute/.test(h)) return "contribute";
     if (/^#\/graph/.test(h)) return "graph";
     return "home";
@@ -191,9 +234,10 @@
   }
   function goActor(id) {
     var str = String(id);
-    if (currentActorId() === str) { showActorView(str); return; }
+    if (currentRoute() === "actor" && currentActorId() === str) { showActorView(str); return; }
     location.hash = "#/actor/" + encodeURIComponent(str);
   }
+  function goActorRatings(id) { location.hash = "#/actor/" + encodeURIComponent(String(id)) + "/ratings"; }
   function goMusicalDetail(id) {
     var str = String(id);
     if (currentMusicalId() === str) { showMusicalView(str); return; }
@@ -214,11 +258,25 @@
   }
   function goGroup(gid) { goHome(); focusGroup(gid); }   // 点团体：图谱聚焦 + 右侧信息卡（不再弹窗）
   function goMusical(mid) { goHome(); focusMusical(mid); }   // 点剧目：图谱聚焦 + 右侧信息卡（不再弹窗）
-  window.addEventListener("hashchange", applyRoute);
+  var lastRouteHash = location.hash || "#/home";
+  var legalReturnHash = "";
+  window.addEventListener("hashchange", function () {
+    var nextHash = location.hash || "#/home";
+    if (/^#\/(terms|privacy)/.test(nextHash) && !/^#\/(terms|privacy)/.test(lastRouteHash)) {
+      legalReturnHash = lastRouteHash;
+    }
+    lastRouteHash = nextHash;
+    applyRoute();
+  });
 
   var viewHome = document.getElementById("view-home");
   var viewGraph = document.getElementById("view-graph");
   var viewContribute = document.getElementById("view-contribute");
+  var viewMyRatings = document.getElementById("view-my-ratings");
+  var viewActorRatings = document.getElementById("view-actor-ratings");
+  var viewLegal = document.getElementById("view-legal");
+  var legalTerms = document.getElementById("legal-terms");
+  var legalPrivacy = document.getElementById("legal-privacy");
   var homeView = document.getElementById("home-view");
   var actorView = document.getElementById("actor-view");
   var musicalView = document.getElementById("musical-view");
@@ -227,6 +285,8 @@
     viewHome.classList.remove("hidden");
     viewGraph.classList.add("hidden");
     viewContribute.classList.add("hidden");
+    if (viewMyRatings) viewMyRatings.classList.add("hidden");
+    if (viewLegal) viewLegal.classList.add("hidden");
     homeView.classList.add("hidden");
     actorView.classList.add("hidden");
     musicalView.classList.add("hidden");
@@ -245,6 +305,8 @@
     viewHome.classList.add("hidden");
     viewGraph.classList.remove("hidden");
     viewContribute.classList.add("hidden");
+    if (viewMyRatings) viewMyRatings.classList.add("hidden");
+    if (viewLegal) viewLegal.classList.add("hidden");
     homeView.classList.remove("hidden");
     actorView.classList.add("hidden");
     musicalView.classList.add("hidden");
@@ -267,16 +329,22 @@
     viewHome.classList.add("hidden");
     viewGraph.classList.add("hidden");
     viewContribute.classList.remove("hidden");
+    if (viewMyRatings) viewMyRatings.classList.add("hidden");
+    if (viewLegal) viewLegal.classList.add("hidden");
     homeView.classList.add("hidden");
     actorView.classList.add("hidden");
     musicalView.classList.add("hidden");
     document.body.classList.remove("actor-mode");
     setNavActive("contribute");
+    // 顶部 Feedback 入口始终回到一级页；已填写内容仍由草稿机制保留。
+    if (fbRoot) fbShow(fbRoot);
   }
   function showActorView(id) {
     viewHome.classList.add("hidden");
     viewGraph.classList.add("hidden");
     viewContribute.classList.add("hidden");
+    if (viewMyRatings) viewMyRatings.classList.add("hidden");
+    if (viewLegal) viewLegal.classList.add("hidden");
     homeView.classList.add("hidden");
     actorView.classList.remove("hidden");
     musicalView.classList.add("hidden");
@@ -289,6 +357,8 @@
     viewHome.classList.add("hidden");
     viewGraph.classList.add("hidden");
     viewContribute.classList.add("hidden");
+    if (viewMyRatings) viewMyRatings.classList.add("hidden");
+    if (viewLegal) viewLegal.classList.add("hidden");
     homeView.classList.add("hidden");
     actorView.classList.add("hidden");
     musicalView.classList.remove("hidden");
@@ -297,11 +367,49 @@
     hidePanel();
     renderMusicalPage(id);
   }
+  function showMyRatingsView() {
+    viewHome.classList.add("hidden");
+    viewGraph.classList.add("hidden");
+    viewContribute.classList.add("hidden");
+    if (viewMyRatings) viewMyRatings.classList.remove("hidden");
+    if (viewLegal) viewLegal.classList.add("hidden");
+    homeView.classList.add("hidden");
+    actorView.classList.add("hidden");
+    musicalView.classList.add("hidden");
+    document.body.classList.remove("actor-mode");
+    setNavActive("");
+    renderMyRatingsPage();
+  }
+  function showActorRatingsView(id) {
+    viewHome.classList.add("hidden"); viewGraph.classList.add("hidden"); viewContribute.classList.add("hidden");
+    if (viewMyRatings) viewMyRatings.classList.add("hidden");
+    if (viewLegal) viewLegal.classList.add("hidden");
+    if (viewActorRatings) viewActorRatings.classList.remove("hidden");
+    homeView.classList.add("hidden"); actorView.classList.add("hidden"); musicalView.classList.add("hidden");
+    document.body.classList.remove("actor-mode"); setNavActive("graph"); hidePanel();
+    renderActorRatingsPage(id);
+  }
+  function showLegalView(kind) {
+    viewHome.classList.add("hidden"); viewGraph.classList.add("hidden"); viewContribute.classList.add("hidden");
+    if (viewMyRatings) viewMyRatings.classList.add("hidden");
+    if (viewActorRatings) viewActorRatings.classList.add("hidden");
+    homeView.classList.add("hidden"); actorView.classList.add("hidden"); musicalView.classList.add("hidden");
+    if (viewLegal) viewLegal.classList.remove("hidden");
+    if (legalTerms) legalTerms.classList.toggle("hidden", kind !== "terms");
+    if (legalPrivacy) legalPrivacy.classList.toggle("hidden", kind !== "privacy");
+    if (viewLegal) viewLegal.setAttribute("aria-labelledby", kind === "terms" ? "legal-title" : "legal-privacy-title");
+    document.body.classList.remove("actor-mode"); setNavActive(""); hidePanel();
+    window.scrollTo(0, 0);
+  }
   function applyRoute() {
     document.body.classList.remove("side-open");   // 切页时收起右侧信息面板
+    if (viewActorRatings) viewActorRatings.classList.add("hidden");
     var route = currentRoute();
-    if (route === "actor") showActorView(currentActorId());
+    if (route === "terms" || route === "privacy") showLegalView(route);
+    else if (route === "actor") showActorView(currentActorId());
+    else if (route === "actor-ratings") showActorRatingsView(currentActorId());
     else if (route === "musical") showMusicalView(currentMusicalId());
+    else if (route === "my-ratings") showMyRatingsView();
     else if (route === "graph") showGraphView();
     else if (route === "contribute") showContributeView();
     else showHomeView();
@@ -1579,6 +1687,31 @@
     if (!item) return null;
     return (Number(item.singing_avg) + Number(item.dancing_avg) + Number(item.acting_avg)) / 3;
   }
+  function ownRatingSummary(rows) {
+    var latest = rows.slice().sort(function (a, b) { return String(b.updated_at || "").localeCompare(String(a.updated_at || "")); })[0];
+    function average(field) {
+      var values = rows.map(function (row) { return Number(row[field]); }).filter(function (value) { return isFinite(value); });
+      return values.length ? values.reduce(function (sum, value) { return sum + value; }, 0) / values.length : null;
+    }
+    return {
+      singing_score: average("singing_score"),
+      dancing_score: average("dancing_score"),
+      acting_score: average("acting_score"),
+      performance_count: rows.length,
+      latest_rating: latest
+    };
+  }
+  function ownRatingsByRole(rows, actorId) {
+    var grouped = {}, summaries = {};
+    (rows || []).filter(function (row) {
+      return String(row.actor_id) === String(actorId) && row.musical_id != null && row.role_id != null;
+    }).forEach(function (row) {
+      var key = ratingRoleKey(actorId, row.musical_id, row.role_id);
+      (grouped[key] = grouped[key] || []).push(row);
+    });
+    Object.keys(grouped).forEach(function (key) { summaries[key] = ownRatingSummary(grouped[key]); });
+    return summaries;
+  }
   function ratingScore10(avg) { return (avg * 2).toFixed(1); }
   function ratingStars(avg) {
     var rounded = Math.round(avg * 2) / 2;
@@ -1637,11 +1770,12 @@
   }
   function renderFocusRating(id) {
     var box = document.getElementById("fc-rating");
-    var button = document.getElementById("fc-rate");
-    if (!box || !button) return;
+    if (!box) return;
     box.classList.remove("hidden");
-    box.innerHTML = "<div class='fc-mom-title'>观众评分</div>" + ratingSummaryHtml(ratingsByActor[id], true);
+    box.innerHTML = "<div class='fc-rating-head'><div class='fc-mom-title'>观众评分</div><button id='fc-rate' type='button' title='给 TA 打分' aria-label='给 TA 打分'><svg viewBox='0 0 24 24' width='17' height='17' aria-hidden='true' focusable='false'><path d='M12 20h9' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round'/><path d='M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/></svg></button></div>" + ratingSummaryHtml(ratingsByActor[id], true);
+    var button = document.getElementById("fc-rate");
     button.classList.toggle("hidden", !ratingCanOpen());
+    button.addEventListener("click", function () { if (focusId && actors[focusId]) startRatingFlow(focusId); });
   }
   function renderActorRating(id) {
     var body = document.getElementById("ap-rating-body");
@@ -1656,35 +1790,340 @@
     else button.classList.toggle("hidden", !ratingCanOpen());
     detail.innerHTML = ratingRolePreviewHtml(id);
     var detailsOpen = document.getElementById("rating-details-open");
-    if (detailsOpen) detailsOpen.addEventListener("click", function () { openRatingDetails(id); });
+    if (detailsOpen) detailsOpen.addEventListener("click", function () { goActorRatings(id); });
   }
-  function ratingRoleDetailHtml(id, option) {
+  function ratingRoleDetailHtml(id, option, ownRow) {
     var item = ratingsByRole[ratingRoleKey(id, option.musicalId, option.roleId)];
-    if (!item) return "<div class='rating-role-item'><span class='rating-role-name'>" + escHtml(option.roleName) + "</span><span class='rating-empty'>评分人数不足，暂不展示</span></div>";
-    var avg = ratingAverage(item);
-    var rows = [["唱", item.singing_avg], ["演", item.acting_avg], ["跳", item.dancing_avg]].map(function (row) {
-      var value = Number(row[1]);
-      return "<div><b>" + row[0] + "</b><span class='rating-stars'>" + ratingStars(value) + "</span><strong>" + ratingScore10(value) + "</strong></div>";
-    }).join("");
-    return "<div class='rating-role-item rating-role-scored'><div class='rating-role-heading'><span class='rating-role-name'>" + escHtml(option.roleName) + "</span><span class='rating-stars'>" + ratingStars(avg) + "</span><strong class='rating-score'>" + ratingScore10(avg) + "</strong><span class='rating-count'>" + Number(item.user_count) + (ratingDemoMode() ? " 人模拟评分" : " 人评分") + "</span></div><div class='rating-dimension-list'>" + rows + "</div></div>";
+    var audience = "<section class='rating-detail-panel rating-detail-audience'><div class='rating-detail-panel-head'><span>观众评分</span></div>";
+    if (!item) {
+      audience += "<p class='rating-empty'>评分人数不足，暂不展示</p>";
+    } else {
+      var avg = ratingAverage(item);
+      var rows = [["唱", item.singing_avg], ["演", item.acting_avg], ["跳", item.dancing_avg]].map(function (row) {
+        var value = Number(row[1]);
+        return "<span>" + row[0] + " " + ratingScore10(value) + "</span>";
+      }).join("");
+      audience += "<div class='rating-detail-overall'><span class='rating-stars'>" + ratingStars(avg) + "</span><strong>" + ratingScore10(avg) + "</strong><small>" + Number(item.user_count) + (ratingDemoMode() ? " 人模拟评分" : " 人评分") + "</small></div><div class='rating-detail-dimensions'>" + rows + "</div>";
+    }
+    audience += "</section>";
+    var mine = "";
+    if (ownRow) {
+      var ownValues = [ownRow.singing_score, ownRow.acting_score, ownRow.dancing_score].filter(function (value) { return value != null && isFinite(Number(value)); }).map(Number);
+      var ownAverage = ownValues.reduce(function (total, value) { return total + value; }, 0) / ownValues.length;
+      var ownRows = [["唱", ownRow.singing_score], ["演", ownRow.acting_score], ["跳", ownRow.dancing_score]].map(function (row) {
+        return row[1] == null ? "" : "<span>" + row[0] + " " + ratingScore10(Number(row[1])) + "</span>";
+      }).join("");
+      var ownCount = Number(ownRow.performance_count) || 1;
+      var ownLabel = ownCount > 1 ? "我的平均评分" : "我的评分";
+      var ownNote = ownCount > 1 ? "<small>基于 " + ownCount + " 场评分</small>" : "";
+      mine = "<section class='rating-detail-panel rating-detail-mine'><div class='rating-detail-panel-head'><span>" + ownLabel + "</span><button type='button' class='rating-detail-edit' data-rating-key='" + escHtml(ratingRoleKey(id, option.musicalId, option.roleId)) + "' title='编辑最近一场评分' aria-label='编辑最近一场评分'><svg viewBox='0 0 24 24' width='16' height='16' aria-hidden='true' focusable='false'><path d='M12 20h9' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round'/><path d='M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/></svg></button></div><div class='rating-detail-overall'><span class='rating-stars'>" + ratingStars(ownAverage) + "</span><strong>" + ratingScore10(ownAverage) + "</strong>" + ownNote + "</div><div class='rating-detail-dimensions'>" + ownRows + "</div></section>";
+    }
+    return "<article class='rating-detail-role" + (ownRow ? " has-mine" : "") + "'><h4>" + escHtml(option.roleName) + "</h4>" + audience + mine + "</article>";
   }
   function openRatingDetails(id) {
     var modal = document.getElementById("rating-details-modal");
     var content = document.getElementById("rating-details-content");
     var byMusical = {};
     (actorRoleOptions[id] || []).forEach(function (option) { (byMusical[option.musicalId] = byMusical[option.musicalId] || []).push(option); });
-    var html = Object.keys(byMusical).map(function (mid) {
-      var options = byMusical[mid];
-      return "<details class='rating-detail-work'><summary><span>" + escHtml(options[0].musicalName) + "</span><small>" + options.length + " 个角色</small></summary><div class='rating-detail-roles'>" + options.map(function (option) { return ratingRoleDetailHtml(id, option); }).join("") + "</div></details>";
-    }).join("");
     document.getElementById("rating-details-actor-name").textContent = actorName(id);
-    content.innerHTML = html || "<p class='rating-empty'>暂无可展示的角色评分</p>";
     modal.classList.remove("hidden");
+    content.innerHTML = "<p class='rating-empty'>正在读取评分…</p>";
+    var request = window.MG_AUTH && window.MG_AUTH.currentUser()
+      ? (authDemoMode() ? Promise.resolve(authDemoRatings()) : ratingRpc("get_my_ratings", {}))
+      : Promise.resolve([]);
+    request.catch(function () { return []; }).then(function (ownRows) {
+      var ownByRole = ownRatingsByRole(ownRows, id);
+      // 本地登录预览固定放一条已关联的角色评分，方便直接检查“我的评分”和编辑入口。
+      if (authDemoMode() && !Object.keys(ownByRole).length) {
+        var previewOption = (actorRoleOptions[id] || [])[0];
+        if (previewOption) {
+          ownByRole[ratingRoleKey(id, previewOption.musicalId, previewOption.roleId)] = {
+            actor_id: id,
+            actor_name: actorName(id),
+            musical_id: previewOption.musicalId,
+            musical_name: previewOption.musicalName,
+            role_id: previewOption.roleId,
+            role_name: previewOption.roleName,
+            singing_score: 4.8,
+            acting_score: 4.9,
+            dancing_score: 4.4
+          };
+        }
+      }
+      var html = Object.keys(byMusical).map(function (mid) {
+        var options = byMusical[mid];
+        return "<section class='rating-detail-work'><div class='rating-detail-work-head'><h3>" + escHtml(options[0].musicalName) + "</h3><span>" + options.length + " 个角色</span></div><div class='rating-detail-roles'>" + options.map(function (option) { return ratingRoleDetailHtml(id, option, ownByRole[ratingRoleKey(id, option.musicalId, option.roleId)]); }).join("") + "</div></section>";
+      }).join("");
+      content.innerHTML = html || "<p class='rating-empty'>暂无可展示的角色评分</p>";
+      content.querySelectorAll(".rating-detail-edit").forEach(function (button) {
+        button.addEventListener("click", function () {
+          var row = ownByRole[button.dataset.ratingKey];
+          if (!row) return;
+          closeRatingDetailsModal();
+          openMyRatingEditor(row.latest_rating || row);
+        });
+      });
+    });
+  }
+  function actorRatingScoreCardHtml(kind, item, ownRow, id, option) {
+    var isMine = kind === "mine";
+    if (isMine && !ownRow) return "";
+    var values = isMine
+      ? [ownRow.singing_score, ownRow.acting_score, ownRow.dancing_score]
+      : item ? [item.singing_avg, item.acting_avg, item.dancing_avg] : [];
+    var valid = values.filter(function (value) { return value != null && isFinite(Number(value)); }).map(Number);
+    if (!valid.length) return "";
+    var average = valid.reduce(function (sum, value) { return sum + value; }, 0) / valid.length;
+    var metrics = [["唱", values[0]], ["演", values[1]], ["跳", values[2]]].filter(function (row) { return row[1] != null; }).map(function (row) {
+      return "<span>" + row[0] + " " + ratingScore10(Number(row[1])) + "</span>";
+    }).join("");
+    var count = !isMine && item ? "<small>" + Number(item.user_count) + (ratingDemoMode() ? " 人模拟评分" : " 人评分") + "</small>" : "";
+    var ownCount = isMine ? Number(ownRow.performance_count) || 1 : 0;
+    var ownNote = ownCount > 1 ? "<small>基于 " + ownCount + " 场评分</small>" : "";
+    var edit = isMine ? "<button type='button' class='actor-rating-edit' data-rating-key='" + escHtml(ratingRoleKey(id, option.musicalId, option.roleId)) + "' title='编辑最近一场评分' aria-label='编辑最近一场评分'><svg viewBox='0 0 24 24' width='17' height='17' aria-hidden='true' focusable='false'><path d='M12 20h9' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round'/><path d='M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/></svg></button>" : "";
+    var label = isMine && ownCount > 1 ? "我的平均评分" : (isMine ? "我的评分" : "观众评分");
+    return "<section class='actor-rating-score-card actor-rating-" + kind + "'><div class='actor-rating-card-head'><span>" + label + "</span>" + edit + "</div><div class='actor-rating-card-score'><span class='rating-stars'>" + ratingStars(average) + "</span><strong>" + ratingScore10(average) + "</strong>" + count + ownNote + "</div><div class='actor-rating-card-metrics'>" + metrics + "</div></section>";
+  }
+  function renderActorRatingsPage(id) {
+    var content = document.getElementById("actor-ratings-content");
+    var actor = actors[id];
+    if (!actor || !content) { goActor(id); return; }
+    document.getElementById("actor-ratings-crumb").textContent = actor.name;
+    document.getElementById("actor-ratings-subtitle").textContent = actor.name + "的角色评分";
+    content.innerHTML = "<p class='rating-empty'>正在读取评分…</p>";
+    var request = window.MG_AUTH && window.MG_AUTH.currentUser() ? (authDemoMode() ? Promise.resolve(authDemoRatings()) : ratingRpc("get_my_ratings", {})) : Promise.resolve([]);
+    request.catch(function () { return []; }).then(function (ownRows) {
+      var ownByRole = ownRatingsByRole(ownRows, id);
+      if (authDemoMode() && !Object.keys(ownByRole).length && (actorRoleOptions[id] || []).length) {
+        var preview = actorRoleOptions[id][0];
+        ownByRole[ratingRoleKey(id, preview.musicalId, preview.roleId)] = { actor_id: id, actor_name: actor.name, musical_id: preview.musicalId, musical_name: preview.musicalName, role_id: preview.roleId, role_name: preview.roleName, singing_score: 4.8, acting_score: 4.9, dancing_score: 4.4 };
+      }
+      var byMusical = {};
+      (actorRoleOptions[id] || []).forEach(function (option) { (byMusical[option.musicalId] = byMusical[option.musicalId] || []).push(option); });
+      var orderedOptions = Object.keys(byMusical).reduce(function (all, mid) { return all.concat(byMusical[mid]); }, []).sort(function (a, b) {
+        var aItem = ratingsByRole[ratingRoleKey(id, a.musicalId, a.roleId)], bItem = ratingsByRole[ratingRoleKey(id, b.musicalId, b.roleId)];
+        var aScore = aItem ? ratingAverage(aItem) : -1, bScore = bItem ? ratingAverage(bItem) : -1;
+        return bScore - aScore;
+      });
+      content.innerHTML = "<div class='actor-role-card-grid'>" + orderedOptions.map(function (option) {
+        var key = ratingRoleKey(id, option.musicalId, option.roleId), item = ratingsByRole[key], own = ownByRole[key];
+        return "<article class='actor-ratings-role'><div class='actor-rating-role-title'><h3>《" + escHtml(option.musicalName) + "》</h3><span>" + escHtml(option.roleName) + "</span></div><div class='actor-rating-comparison'>" + actorRatingScoreCardHtml("audience", item, own, id, option) + actorRatingScoreCardHtml("mine", item, own, id, option) + (!item && !own ? "<p class='rating-empty'>暂无评分</p>" : "") + "</div></article>";
+      }).join("") + "</div>";
+      if (!Object.keys(byMusical).length) content.innerHTML = "<p class='rating-empty'>暂无可展示的角色评分</p>";
+      content.querySelectorAll(".actor-rating-edit").forEach(function (button) { button.addEventListener("click", function () { var row = ownByRole[button.dataset.ratingKey]; if (row) openMyRatingEditor(row.latest_rating || row); }); });
+    }).catch(function (error) { content.innerHTML = "<p class='rating-empty'>评分读取失败：" + escHtml(error && error.message ? error.message : "请稍后重试") + "</p>"; });
   }
   function refreshRatingViews() {
     rebuildRatingIndexes();
     if (focusId && actors[focusId]) renderFocusRating(focusId);
     if (currentRoute() === "actor" && currentActorId()) renderActorRating(currentActorId());
+    if (currentRoute() === "actor-ratings" && currentActorId()) renderActorRatingsPage(currentActorId());
+  }
+  var myRatingsTab = "summary";
+  function myRatingSubjectKey(row) {
+    var actorId = s(row.actor_id);
+    if (row.musical_id != null && row.role_id != null) return actorId + "|known|" + s(row.musical_id) + "|" + s(row.role_id);
+    return actorId + "|manual|" + String(row.manual_musical_name || "").toLowerCase() + "|" + String(row.manual_role_name || "").toLowerCase();
+  }
+  function myRatingValues(row) {
+    return [row.singing_score, row.acting_score, row.dancing_score].filter(function (value) {
+      return value != null && isFinite(Number(value));
+    }).map(Number);
+  }
+  function myRatingAverage(row) {
+    var values = myRatingValues(row);
+    return values.length ? values.reduce(function (total, value) { return total + value; }, 0) / values.length : 0;
+  }
+  function myRatingPerformanceLabel(row) {
+    return row.performance_date ? String(row.performance_date) + (row.session_period ? " · " + (RATING_SESSION_LABELS[row.session_period] || row.session_period) : "") : "场次待补充";
+  }
+  function myRatingCard(row, options) {
+    options = options || {};
+    var actorId = s(row.actor_id), actor = row.actor_name || actorName(actorId);
+    var musical = row.musical_name || row.manual_musical_name || "未知剧目";
+    var role = row.role_name || row.manual_role_name || "角色待补充";
+    var count = Number(row.performance_count) || 1;
+    var meta = options.history ? "观演：" + myRatingPerformanceLabel(row) : "基于 " + count + " 场评分";
+    var average = myRatingAverage(row);
+    var selectRecord = !!options.subjectKey;
+    var multipleRecords = !!options.multipleRecords;
+    var editAttribute = selectRecord
+      ? " data-rating-subject-key='" + escHtml(options.subjectKey) + "'"
+      : " data-rating-id='" + escHtml(String(row.id || "")) + "'";
+    var editTitle = multipleRecords ? "选择要编辑的场次" : "编辑评分";
+    var editLabel = multipleRecords
+      ? "选择“" + actor + " · " + musical + "”要编辑的场次"
+      : "编辑“" + actor + " · " + musical + "”的评分";
+    return "<article class='my-rating-row" + (options.history ? " my-rating-history-card" : "") + "'>" +
+      "<a class='my-rating-work' href='#/actor/" + encodeURIComponent(actorId) + "'>" + (options.history ? "<span class='my-rating-actor-inline'>" + escHtml(actor) + "</span>" : "") + escHtml(musical) + " <span class='my-rating-role'>· " + escHtml(role) + "</span><span class='my-rating-performance'>" + escHtml(meta) + "</span></a>" +
+      "<div class='my-rating-overall'><span class='rating-stars'>" + ratingStars(average) + "</span><strong>" + ratingScore10(average) + "</strong></div>" +
+      "<div class='my-rating-scores'>" + [["唱", row.singing_score], ["演", row.acting_score], ["跳", row.dancing_score]].map(function (pair) {
+        return "<div class='my-rating-score'><span>" + pair[0] + "</span><strong>" + (pair[1] == null ? "—" : (Number(pair[1]) * 2).toFixed(1)) + "</strong></div>";
+      }).join("") + "</div>" +
+      "<button type='button' class='my-rating-edit'" + editAttribute + " title='" + escHtml(editTitle) + "' aria-label='" + escHtml(editLabel) + "'><svg viewBox='0 0 24 24' width='16' height='16' aria-hidden='true' focusable='false'><path d='M12 20h9' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round'/><path d='M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/></svg></button>" +
+      "</article>";
+  }
+  function bindMyRatingEditors(container, rows, subjectRows) {
+    var byId = {};
+    rows.forEach(function (row) { byId[String(row.id)] = row; });
+    container.querySelectorAll(".my-rating-edit").forEach(function (button) {
+      button.addEventListener("click", function () {
+        var selectedRows = subjectRows && subjectRows[button.dataset.ratingSubjectKey];
+        if (selectedRows) {
+          if (selectedRows.length === 1) openMyRatingEditor(selectedRows[0]);
+          else openMyRatingRecordPicker(selectedRows);
+          return;
+        }
+        var row = byId[button.dataset.ratingId];
+        if (row) openMyRatingEditor(row);
+      });
+    });
+  }
+  function renderMyRatingSummary(rows, list, summary) {
+    var subjects = {}, ordered = [], subjectRows = {};
+    rows.forEach(function (row) {
+      var key = myRatingSubjectKey(row);
+      if (!subjects[key]) { subjects[key] = { rows: [], latest: row }; ordered.push(subjects[key]); }
+      subjects[key].rows.push(row);
+      subjectRows[key] = subjects[key].rows;
+      if (String(row.updated_at || "") > String(subjects[key].latest.updated_at || "")) subjects[key].latest = row;
+    });
+    var byActor = {}, actorsInOrder = [];
+    ordered.forEach(function (subject) {
+      var latest = subject.latest, actorId = s(latest.actor_id);
+      if (!byActor[actorId]) {
+        byActor[actorId] = { id: actorId, name: latest.actor_name || actorName(actorId), subjects: [] };
+        actorsInOrder.push(byActor[actorId]);
+      }
+      var aggregate = ownRatingSummary(subject.rows);
+      aggregate.id = latest.id;
+      aggregate.actor_id = latest.actor_id;
+      aggregate.actor_name = latest.actor_name;
+      aggregate.musical_name = latest.musical_name;
+      aggregate.manual_musical_name = latest.manual_musical_name;
+      aggregate.role_name = latest.role_name;
+      aggregate.manual_role_name = latest.manual_role_name;
+      aggregate.performance_date = latest.performance_date;
+      aggregate.session_period = latest.session_period;
+      byActor[actorId].subjects.push({ key: myRatingSubjectKey(latest), row: aggregate, count: subject.rows.length });
+    });
+    actorsInOrder.sort(function (a, b) { return a.name.localeCompare(b.name, "zh-Hans-CN"); });
+    summary.textContent = actorsInOrder.length + " 位演员 · " + ordered.length + " 个角色";
+    summary.classList.remove("hidden");
+    list.innerHTML = actorsInOrder.map(function (actor) {
+      return "<li class='my-rating-actor'><div class='my-rating-actor-head'><a class='my-rating-actor-name' href='#/actor/" + encodeURIComponent(actor.id) + "'>" + escHtml(actor.name) + "</a><span class='my-rating-actor-count'>" + actor.subjects.length + " 个角色</span></div><div class='my-rating-works'>" + actor.subjects.map(function (subject) { return myRatingCard(subject.row, { subjectKey: subject.key, multipleRecords: subject.count > 1 }); }).join("") + "</div></li>";
+    }).join("");
+    bindMyRatingEditors(list, rows, subjectRows);
+  }
+  function renderMyRatingHistory(rows, timeline, summary) {
+    var byDay = {}, days = [];
+    rows.forEach(function (row) {
+      var day = String(row.updated_at || row.performance_date || "").slice(0, 10) || "未标注日期";
+      if (!byDay[day]) { byDay[day] = []; days.push(day); }
+      byDay[day].push(row);
+    });
+    days.sort(function (a, b) { return b.localeCompare(a); });
+    summary.textContent = rows.length + " 场评分 · 按评分日期排列";
+    summary.classList.remove("hidden");
+    timeline.innerHTML = days.map(function (day) {
+      var label = day === "未标注日期" ? day : day.replace(/-/g, ".");
+      var dayRows = byDay[day].slice().sort(function (a, b) {
+        return String(b.updated_at || "").localeCompare(String(a.updated_at || ""));
+      });
+      return "<li class='my-rating-day'><time class='my-rating-day-date' datetime='" + escHtml(day) + "'>" + escHtml(label) + "</time><span class='my-rating-timeline-rail' aria-hidden='true'><i></i></span><div class='my-rating-day-records'>" + dayRows.map(function (row) { return myRatingCard(row, { history: true }); }).join("") + "</div></li>";
+    }).join("");
+    bindMyRatingEditors(timeline, rows);
+  }
+  function renderMyRatingsPage() {
+    var empty = document.getElementById("my-ratings-empty");
+    var list = document.getElementById("my-ratings-list");
+    var summary = document.getElementById("my-ratings-summary");
+    var timeline = document.getElementById("my-ratings-timeline");
+    if (!empty || !list || !summary || !timeline) return;
+    list.innerHTML = "";
+    timeline.innerHTML = "";
+    list.classList.toggle("hidden", myRatingsTab !== "summary");
+    timeline.classList.toggle("hidden", myRatingsTab !== "history");
+    document.querySelectorAll("[data-my-ratings-tab]").forEach(function (button) {
+      var active = button.dataset.myRatingsTab === myRatingsTab;
+      button.classList.toggle("is-active", active);
+      button.setAttribute("aria-selected", String(active));
+    });
+    summary.classList.add("hidden");
+    if (!window.MG_AUTH || !window.MG_AUTH.currentUser()) {
+      empty.textContent = "登录后可以查看你的全部评分。";
+      empty.classList.remove("hidden");
+      if (window.MG_AUTH) window.MG_AUTH.open();
+      return;
+    }
+    empty.textContent = "正在读取你的评分…";
+    empty.classList.remove("hidden");
+    var request = authDemoMode() ? Promise.resolve(authDemoRatings()) : ratingRpc("get_my_ratings", {});
+    request.then(function (rows) {
+      rows = rows || [];
+      if (!rows.length) {
+        empty.textContent = "你还没有提交过评分。";
+        return;
+      }
+      empty.classList.add("hidden");
+      if (myRatingsTab === "summary") renderMyRatingSummary(rows, list, summary);
+      else renderMyRatingHistory(rows, timeline, summary);
+    }).catch(function () {
+      empty.textContent = "评分读取失败，请稍后再试。";
+    });
+  }
+  function openMyRatingEditor(row) {
+    if (!ratingCanOpen()) { showToast("评分功能需要连接线上数据"); return; }
+    openRatingModal(row.actor_id, row);
+  }
+  function ratingRecordPickerDate(row) {
+    var match = String(row.performance_date || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    var day = match ? Number(match[1]) + "年" + Number(match[2]) + "月" + Number(match[3]) + "日" : "场次待补充";
+    var session = row.session_period ? RATING_SESSION_LABELS[row.session_period] || row.session_period : "";
+    return day + (session ? " · " + session : "");
+  }
+  function openMyRatingRecordPicker(rows) {
+    var modal = document.getElementById("rating-record-picker-modal");
+    var subject = document.getElementById("rating-record-picker-subject");
+    var list = document.getElementById("rating-record-picker-list");
+    if (!modal || !subject || !list || !rows.length) return;
+    var ordered = rows.slice().sort(function (a, b) {
+      return String(b.performance_date || b.updated_at || "").localeCompare(String(a.performance_date || a.updated_at || "")) || String(b.updated_at || "").localeCompare(String(a.updated_at || ""));
+    });
+    var first = ordered[0];
+    var actor = first.actor_name || actorName(s(first.actor_id));
+    var musical = first.musical_name || first.manual_musical_name || "未知剧目";
+    var role = first.role_name || first.manual_role_name || "角色待补充";
+    subject.textContent = actor + " · " + musical + " · " + role;
+    list.innerHTML = ordered.map(function (row) {
+      var parts = [["唱", row.singing_score], ["演", row.acting_score], ["跳", row.dancing_score]].map(function (pair) {
+        return pair[0] + " " + (pair[1] == null ? "—" : (Number(pair[1]) * 2).toFixed(1));
+      }).join(" · ");
+      return "<button type='button' class='rating-record-picker-item' data-rating-id='" + escHtml(String(row.id || "")) + "'><time>" + escHtml(ratingRecordPickerDate(row)) + "</time><span>" + escHtml(parts) + "</span><strong>" + ratingScore10(myRatingAverage(row)) + "</strong><i aria-hidden='true'>编辑</i></button>";
+    }).join("");
+    modal.classList.remove("hidden");
+    list.querySelectorAll(".rating-record-picker-item").forEach(function (button) {
+      button.addEventListener("click", function () {
+        var row = ordered.filter(function (item) { return String(item.id) === button.dataset.ratingId; })[0];
+        if (!row) return;
+        closeRatingRecordPickerModal();
+        openMyRatingEditor(row);
+      });
+    });
+    setTimeout(function () { var firstButton = list.querySelector(".rating-record-picker-item"); if (firstButton) firstButton.focus(); }, 0);
+  }
+  document.querySelectorAll("[data-my-ratings-tab]").forEach(function (button) {
+    button.addEventListener("click", function () {
+      myRatingsTab = button.dataset.myRatingsTab;
+      renderMyRatingsPage();
+    });
+  });
+  if (window.MG_AUTH) {
+    window.MG_AUTH.onChange(function () {
+      if (currentRoute() === "my-ratings") renderMyRatingsPage();
+    if (currentRoute() === "actor" && currentActorId()) loadMyRating();
+    if (currentRoute() === "actor-ratings" && currentActorId()) renderActorRatingsPage(currentActorId());
+    });
   }
   function showFocusCard(id) {
     var a = actors[id];
@@ -1755,7 +2194,7 @@
     renderMusicalCast(ul, m);
     fcMom.appendChild(ul);
     document.getElementById("fc-rating").classList.add("hidden");
-    document.getElementById("fc-rate").classList.add("hidden");
+    var musicalRate = document.getElementById("fc-rate"); if (musicalRate) musicalRate.classList.add("hidden");
     document.getElementById("fc-detail").textContent = "查看详情";
     document.getElementById("fc-detail").classList.remove("hidden");
     focusCard.classList.remove("hidden");
@@ -1791,7 +2230,7 @@
     });
     fcMom.appendChild(ul);
     document.getElementById("fc-rating").classList.add("hidden");
-    document.getElementById("fc-rate").classList.add("hidden");
+    var groupRate = document.getElementById("fc-rate"); if (groupRate) groupRate.classList.add("hidden");
     document.getElementById("fc-detail").classList.add("hidden");   // 团体无独立详情页
     focusCard.classList.remove("hidden");
     document.body.classList.add("side-open");     // 团体信息 -> 右侧面板滑出
@@ -1812,6 +2251,8 @@
   });
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape") {
+      var ratingRecordPickerModal = document.getElementById("rating-record-picker-modal");
+      if (ratingRecordPickerModal && !ratingRecordPickerModal.classList.contains("hidden")) { ratingRecordPickerModal.classList.add("hidden"); return; }
       var ratingDetailsModal = document.getElementById("rating-details-modal");
       if (ratingDetailsModal && !ratingDetailsModal.classList.contains("hidden")) { ratingDetailsModal.classList.add("hidden"); return; }
       if (ratingModal && !ratingModal.classList.contains("hidden")) { closeRatingModal(); return; }
@@ -2118,14 +2559,23 @@
         button.classList.toggle("is-active", Number(button.dataset.roleIndex) === index);
       });
       var activeTab = roleTabs.querySelector("button[data-role-index='" + index + "']");
-      if (activeTab) activeTab.scrollIntoView({ block: "nearest", inline: "nearest" });
+      if (activeTab) {
+        // Keep the selected tab visible without letting scrollIntoView move
+        // the vertical reading column back to its top.
+        var tabLeft = activeTab.offsetLeft - Math.max(0, (roleTabs.clientWidth - activeTab.offsetWidth) / 2);
+        roleTabs.scrollTo({ left: Math.max(0, tabLeft), behavior: "smooth" });
+      }
     }
     function scrollToRole(index) {
       var panel = panels[index];
       if (!panel) return;
-      var scrollHost = content.scrollHeight > content.clientHeight + 2 ? content : document.getElementById("musical-view");
-      var top = scrollHost.scrollTop + panel.getBoundingClientRect().top - scrollHost.getBoundingClientRect().top - roleTabsShell.offsetHeight - 12;
-      scrollHost.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+      // The desktop musical page has its own scrolling reading column, so
+      // scroll that column explicitly instead of relying on scrollIntoView.
+      var panelTop = panel.getBoundingClientRect().top - content.getBoundingClientRect().top + content.scrollTop;
+      content.scrollTo({
+        top: Math.max(0, panelTop - roleTabsShell.offsetHeight - 12),
+        behavior: "smooth"
+      });
       setActiveRole(index);
     }
     function addGroup(roleName, ids, index) {
@@ -2714,10 +3164,10 @@
         var span = document.createElement("span");
         span.className = "c";
         span.textContent = m;
-        span.title = "查看作品演员表";
+        span.title = "查看剧目详情";
         span.addEventListener("click", function () {
           var mid = Object.keys(musicals).filter(function (k) { return musicals[k].name === m; })[0];
-          if (mid) goMusical(mid);
+          if (mid) goMusicalDetail(mid);
         });
         li.appendChild(span);
         if (rolesArr.length) {
@@ -2938,7 +3388,7 @@
     clearTimeout(topSearchBox._t);
     topSearchBox._t = setTimeout(function () {
       if (!topSearchBox.classList.contains("open")) topSearchBox.classList.add("hidden");
-    }, 320);   // 等收起动效结束再挂 display:none
+    }, 480);   // 等收起动效结束再挂 display:none
   }
   if (searchToggle) {
     searchToggle.addEventListener("click", function (e) {
@@ -3103,7 +3553,17 @@
   }
   // ---- 匿名演员评分：仅走 Supabase RPC，不在静态快照保存原始评分 ----
   var ratingModal = document.getElementById("rating-modal");
+  var ratingAuthModal = document.getElementById("rating-auth-modal");
+  var ratingAuthEmailForm = document.getElementById("rating-auth-email-form");
+  var ratingAuthTokenForm = document.getElementById("rating-auth-token-form");
+  var ratingAuthEmail = document.getElementById("rating-auth-email");
+  var ratingAuthToken = document.getElementById("rating-auth-token");
+  var ratingAuthMessage = document.getElementById("rating-auth-message");
+  var ratingAuthAgreementEmail = document.getElementById("rating-auth-agreement-email");
+  var ratingAuthAgreementToken = document.getElementById("rating-auth-agreement-token");
+  var ratingAuthCurrentEmail = "";
   var ratingDetailsModal = document.getElementById("rating-details-modal");
+  var ratingRecordPickerModal = document.getElementById("rating-record-picker-modal");
   var ratingKnownSubject = document.getElementById("rating-known-subject");
   var ratingManualSubject = document.getElementById("rating-manual-subject");
   var ratingManualSubjectToggle = document.getElementById("rating-manual-subject-toggle");
@@ -3128,7 +3588,20 @@
   var ratingActorId = null;
   var ratingSubjectMode = "known";
   var ratingPerformance = null;
+  function scrollRatingDialogTo(target, align) {
+    if (!target || ratingModal.classList.contains("hidden")) return;
+    var dialog = ratingModal.querySelector(".rating-dialog");
+    if (!dialog) return;
+    requestAnimationFrame(function () {
+      var dialogRect = dialog.getBoundingClientRect();
+      var targetRect = target.getBoundingClientRect();
+      var top = dialog.scrollTop + targetRect.top - dialogRect.top - dialog.clientHeight * (align == null ? .28 : align);
+      dialog.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+    });
+  }
   var ratingPerformanceConfirmed = false;
+  var pendingRatingActorId = null;
+  var pendingRatingEdit = null;
   var ratingCurrentYear = new Date().getFullYear();
   var ratingCalendarView = { year: ratingCurrentYear, month: new Date().getMonth() };
   var RATING_MONTHS = ["一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月"];
@@ -3199,17 +3672,59 @@
       });
     });
   }
-  function ratingRpc(name, payload) {
+  function ratingRpcHeaders(token) {
+    var sb = window.MG_SUPABASE || {};
+    var headers = { "Content-Type": "application/json", apikey: sb.anonKey };
+    if (token) headers.Authorization = "Bearer " + token;
+    else if (sb.anonKey) headers.Authorization = "Bearer " + sb.anonKey;
+    return headers;
+  }
+  function ratingRpcWithToken(name, payload, token) {
     var sb = window.MG_SUPABASE || {};
     return fetch(sb.url + "/rest/v1/rpc/" + name, {
       method: "POST",
-      headers: { "Content-Type": "application/json", apikey: sb.anonKey, Authorization: "Bearer " + sb.anonKey },
+      headers: ratingRpcHeaders(token),
       body: JSON.stringify(payload || {}),
       signal: AbortSignal.timeout(sb.timeoutMs || 8000)
     }).then(function (r) {
       if (!r.ok) return r.text().then(function (t) { throw new Error(t || ("HTTP " + r.status)); });
       return r.json();
     });
+  }
+  function ratingRpc(name, payload) {
+    if (window.MG_AUTH) {
+      return window.MG_AUTH.getAccessToken().then(function (token) {
+        return ratingRpcWithToken(name, payload, token);
+      });
+    }
+    return ratingRpcWithToken(name, payload, null);
+  }
+  function ratingIdentityPayload() {
+    return window.MG_AUTH && window.MG_AUTH.currentUser() ? {} : { p_anonymous_user_id: mgClientId() };
+  }
+  var anonymousRatingClaimUserId = "";
+  var anonymousRatingClaimPromise = null;
+  function claimAnonymousRatings() {
+    var auth = window.MG_AUTH, user = auth && auth.currentUser && auth.currentUser();
+    if (!user || !user.id || authDemoMode()) return Promise.resolve({ claimed_count: 0 });
+    if (anonymousRatingClaimUserId === user.id && anonymousRatingClaimPromise) return anonymousRatingClaimPromise;
+    anonymousRatingClaimUserId = user.id;
+    anonymousRatingClaimPromise = ratingRpc("claim_anonymous_ratings", {
+      p_anonymous_user_id: mgClientId()
+    }).then(function (result) {
+      var claimed = Number(result && result.claimed_count) || 0;
+      if (claimed) {
+        showToast("已将本浏览器的 " + claimed + " 条匿名评分保存到账号");
+        refreshRatingViews();
+        if (currentRoute() === "my-ratings") renderMyRatingsPage();
+      }
+      return result || { claimed_count: 0 };
+    }).catch(function (error) {
+      anonymousRatingClaimUserId = "";
+      anonymousRatingClaimPromise = null;
+      throw error;
+    });
+    return anonymousRatingClaimPromise;
   }
   function selectedRatingOption() {
     if (!ratingActorId) return null;
@@ -3308,9 +3823,17 @@
         renderRatingPerformanceConfirmation();
         ratingScoreStage.classList.remove("hidden");
         ratingDimensions.classList.remove("hidden");
+        scrollRatingDialogTo(ratingScoreStage, .2);
+        var savedEdit = pendingRatingEdit;
+        pendingRatingEdit = null;
         loadMyRating();
+        prefillRatingEditScores(savedEdit);
       });
     });
+    if (pendingRatingEdit && pendingRatingEdit.session_period) {
+      var savedSession = ratingPerformanceResults.querySelector("[data-session='" + pendingRatingEdit.session_period + "']");
+      if (savedSession) savedSession.click();
+    }
   }
   function renderRatingPerformances(performances) {
     ratingPerformanceResults.innerHTML = "";
@@ -3336,11 +3859,24 @@
         ratingPerformanceConfirmed = true;
         ratingScoreStage.classList.remove("hidden");
         ratingDimensions.classList.remove("hidden");
+        scrollRatingDialogTo(ratingScoreStage, .2);
+        var savedEdit = pendingRatingEdit;
+        pendingRatingEdit = null;
         loadMyRating();
+        prefillRatingEditScores(savedEdit);
       });
       ratingPerformanceResults.appendChild(button);
     });
     ratingPerformanceResults.classList.remove("hidden");
+    if (pendingRatingEdit) {
+      var saved = pendingRatingEdit;
+      var match = Array.prototype.slice.call(ratingPerformanceResults.querySelectorAll("button")).filter(function (button) {
+        var index = Array.prototype.indexOf.call(ratingPerformanceResults.querySelectorAll("button"), button);
+        var performance = performances[index];
+        return performance && (String(performance.id) === String(saved.performance_id) || ratingSessionPeriod(performance) === saved.session_period);
+      })[0];
+      if (match) match.click();
+    }
   }
   function loadRatingPerformances() {
     var option = selectedRatingOption();
@@ -3352,7 +3888,7 @@
       return;
     }
     ratingHint.textContent = "正在查找该日场次...";
-    var request = ratingDemoMode() ? Promise.resolve(demoRatingPerformances(option, ratingDate.value)) : ratingRpc("get_rating_performances", {
+    var request = ratingPreviewMode() ? Promise.resolve(demoRatingPerformances(option, ratingDate.value)) : ratingRpc("get_rating_performances", {
       p_actor_id: Number(ratingActorId), p_musical_id: Number(option.musicalId), p_role_id: Number(option.roleId), p_date: ratingDate.value
     });
     request.then(function (performances) { renderRatingPerformances(Array.isArray(performances) ? performances : []); updateRatingSubmitState(); }).catch(function () {
@@ -3405,8 +3941,8 @@
     var ready = !!selectedRatingOption() && !!ratingPerformance && ratingPerformanceConfirmed;
     var scores = currentRatingScores();
     var count = [scores.singing, scores.dancing, scores.acting].filter(function (v) { return v != null; }).length;
-    ratingSubmit.disabled = ratingDemoMode() || !ready || count < 2;
-    if (ratingDemoMode()) ratingHint.textContent = "演示模式可体验评分流程，但不会保存或提交。";
+    ratingSubmit.disabled = ratingPreviewMode() || !ready || count < 2;
+    if (ratingPreviewMode()) ratingHint.textContent = "演示模式可查看编辑流程，但不会保存或提交。";
     else if (!selectedRatingOption()) ratingHint.textContent = ratingSubjectMode === "manual" ? "请填写剧目名称与角色名称。" : "请选择剧目与角色。";
     else if (!ratingDate.value) ratingHint.textContent = "请选择观看日期。";
     else if (!ratingPerformance) ratingHint.textContent = "请选择演出时间。";
@@ -3422,12 +3958,13 @@
     var option = selectedRatingOption();
     if (!option || !ratingPerformance || !ratingPerformanceConfirmed) { ratingDimensions.classList.add("hidden"); resetRatingDimensions(); updateRatingSubmitState(); return; }
     ratingDimensions.classList.remove("hidden"); resetRatingDimensions(); updateRatingSubmitState();
-    if (ratingDemoMode()) return;
+    if (ratingPreviewMode()) return;
     if (option.manual) {
-      ratingRpc("get_my_manual_rating", {
-        p_anonymous_user_id: mgClientId(), p_actor_id: Number(ratingActorId),
-        p_musical_name: option.musicalName, p_role_name: option.roleName
-      }).then(function (saved) {
+      ratingRpc("get_my_manual_rating", Object.assign(ratingIdentityPayload(), {
+        p_actor_id: Number(ratingActorId),
+        p_musical_name: option.musicalName, p_role_name: option.roleName,
+        p_performance_date: ratingPerformance.date, p_session_period: ratingPerformance.session_period
+      })).then(function (saved) {
         if (!saved || typeof saved !== "object") return;
         setDimensionScore("singing", saved.singing_score); setDimensionScore("dancing", saved.dancing_score); setDimensionScore("acting", saved.acting_score);
         updateRatingSubmitState();
@@ -3435,9 +3972,9 @@
       return;
     }
     if (ratingPerformance.id == null) return;
-    ratingRpc("get_my_rating", {
-      p_anonymous_user_id: mgClientId(), p_performance_id: Number(ratingPerformance.id), p_actor_id: Number(ratingActorId), p_musical_id: Number(option.musicalId), p_role_id: Number(option.roleId)
-    }).then(function (saved) {
+    ratingRpc("get_my_rating", Object.assign(ratingIdentityPayload(), {
+      p_performance_id: Number(ratingPerformance.id), p_actor_id: Number(ratingActorId), p_musical_id: Number(option.musicalId), p_role_id: Number(option.roleId)
+    })).then(function (saved) {
       if (!saved || typeof saved !== "object") return;
       setDimensionScore("singing", saved.singing_score);
       setDimensionScore("dancing", saved.dancing_score);
@@ -3447,8 +3984,9 @@
       // 读取失败不阻断新评分；提交时服务端仍会完整校验。
     });
   }
-  function openRatingModal(actorId) {
+  function openRatingModal(actorId, editRow) {
     if (!ratingCanOpen()) { showToast("评分功能需要连接线上数据"); return; }
+    pendingRatingEdit = editRow || null;
     ratingActorId = s(actorId);
     document.getElementById("rating-actor-name").textContent = actorName(ratingActorId);
     ratingMusical.innerHTML = "<option value=''>请选择剧目</option>";
@@ -3467,11 +4005,75 @@
     refreshRatingSelect(ratingMusical); refreshRatingSelect(ratingRole);
     resetRatingPerformance(); updateRatingSubmitState();
     ratingModal.classList.remove("hidden");
-    if (ratingDemoMode()) ratingSubmit.textContent = "演示模式不可提交";
+    if (ratingPreviewMode()) ratingSubmit.textContent = "演示模式不可提交";
     else ratingSubmit.textContent = "提交评分";
+    if (editRow) {
+      if (editRow.manual_musical_name || editRow.manual_role_name) {
+        setRatingSubjectMode("manual");
+        ratingManualMusical.value = editRow.manual_musical_name || "";
+        ratingManualRole.value = editRow.manual_role_name || "";
+        ratingManualRole.dispatchEvent(new Event("input", { bubbles: true }));
+      } else {
+        ratingMusical.value = s(editRow.musical_id || "");
+        ratingMusical.dispatchEvent(new Event("change", { bubbles: true }));
+        ratingRole.value = s(editRow.role_id || "");
+        ratingRole.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+      if (editRow.performance_date) {
+        ratingDate.value = editRow.performance_date;
+        ratingDate.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    }
   }
-  function closeRatingModal() { ratingModal.classList.add("hidden"); ratingActorId = null; }
+  function prefillRatingEditScores(row) {
+    if (!row) return;
+    setDimensionScore("singing", row.singing_score);
+    setDimensionScore("dancing", row.dancing_score);
+    setDimensionScore("acting", row.acting_score);
+    updateRatingSubmitState();
+  }
+  function openRatingAuthModal(actorId) {
+    if (!ratingCanOpen()) { showToast("评分功能需要连接线上数据"); return; }
+    pendingRatingActorId = s(actorId);
+    ratingAuthEmailForm.classList.remove("hidden");
+    ratingAuthTokenForm.classList.add("hidden");
+    ratingAuthMessage.textContent = "";
+    ratingAuthMessage.className = "auth-message";
+    ratingAuthToken.value = "";
+    if (ratingAuthAgreementEmail) ratingAuthAgreementEmail.checked = false;
+    if (ratingAuthAgreementToken) ratingAuthAgreementToken.checked = false;
+    ratingAuthModal.classList.remove("hidden");
+    setTimeout(function () { ratingAuthEmail.focus(); }, 0);
+  }
+  function closeRatingAuthModal() {
+    ratingAuthModal.classList.add("hidden");
+  }
+  function setRatingAuthMessage(msg, tone) {
+    ratingAuthMessage.textContent = msg || "";
+    ratingAuthMessage.className = "auth-message" + (tone ? " " + tone : "");
+  }
+  function ratingAgreementChecked(checkbox) { return !!(checkbox && checkbox.checked); }
+  function continueRatingAfterAuth() {
+    if (!pendingRatingActorId) return;
+    var actorId = pendingRatingActorId;
+    claimAnonymousRatings().catch(function () {
+      // 认领失败不阻断刚完成的登录和当前评分流程；下次登录会自动重试。
+    }).then(function () {
+      closeRatingAuthModal();
+      openRatingModal(actorId);
+    });
+  }
+  function startRatingFlow(actorId) {
+    if (!ratingCanOpen()) { showToast("评分功能需要连接线上数据"); return; }
+    if (window.MG_AUTH && window.MG_AUTH.currentUser()) {
+      openRatingModal(actorId);
+      return;
+    }
+    openRatingAuthModal(actorId);
+  }
+  function closeRatingModal() { ratingModal.classList.add("hidden"); ratingActorId = null; pendingRatingEdit = null; }
   function closeRatingDetailsModal() { ratingDetailsModal.classList.add("hidden"); }
+  function closeRatingRecordPickerModal() { ratingRecordPickerModal.classList.add("hidden"); }
   ratingMusical.addEventListener("change", function () {
     ratingRole.innerHTML = "<option value=''>请选择角色</option>";
     var musicalRoles = (actorRoleOptions[ratingActorId] || []).filter(function (option) {
@@ -3493,6 +4095,7 @@
   ratingRole.addEventListener("change", function () {
     setRatingDateEnabled(!!ratingRole.value);
     resetRatingPerformance(); updateRatingSubmitState();
+    if (ratingRole.value) scrollRatingDialogTo(ratingDateWrap, .3);
   });
   ratingManualSubjectToggle.addEventListener("click", function () { setRatingSubjectMode("manual"); });
   document.getElementById("rating-use-known-subject").addEventListener("click", function () { setRatingSubjectMode("known"); });
@@ -3511,6 +4114,7 @@
     ratingCalendarYears.classList.add("hidden"); ratingCalendarDays.classList.remove("hidden");
     renderRatingCalendar();
     ratingCalendar.classList.remove("hidden"); ratingDateTrigger.setAttribute("aria-expanded", "true");
+    scrollRatingDialogTo(ratingDateWrap, .25);
   });
   document.getElementById("rating-calendar-prev").addEventListener("click", function () {
     if (ratingCalendarView.month === 0) { ratingCalendarView.year--; ratingCalendarView.month = 11; } else ratingCalendarView.month--;
@@ -3543,15 +4147,15 @@
     if (!option || !ratingPerformance || !ratingPerformanceConfirmed) return;
     ratingSubmit.disabled = true;
     ratingHint.textContent = "正在保存评分...";
-    var request = option.manual ? ratingRpc("upsert_manual_actor_rating", {
-      p_anonymous_user_id: mgClientId(), p_actor_id: Number(ratingActorId), p_musical_name: option.musicalName, p_role_name: option.roleName,
+    var request = option.manual ? ratingRpc("upsert_manual_actor_rating", Object.assign(ratingIdentityPayload(), {
+      p_actor_id: Number(ratingActorId), p_musical_name: option.musicalName, p_role_name: option.roleName,
       p_performance_date: ratingPerformance.date, p_session_period: ratingPerformance.session_period,
       p_singing_score: scores.singing, p_dancing_score: scores.dancing, p_acting_score: scores.acting
-    }) : ratingRpc("upsert_actor_rating", {
-      p_anonymous_user_id: mgClientId(), p_performance_id: ratingPerformance.id == null ? null : Number(ratingPerformance.id), p_actor_id: Number(ratingActorId), p_musical_id: Number(option.musicalId), p_role_id: Number(option.roleId),
+    })) : ratingRpc("upsert_actor_rating", Object.assign(ratingIdentityPayload(), {
+      p_performance_id: ratingPerformance.id == null ? null : Number(ratingPerformance.id), p_actor_id: Number(ratingActorId), p_musical_id: Number(option.musicalId), p_role_id: Number(option.roleId),
       p_performance_date: ratingPerformance.id == null ? ratingPerformance.date : null, p_session_period: ratingPerformance.id == null ? ratingPerformance.session_period : null,
       p_singing_score: scores.singing, p_dancing_score: scores.dancing, p_acting_score: scores.acting
-    });
+    }));
     request.then(function (saved) {
       closeRatingModal();
       showToast(option.manual ? "评分已保存；会立即计入演员整体评价" : (saved && saved.cast_mapping_status === "pending" ? "评分已保存；场次角色信息已进入待核验" : "评分已保存；达到 10 人后将公开展示"));
@@ -3567,12 +4171,97 @@
       if (window.__MG_DEBUG) window.__MG_DEBUG.ratingError = err && err.message ? err.message : String(err);
     });
   });
-  document.getElementById("fc-rate").addEventListener("click", function () { if (focusId && actors[focusId]) openRatingModal(focusId); });
-  document.getElementById("ap-rate").addEventListener("click", function () { if (apCenterId) openRatingModal(apCenterId); });
+  document.getElementById("ap-rate").addEventListener("click", function () { if (apCenterId) startRatingFlow(apCenterId); });
+  document.getElementById("rating-auth-close").addEventListener("click", closeRatingAuthModal);
+  ratingAuthModal.addEventListener("click", function (e) { if (e.target === ratingAuthModal) closeRatingAuthModal(); });
+  ratingAuthEmailForm.addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (!window.MG_AUTH || !window.MG_AUTH.sendOtp) {
+      setRatingAuthMessage("登录服务还没有配置完成，可以先匿名提交。", "error");
+      return;
+    }
+    ratingAuthCurrentEmail = ratingAuthEmail.value.trim();
+    if (!ratingAuthCurrentEmail) return;
+    if (!ratingAgreementChecked(ratingAuthAgreementEmail)) {
+      setRatingAuthMessage("请先阅读并同意《用户协议》和《隐私政策》", "error");
+      return;
+    }
+    var sendButton = e.currentTarget.querySelector("button[type='submit']");
+    sendButton.disabled = true;
+    sendButton.textContent = "正在发送...";
+    setRatingAuthMessage("");
+    window.MG_AUTH.sendOtp(ratingAuthCurrentEmail).then(function () {
+      document.getElementById("rating-auth-email-sent").textContent = "验证码已发送至 " + ratingAuthCurrentEmail;
+      ratingAuthEmailForm.classList.add("hidden");
+      ratingAuthTokenForm.classList.remove("hidden");
+      ratingAuthToken.value = "";
+      setRatingAuthMessage("");
+      setTimeout(function () { ratingAuthToken.focus(); }, 0);
+    }).catch(function (err) {
+      sendButton.disabled = false;
+      sendButton.textContent = "发送验证码";
+      setRatingAuthMessage(err.message || "发送失败", "error");
+    });
+  });
+  ratingAuthTokenForm.addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (!window.MG_AUTH || !window.MG_AUTH.verifyOtp) return;
+    var token = ratingAuthToken.value.trim();
+    if (!ratingAuthCurrentEmail || !token) return;
+    if (!ratingAgreementChecked(ratingAuthAgreementToken)) {
+      setRatingAuthMessage("请先阅读并同意《用户协议》和《隐私政策》", "error");
+      return;
+    }
+    setRatingAuthMessage("正在登录...");
+    window.MG_AUTH.verifyOtp(ratingAuthCurrentEmail, token).then(continueRatingAfterAuth).catch(function (err) {
+      setRatingAuthMessage(err.message || "验证码错误或已过期", "error");
+    });
+  });
+  document.getElementById("rating-auth-resend").addEventListener("click", function (e) {
+    if (!window.MG_AUTH || !window.MG_AUTH.sendOtp || !ratingAuthCurrentEmail) return;
+    e.currentTarget.disabled = true;
+    setRatingAuthMessage("正在重新发送...");
+    window.MG_AUTH.sendOtp(ratingAuthCurrentEmail).then(function () {
+      setRatingAuthMessage("验证码已重新发送");
+    }).catch(function (err) {
+      setRatingAuthMessage(err.message || "发送失败", "error");
+    });
+    setTimeout(function () { e.currentTarget.disabled = false; }, 30000);
+  });
+  document.getElementById("rating-auth-change-email").addEventListener("click", function () {
+    ratingAuthTokenForm.classList.add("hidden");
+    ratingAuthEmailForm.classList.remove("hidden");
+    var sendButton = ratingAuthEmailForm.querySelector("button[type='submit']");
+    if (sendButton) { sendButton.disabled = false; sendButton.textContent = "发送验证码"; }
+    setRatingAuthMessage("");
+    setTimeout(function () { ratingAuthEmail.focus(); }, 0);
+  });
+  if (ratingAuthAgreementEmail && ratingAuthAgreementToken) {
+    ratingAuthAgreementEmail.addEventListener("change", function () { ratingAuthAgreementToken.checked = ratingAuthAgreementEmail.checked; });
+    ratingAuthAgreementToken.addEventListener("change", function () { ratingAuthAgreementEmail.checked = ratingAuthAgreementToken.checked; });
+  }
+  document.getElementById("rating-auth-anonymous").addEventListener("click", function () {
+    var actorId = pendingRatingActorId;
+    closeRatingAuthModal();
+    if (actorId) openRatingModal(actorId);
+  });
+  document.getElementById("legal-back").addEventListener("click", function () {
+    location.hash = legalReturnHash || "#/home";
+  });
+  if (window.MG_AUTH) {
+    window.MG_AUTH.onChange(function () {
+      if (window.MG_AUTH.currentUser()) claimAnonymousRatings().catch(function () {});
+      if (!pendingRatingActorId || !window.MG_AUTH.currentUser() || ratingAuthModal.classList.contains("hidden")) return;
+      continueRatingAfterAuth();
+    });
+  }
   document.getElementById("rating-close").addEventListener("click", closeRatingModal);
+  document.getElementById("actor-ratings-back").addEventListener("click", function () { location.hash = "#/actor/" + encodeURIComponent(String(currentActorId())); });
   ratingModal.addEventListener("click", function (e) { if (e.target === ratingModal) closeRatingModal(); });
   document.getElementById("rating-details-close").addEventListener("click", closeRatingDetailsModal);
   ratingDetailsModal.addEventListener("click", function (e) { if (e.target === ratingDetailsModal) closeRatingDetailsModal(); });
+  document.getElementById("rating-record-picker-close").addEventListener("click", closeRatingRecordPickerModal);
+  ratingRecordPickerModal.addEventListener("click", function (e) { if (e.target === ratingRecordPickerModal) closeRatingRecordPickerModal(); });
   var MODE_LABELS = { supplement: "补充信息", fix: "勘误", feedback: "意见反馈" };
   var CAT_LABELS = { actor: "演员", musical: "剧目", relation: "关系", moment: "精彩片段", feedback: "意见反馈" };
   var FIELD_LABELS = {
@@ -3639,6 +4328,7 @@
       });
     }
     function open() {
+      if (sel.closest(".rating-modal")) scrollRatingDialogTo(wrap, .24);
       wrap.classList.add("open");
       document.addEventListener("mousedown", closeOutside, true);
     }
@@ -3663,6 +4353,7 @@
           sel.dispatchEvent(new Event("change", { bubbles: true }));
           sync();
           close();
+          if (sel.closest(".rating-modal")) scrollRatingDialogTo(wrap, .24);
         });
         menu.appendChild(li);
       });
@@ -3862,7 +4553,10 @@
   if (fbRoot) {
     document.getElementById("fb-add").addEventListener("click", function () { fbGoType("supplement"); });
     document.getElementById("fb-fix").addEventListener("click", function () { fbGoType("fix"); });
-    document.getElementById("fb-feedback").addEventListener("click", function () { fbShow(fbFeedback); });
+    document.getElementById("fb-feedback").addEventListener("click", function () {
+      prefillFeedbackContact();
+      fbShow(fbFeedback);
+    });
     document.getElementById("fb-back-type").addEventListener("click", function () { fbShow(fbRoot); });
     document.getElementById("fb-back-form").addEventListener("click", function () { fbShow(fbType); });
     document.getElementById("fb-back-feedback").addEventListener("click", function () { fbShow(fbRoot); });
@@ -4074,6 +4768,12 @@
     persistSubmission(item, e.target);
   });
   var fbFeedbackForm = document.getElementById("fb-feedback-form");
+  function prefillFeedbackContact() {
+    if (!fbFeedbackForm || !window.MG_AUTH || !window.MG_AUTH.currentUser) return;
+    var contact = fbFeedbackForm.querySelector("[name=contact]");
+    var user = window.MG_AUTH.currentUser();
+    if (contact && !contact.value.trim() && user && user.email) contact.value = user.email;
+  }
   if (fbFeedbackForm) {
     fbFeedbackForm.addEventListener("submit", function (e) {
       e.preventDefault();
@@ -4097,6 +4797,8 @@
     fbFeedbackForm.addEventListener("change", queueDraftSave);
   }
   restoreDraft();
+  prefillFeedbackContact();
+  if (window.MG_AUTH && window.MG_AUTH.onChange) window.MG_AUTH.onChange(prefillFeedbackContact);
   // ---- 演出排期批量补充（作品表单内） ----
   var SCHED_COLS = [
     { name: "date", keys: ["日期", "date"] },
@@ -4334,9 +5036,8 @@
     coWork.forEach(function (e) { if (e.a === e.b) return; (coWorkByActor[e.a] = coWorkByActor[e.a] || []).push(e); (coWorkByActor[e.b] = coWorkByActor[e.b] || []).push(e); });
     nameCount = {};
     Object.keys(actors).forEach(function (k) { nameCount[actors[k].name] = (nameCount[actors[k].name] || 0) + 1; });
-    if (currentRoute() === "actor" && currentActorId()) renderActorPage(currentActorId());
-    else if (currentRoute() === "musical" && currentMusicalId()) renderMusicalPage(currentMusicalId());
-    else goHome();
+    // 数据升级完成后保留用户当前所在页，不能把首页、反馈或协议页强制带回图谱。
+    applyRoute();
     updateStats();
   };
 })();

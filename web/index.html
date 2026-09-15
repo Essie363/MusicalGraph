@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MusicGraph · 音乐剧演员关系图谱</title>
-<link rel="stylesheet" href="style.css?v=20260913-ui-sync-27">
+<link rel="stylesheet" href="style.css?v=20260915-hero-button-radius">
 </head>
 <body>
 <a class="skip-link" href="#main">跳转到主要内容</a>
@@ -24,6 +24,16 @@
     <a href="#/home" data-nav="home">Home</a>
     <a href="#/graph" data-nav="graph">Graph</a>
     <a href="#/contribute" data-nav="contribute">Feedback</a>
+    <div class="auth-entry" id="auth-entry">
+      <button id="auth-login-btn" class="auth-login-btn" type="button">Sign in / Sign up</button>
+      <div id="auth-user-menu" class="auth-user-menu hidden">
+        <button id="auth-user-btn" class="auth-user-btn" type="button">我的</button>
+        <div id="auth-menu-pop" class="auth-menu-pop hidden">
+          <a href="#/my-ratings">我的评分</a>
+          <button id="auth-logout-btn" type="button">退出登录</button>
+        </div>
+      </div>
+    </div>
   </div>
 </nav>
 
@@ -61,39 +71,90 @@
   </section>
 
   <section id="intro">
-    <div class="sec-head">
-      <span class="sec-k">探索</span><span class="sec-rule" aria-hidden="true"></span><span class="sec-k-en">EXPLORE</span>
+    <header class="intro-heading">
+      <h2>看见演员，看见更多</h2>
+      <p>See Artists. See More.</p>
+    </header>
+    <div class="feature-list">
+      <section class="feature-item">
+        <div class="feature-copy">
+          <span class="feature-num">01</span>
+          <h3>你想找的演员，都在这里</h3>
+          <p>覆盖音乐剧舞台的演员，从一个熟悉的名字出发，发现更多演员与关系。</p>
+        </div>
+        <div class="feature-visual" data-feature-image="relationship"><img src="assets/home/relationship.png" alt="人物关系图谱功能示意"></div>
+      </section>
+      <section class="feature-item feature-reverse">
+        <div class="feature-copy">
+          <span class="feature-num">02</span>
+          <h3>认识舞台上下的 TA</h3>
+          <p>看 TA 演过的剧、角色与评分，也看看一路合作、相识的人。</p>
+        </div>
+        <div class="feature-visual" data-feature-image="profile"><img src="assets/home/profile.png" alt="演员个人履历功能示意"></div>
+      </section>
+      <section class="feature-item">
+        <div class="feature-copy">
+          <span class="feature-num">03</span>
+          <h3>音乐剧，就该这样打分</h3>
+          <p>唱、演、跳分开评，用更懂音乐剧的方式，帮你找到心仪卡司。</p>
+        </div>
+        <div class="feature-visual" data-feature-image="ratings"><img src="assets/home/ratings.png" alt="多维评分功能示意"></div>
+      </section>
+      <section class="feature-item feature-reverse">
+        <div class="feature-copy">
+          <span class="feature-num">04</span>
+          <h3>记录你的真实观演体验</h3>
+          <p>留下你对演员的评价，让更多真实观演汇成更有参考价值的评分。</p>
+        </div>
+        <div class="feature-visual" data-feature-image="my-ratings"><img src="assets/home/my-ratings.png" alt="我的评分功能示意"></div>
+      </section>
     </div>
-    <h2 class="sec-title">从哪里开始？</h2>
-    <div class="chapters">
-      <a class="chapter-card" href="#/graph?scene=actors">
-        <span class="cc-num">01</span>
-        <span class="cc-title"><b>演员</b><i>Actors</i></span>
-        <span class="cc-desc">从一位演员出发，看 TA 的同台搭档与关系网络。</span>
-        <svg class="cc-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </a>
-      <a class="chapter-card" href="#/graph?scene=musicals">
-        <span class="cc-num">02</span>
-        <span class="cc-title"><b>作品</b><i>Musicals</i></span>
-        <span class="cc-desc">按剧目浏览演员表、角色与排期足迹。</span>
-        <svg class="cc-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </a>
-      <a class="chapter-card" href="#/graph?scene=groups">
-        <span class="cc-num">03</span>
-        <span class="cc-title"><b>团体</b><i>Groups</i></span>
-        <span class="cc-desc">从上音、北舞等院校与剧团切入。</span>
-        <svg class="cc-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </a>
-      <a class="chapter-card" href="#/graph?scene=moments">
-        <span class="cc-num">04</span>
-        <span class="cc-title"><b>精彩片段</b><i>Moments</i></span>
-        <span class="cc-desc">从舞台高光片段出发，认识这些发光瞬间背后的演员。</span>
-        <svg class="cc-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </a>
+  </section>
+
+  <section id="faq" aria-labelledby="faq-title">
+    <div class="faq-head">
+      <span class="faq-kicker">FAQ</span>
+      <h2 id="faq-title">常见问题</h2>
     </div>
+    <div class="faq-list">
+      <details class="faq-item">
+        <summary><span>Cast Light 是做什么的？</span><i class="faq-icon" aria-hidden="true"></i></summary>
+        <div class="faq-answer"><p>Cast Light 是一个音乐剧演员关系与演出信息图谱。你可以在这里探索演员之间的合作关系，查看演员、剧目与角色信息，也可以记录自己的观演评分，为下一次选卡提供参考。</p></div>
+      </details>
+      <details class="faq-item">
+        <summary><span>图谱里的连线代表什么？</span><i class="faq-icon" aria-hidden="true"></i></summary>
+        <div class="faq-answer"><p>连线代表两位演员之间存在合作关系。点击演员节点，可以进一步查看演员的个人信息、参演作品以及与其他演员的合作情况。</p></div>
+      </details>
+      <details class="faq-item">
+        <summary><span>Cast Light 的数据从哪里来？搜不到想找的信息怎么办？</span><i class="faq-icon" aria-hidden="true"></i></summary>
+        <div class="faq-answer"><p>图谱中的信息主要整理自公开演出资料，并结合用户提交的信息持续补充和校正。</p><p>目前 2023 年以前的演出资料收录尚不完整，部分演员的参演记录、合作次数和相关统计可能因此存在偏差，仅供参考。</p><p>由于演员、剧目和演出场次较多，部分信息也可能暂时缺失。如果发现遗漏或错误，可以通过「Feedback」提交补充或勘误，我们会在核对后逐步更新。</p></div>
+      </details>
+      <details class="faq-item">
+        <summary><span>评分是怎么计算的？</span><i class="faq-icon" aria-hidden="true"></i></summary>
+        <div class="faq-answer"><p>每次评分都基于一次具体的观演记录。你需要选择演员、剧目、角色和观看场次，并从「唱 / 演 / 舞」三个维度进行评价，至少完成其中两个维度。</p><p>如果你看过同一位演员出演同一角色的多个场次，可以分别评分。系统会先计算这些场次的平均分，作为<strong>你对该演员这一角色的综合评分</strong>。</p><p>最终公开展示的角色评分，则由所有参与评分用户的综合评分再次取平均得出。无论一个用户看过一场还是很多场，在最终评分中都只占一份权重。</p><p><strong>简单来说：每场都可以记录，但每位用户对同一演员的同一角色只计一份最终评分。</strong></p></div>
+      </details>
+      <details class="faq-item">
+        <summary><span>为什么有些演员或场次没有显示评分？</span><i class="faq-icon" aria-hidden="true"></i></summary>
+        <div class="faq-answer"><p>为了避免少量评价对结果产生过大影响，只有达到最低有效评分人数后，评分才会公开展示。</p><p>目前同一评分对象至少需要 10 位用户参与评分。人数不足时，你提交的评分仍会被记录，但暂时不会展示公开均分。</p></div>
+      </details>
+      <details class="faq-item">
+        <summary><span>可以给同一个演员重复评分吗？</span><i class="faq-icon" aria-hidden="true"></i></summary>
+        <div class="faq-answer"><p>可以。</p><p>如果你在不同剧目、角色或场次中看过同一位演员，可以分别记录自己的评分。同一场演出的重复提交会更新这场的记录。</p><p>公开评分时，系统会先计算你对同一角色多场评分的平均值，再将你作为一位用户计入总分。因此，多看几场可以留下更完整的观演记录，但不会让你的评分获得更高权重。</p></div>
+      </details>
+      <details class="faq-item">
+        <summary><span>Cast Light 的评分代表演员的真实水平吗？</span><i class="faq-icon" aria-hidden="true"></i></summary>
+        <div class="faq-answer"><p>不完全代表。</p><p>评分来自不同观众的个人观演体验，也可能受到剧目、角色、具体场次和个人偏好的影响。我们希望评分能够帮助大家记录自己的观演体验，并为选卡提供更多参考，而不是成为衡量演员专业能力的绝对标准。</p></div>
+      </details>
+      <details class="faq-item">
+        <summary><span>不登录也可以使用 Cast Light 吗？登录后有什么区别？</span><i class="faq-icon" aria-hidden="true"></i></summary>
+        <div class="faq-answer"><p>可以。浏览图谱、演员及剧目信息等功能不需要登录，未登录状态下也可以参与评分。</p><p>登录后，你的评分会保存到账号中，可以在「我的评分」中查看和修改过去的记录。匿名状态下提交的评分不会同步至账号，也不会出现在「我的评分」中。</p></div>
+      </details>
+    </div>
+  </section>
 
   <div class="home-foot">
     <a href="#/contribute">帮助与反馈</a>
+    <span class="home-foot-legal"><a href="#/terms">用户协议</a><span aria-hidden="true">·</span><a href="#/privacy">隐私政策</a></span>
     <span class="home-foot-src">音乐剧排期数据来源 · <a href="https://y.saoju.net/yyj/" target="_blank" rel="noopener noreferrer">y.saoju.net/yyj</a></span>
   </div>
 </div>
@@ -129,7 +190,7 @@
       </div>
     <aside id="panel" class="hidden">
       <div id="panel-box">
-        <button id="panel-close" title="关闭">×</button>
+        <button id="panel-close" title="关闭" aria-label="关闭">×</button>
         <h2 id="p-name"></h2>
         <div id="p-nickname" class="sub"></div>
         <dl id="p-fields"></dl>
@@ -148,18 +209,17 @@
     </div>
     <aside id="graph-tools">
       <section id="focus-card" class="gt-block gt-focus hidden">
-        <div class="fc-head"><span id="fc-name"></span><button id="fc-close" title="返回全局图谱">×</button></div>
+        <div class="fc-head"><span id="fc-name"></span><button id="fc-close" title="返回全局图谱" aria-label="返回全局图谱">×</button></div>
         <div id="fc-stats" class="fc-stats"></div>
         <div id="fc-tags" class="fc-tags"></div>
         <div id="fc-moments" class="fc-moments hidden"></div>
         <div id="fc-rating" class="fc-rating"></div>
         <div class="fc-actions">
-          <button id="fc-rate" class="fc-btn">给 TA 打分</button>
           <button id="fc-detail" class="fc-btn primary">查看详情</button>
         </div>
       </section>
       <section id="scene-card" class="gt-block hidden">
-        <div class="fc-head"><span id="scene-name"></span><button id="scene-close" title="返回全局图谱">×</button></div>
+        <div class="fc-head"><span id="scene-name"></span><button id="scene-close" title="返回全局图谱" aria-label="返回全局图谱">×</button></div>
         <div id="scene-desc" class="fc-stats"></div>
         <div id="scene-moments" class="scene-moments hidden"></div>
         <a id="scene-add-moment" class="scene-add-moment hidden" href="#/contribute">＋ 补充精彩片段</a>
@@ -183,19 +243,16 @@
           <span class="fb-card-num">01</span>
           <span class="fb-card-title"><b>补充信息</b><i>Add</i></span>
           <span class="fb-card-desc">为图谱添加新的演员、作品、关系或精彩片段。</span>
-          <svg class="fb-card-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
         <button type="button" class="fb-card" id="fb-fix">
           <span class="fb-card-num">02</span>
           <span class="fb-card-title"><b>内容勘误</b><i>Fix</i></span>
           <span class="fb-card-desc">发现信息有误？帮助我们修正图谱中的内容。</span>
-          <svg class="fb-card-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
         <button type="button" class="fb-card" id="fb-feedback">
           <span class="fb-card-num">03</span>
           <span class="fb-card-title"><b>意见反馈</b><i>Feedback</i></span>
           <span class="fb-card-desc">告诉我们你的想法、建议，或使用过程中的体验。</span>
-          <svg class="fb-card-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
       </div>
     </section>
@@ -215,25 +272,21 @@
           <span class="fb-card-num">01</span>
           <span class="fb-card-title"><b>演员</b><i>Actor</i></span>
           <span class="fb-card-desc">补充演员相关信息。</span>
-          <svg class="fb-card-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
         <button type="button" class="fb-card" data-category="musical">
           <span class="fb-card-num">02</span>
           <span class="fb-card-title"><b>作品</b><i>Musical</i></span>
           <span class="fb-card-desc">补充音乐剧作品相关信息。</span>
-          <svg class="fb-card-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
         <button type="button" class="fb-card" data-category="relation">
           <span class="fb-card-num">03</span>
           <span class="fb-card-title"><b>人物关系</b><i>Relation</i></span>
           <span class="fb-card-desc">补充演员之间的关系。</span>
-          <svg class="fb-card-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
         <button type="button" class="fb-card" data-category="moment">
           <span class="fb-card-num">04</span>
           <span class="fb-card-title"><b>精彩片段</b><i>Moment</i></span>
           <span class="fb-card-desc">补充 Stage Moments。</span>
-          <svg class="fb-card-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
       </div>
     </section>
@@ -437,6 +490,114 @@
 
 </div>
 
+<!-- ============ 我的评分 ============ -->
+<div id="view-my-ratings" class="view hidden">
+  <div class="page-head">
+    <h1>我的评分</h1>
+    <p class="page-sub">你的观演评分</p>
+  </div>
+  <div class="my-ratings-tabs" role="tablist" aria-label="我的评分视图">
+    <button type="button" class="is-active" role="tab" aria-selected="true" aria-controls="my-ratings-list" id="my-ratings-summary-tab" data-my-ratings-tab="summary">我的评分</button>
+    <button type="button" role="tab" aria-selected="false" aria-controls="my-ratings-timeline" id="my-ratings-history-tab" data-my-ratings-tab="history">评分记录</button>
+  </div>
+  <section class="my-ratings-panel">
+    <div id="my-ratings-summary" class="my-ratings-summary hidden"></div>
+    <div id="my-ratings-empty" class="my-ratings-empty">登录后可以查看你的全部评分。</div>
+    <ul id="my-ratings-list" class="my-ratings-list"></ul>
+    <ol id="my-ratings-timeline" class="my-ratings-timeline hidden"></ol>
+  </section>
+</div>
+
+<!-- ============ 演员详细评分独立页 ============ -->
+<div id="view-actor-ratings" class="view hidden">
+  <main class="actor-ratings-page">
+    <div class="actor-ratings-head">
+      <button id="actor-ratings-back" class="actor-ratings-back" type="button" title="返回演员页" aria-label="返回演员页">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="actor-ratings-crumbs">Graph / 演员 / <span id="actor-ratings-crumb"></span> / 详细评分</div>
+    </div>
+    <div class="actor-ratings-title"><h1>详细评分</h1><p id="actor-ratings-subtitle"></p></div>
+    <div id="actor-ratings-content" class="actor-ratings-content"></div>
+  </main>
+</div>
+
+<!-- ============ 用户协议 / 隐私政策 ============ -->
+<section id="view-legal" class="legal-view hidden" aria-labelledby="legal-title">
+  <div class="legal-shell">
+    <button id="legal-back" class="legal-back" type="button" title="返回" aria-label="返回上一页">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <article id="legal-terms" class="legal-document hidden">
+      <header class="legal-head"><h1 id="legal-title">Cast Light 用户协议</h1><p>生效日期：2026年9月14日<br>最近更新日期：2026年9月14日</p></header>
+      <p>欢迎使用 Cast Light。</p>
+      <p>Cast Light（中文名“幕光”，以下简称“Cast Light”“本平台”或“我们”）是一个面向音乐剧观众的信息整理、查询与交流平台，提供演员、剧目、角色、演出场次、演员关系及观众评分等相关功能。</p>
+      <p>在注册、登录或使用 Cast Light 账号及相关服务前，请认真阅读本协议。当您主动勾选同意本协议并使用账号相关服务，即表示您已经阅读、理解并同意接受本协议的约定。</p>
+      <p>如果您不同意本协议，仍可以使用无需账号即可使用的部分公开浏览功能。</p>
+      <h2>一、服务说明</h2>
+      <p>Cast Light 根据产品实际情况，为用户提供包括但不限于以下服务：</p>
+      <ol><li>浏览演员、剧目、角色、演出场次及相关资料；</li><li>浏览演员之间的合作关系及相关信息；</li><li>对演员在特定剧目、角色及演出场次中的表现进行评分；</li><li>登录后保存、查看和管理与账号关联的个人评分记录；</li><li>提交演员、剧目、演出场次等相关资料的补充、勘误及反馈；</li><li>Cast Light 后续提供的其他音乐剧相关功能。</li></ol>
+      <p>Cast Light 仍处于持续开发和完善过程中，我们可能根据实际情况调整、增加或减少部分功能。</p>
+      <h2>二、账号注册与使用</h2>
+      <p>Cast Light 目前支持通过邮箱验证码方式创建和登录账号。用户应使用本人有权使用的邮箱地址，并妥善保护自己的邮箱账号和验证码。</p>
+      <p>用户不得通过自动化程序、批量注册、冒用他人身份或其他不正当方式创建、控制或使用 Cast Light 账号。如发现账号存在异常使用情况，可以通过本协议公布的联系方式与我们联系。</p>
+      <h2>三、评分及社区数据</h2>
+      <p>Cast Light 允许用户根据自己的实际观演体验，对演员在特定剧目、角色或演出场次中的表现进行评分。平台中的评分代表参与评分用户的主观观演体验，不代表 Cast Light 对任何演员的专业能力、职业水平或商业价值作出的事实认定，也不构成购票建议。</p>
+      <p>用户不得通过多个账号、脚本或自动化程序批量提交评分；不得组织或参与针对特定演员的恶意刷高或刷低评分；也不得绕过平台设置的评分限制。</p>
+      <p>如 Cast Light 根据数据异常、技术记录、用户反馈或其他合理依据判断相关评分存在异常，有权对相关数据进行核查，并根据情况采取不计入公开评分、删除异常数据、限制评分功能或暂停账号等措施。平台不会仅因为某项评分较高、较低或者与多数用户意见不同而将其认定为异常评分。</p>
+      <h2>四、用户提交的信息</h2>
+      <p>用户可以通过 Cast Light 提交演员、剧目、角色、演出场次及其他音乐剧相关资料的补充、修改或勘误建议。用户应尽可能确保提交的信息真实、准确。</p>
+      <p>不得故意提交明知虚假的信息、侮辱诽谤或骚扰他人的内容、侵犯他人隐私或其他合法权益的内容、与平台资料整理明显无关的垃圾信息，或其他违反法律法规的内容。</p>
+      <p>为了完成平台资料整理、审核和展示，用户同意 Cast Light 可以对主动提交的相关资料进行审核、整理、编辑、格式化及展示。对于存在明显错误、缺乏可靠来源或可能侵犯第三方合法权益的信息，Cast Light 有权暂不展示、修改或删除。</p>
+      <h2>五、知识产权与信息来源</h2>
+      <p>Cast Light 自行开发的页面设计、数据组织方式、原创文字、图形、程序代码及其他依法享有权利的内容，其相关权益由 Cast Light 或相应权利人依法享有。演员、剧目、演出等名称、图片、海报及第三方资料的相关权利归原始权利人所有。</p>
+      <p>未经授权，用户不得通过大规模自动化抓取、复制数据库、镜像网站等方式影响 Cast Light 正常运行或不合理利用平台整理形成的数据成果。</p>
+      <h2>六、服务使用规范</h2>
+      <p>用户不得利用 Cast Light 从事违反法律法规的活动，攻击、干扰或破坏网站及服务器，尝试未经授权访问其他用户账号、数据库或后台系统，或利用平台骚扰、攻击及侵犯他人合法权益。对于严重违反上述规则的行为，Cast Light 有权采取限制功能、暂停账号或终止服务等必要措施。</p>
+      <h2>七、服务变更与信息准确性</h2>
+      <p>Cast Light 会尽力维护平台信息的准确性，但音乐剧演出安排、演员阵容及场次信息可能发生临时调整。平台部分资料可能来自公开信息、用户提交或其他公开渠道，因此无法保证所有信息始终完整、准确或实时。涉及实际购票、演出安排等事项时，请以剧院、制作方、票务平台等官方渠道发布的信息为准。</p>
+      <h2>八、账号注销</h2>
+      <p>用户可以通过 Cast Light 提供的账号管理功能申请注销账号。账号注销完成后，我们将按照《Cast Light 隐私政策》处理与该账号关联的个人信息。已经完成匿名化处理、无法重新识别特定用户的统计数据，可能继续用于平台评分统计、数据分析和服务优化。账号注销属于不可逆操作，请在操作前确认相关影响。</p>
+      <h2>九、协议更新</h2>
+      <p>随着 Cast Light 功能发展，本协议可能进行必要调整。如果相关调整会对用户权利产生重要影响，我们将通过网站页面等合理方式进行提示。依法需要重新取得用户同意的，我们将在取得同意后再进行相关个人信息处理。</p>
+      <h2>十、联系我们</h2>
+      <p>如果您对本协议、平台内容、账号或其他相关事项存在疑问，可以联系我们：</p>
+      <p><strong>联系邮箱：<a href="mailto:castlight_musical@163.com">castlight_musical@163.com</a></strong></p>
+    </article>
+    <article id="legal-privacy" class="legal-document hidden">
+      <header class="legal-head"><h1 id="legal-privacy-title">Cast Light 隐私政策</h1><p>生效日期：2026年9月14日<br>最近更新日期：2026年9月14日</p></header>
+      <p>Cast Light（中文名“幕光”，以下简称“Cast Light”“本平台”或“我们”）重视用户个人信息和隐私保护。</p>
+      <p>本隐私政策用于说明您使用 Cast Light 时，我们可能处理哪些个人信息、为什么处理这些信息、如何保护这些信息，以及您可以如何管理自己的个人信息。我们按照合法、正当、必要和诚信的原则处理个人信息，并尽量将个人信息的处理限制在实现相关产品功能所必要的范围内。</p>
+      <h2>一、我们收集和处理的信息</h2>
+      <h3>1. 邮箱地址</h3>
+      <p>当您选择注册或登录 Cast Light 账号时，我们会处理您提供的邮箱地址，用于发送登录验证码、创建和识别 Cast Light 账号、维护账号登录状态、保障账号安全，以及在注销账号或执行重要账号操作时验证身份。</p>
+      <p>如果您不提供邮箱地址，仍可以使用 Cast Light 无需登录即可使用的公开浏览功能，但无法使用需要账号身份的功能。</p>
+      <h3>2. 评分及使用记录</h3>
+      <p>当您进行演员、剧目、角色或场次相关评分时，我们可能记录被评分的演员、对应剧目和角色、对应演出场次、您提交的评分、评分创建及修改时间、与登录账号相关联的用户标识，以及为防止重复评分和维护数据质量所必要的信息。</p>
+      <p>相关信息用于保存和管理个人评分、计算平台聚合评分、防止重复评分及异常刷分，以及改善平台评分机制。平台公开展示聚合评分时不会公开您的邮箱地址。</p>
+      <h3>3. 用户主动提交的信息</h3>
+      <p>当您通过资料补充、勘误、反馈等功能主动向 Cast Light 提交信息时，我们会处理您主动提供的相关内容，用于审核、完善和维护平台资料。请不要在相关区域主动填写与对应功能无关的敏感个人信息。</p>
+      <h3>4. 服务安全所必要的技术信息</h3>
+      <p>为了保障网站正常运行、防止恶意攻击、重复评分、批量注册或自动化刷分，我们可能处理服务运行过程中产生的必要技术信息，例如 IP 地址、浏览器及设备类型、请求时间、登录及安全日志、异常请求记录，以及维持登录状态所必要的 Cookie 或本地存储信息。</p>
+      <p>这些信息主要用于保障账号及服务安全、排查技术故障和识别明显异常行为，不用于与 Cast Light 服务无关的商业广告画像。</p>
+      <h2>二、Cookie 与本地存储</h2>
+      <p>Cast Light 可能使用 Cookie、Local Storage 或类似技术维持必要的登录状态、保存必要的产品设置以及保障网站正常运行。对于维持登录状态和核心功能所必要的信息，我们仅在实现相关功能所需要的范围内使用。</p>
+      <p>如果未来引入非必要的统计、广告或其他第三方追踪技术，我们将根据实际情况更新本隐私政策，并在必要情况下提供相应选择机制。</p>
+      <h2>三、第三方服务</h2>
+      <p>为了提供账号认证、邮件验证码、数据存储和网站托管等基础技术能力，我们可能使用 Supabase、Brevo、Cloudflare 等第三方服务。相关服务商会在提供其服务所必需的范围内处理信息，并适用其自身的隐私政策和安全措施。</p>
+      <h2>四、信息的保存与保护</h2>
+      <p>我们会在实现本政策所述目的所必需的期限内保存个人信息，法律法规另有规定的除外。我们会采取合理的技术和管理措施保护个人信息；但互联网传输和电子存储并非绝对安全，建议您妥善保管邮箱账号与验证码。</p>
+      <h2>五、您的权利</h2>
+      <p>您可以依法请求查阅、更正、删除与您相关的个人信息，或撤回相关授权。您也可以申请注销账号。对于合理的请求，我们会在核实身份后尽快处理；已完成匿名化、无法重新识别特定用户的统计数据可能继续用于平台统计和服务优化。</p>
+      <h2>六、未成年人保护</h2>
+      <p>如您是不满十四周岁的未成年人，请在父母或其他监护人的指导和同意下使用涉及个人信息处理的账号服务。</p>
+      <h2>七、政策更新与联系我们</h2>
+      <p>当本政策发生更新时，我们会在网站页面上公布更新版本。若更新会对您的权利产生重要影响，我们会通过合理方式进行提示。</p>
+      <p>如您对本政策或个人信息处理有疑问、意见或请求，请联系：<strong><a href="mailto:castlight_musical@163.com">castlight_musical@163.com</a></strong></p>
+    </article>
+  </div>
+</section>
+
 <!-- ============ 演员独立详情页 ============ -->
 <div id="actor-view" class="hidden">
   <div class="ap-layout">
@@ -568,6 +729,56 @@
 
 </main>
 <div id="toast" class="toast hidden"></div>
+<div id="auth-modal" class="auth-modal hidden" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+  <div class="auth-dialog">
+    <button id="auth-close" class="auth-close" type="button" title="关闭" aria-label="关闭">×</button>
+    <p class="auth-kicker">CAST LIGHT ACCOUNT</p>
+    <h2 id="auth-title">登录/注册</h2>
+    <form id="auth-email-form" class="auth-form">
+      <label>邮箱<input id="auth-email" type="email" required autocomplete="email" placeholder="your@email.com"></label>
+      <label class="agreement-check"><input id="auth-agreement-email" type="checkbox"><span>我已阅读并同意<a href="#/terms" target="_blank" rel="noopener noreferrer">《用户协议》</a>和<a href="#/privacy" target="_blank" rel="noopener noreferrer">《隐私政策》</a></span></label>
+      <button type="submit">发送验证码</button>
+    </form>
+    <form id="auth-token-form" class="auth-form hidden">
+      <label>验证码<input id="auth-token" type="text" inputmode="numeric" maxlength="8" pattern="[0-9]{8}" required autocomplete="one-time-code" placeholder="8 位验证码"></label>
+      <label class="agreement-check"><input id="auth-agreement-token" type="checkbox"><span>我已阅读并同意<a href="#/terms" target="_blank" rel="noopener noreferrer">《用户协议》</a>和<a href="#/privacy" target="_blank" rel="noopener noreferrer">《隐私政策》</a></span></label>
+      <button type="submit">登录</button>
+      <div id="auth-email-sent" class="auth-sent"></div>
+      <div class="auth-row">
+        <button id="auth-resend" type="button">重新发送验证码</button>
+        <button id="auth-change-email" type="button">更换邮箱</button>
+      </div>
+    </form>
+    <div id="auth-message" class="auth-message"></div>
+  </div>
+</div>
+<div id="rating-auth-modal" class="auth-modal hidden" role="dialog" aria-modal="true" aria-labelledby="rating-auth-title">
+  <div class="auth-dialog rating-auth-dialog">
+    <button id="rating-auth-close" class="auth-close" type="button" title="关闭" aria-label="关闭">×</button>
+    <p class="auth-kicker">BEFORE RATING</p>
+    <h2 id="rating-auth-title">登录/注册</h2>
+    <p class="auth-copy rating-auth-copy">登录后可在「我的评分」中查看和修改记录。</p>
+    <form id="rating-auth-email-form" class="auth-form">
+      <label>邮箱<input id="rating-auth-email" type="email" required autocomplete="email" placeholder="your@email.com"></label>
+      <label class="agreement-check"><input id="rating-auth-agreement-email" type="checkbox"><span>我已阅读并同意<a href="#/terms" target="_blank" rel="noopener noreferrer">《用户协议》</a>和<a href="#/privacy" target="_blank" rel="noopener noreferrer">《隐私政策》</a></span></label>
+      <button type="submit">发送验证码</button>
+    </form>
+    <form id="rating-auth-token-form" class="auth-form hidden">
+      <label>验证码<input id="rating-auth-token" type="text" inputmode="numeric" maxlength="8" pattern="[0-9]{8}" required autocomplete="one-time-code" placeholder="8 位验证码"></label>
+      <label class="agreement-check"><input id="rating-auth-agreement-token" type="checkbox"><span>我已阅读并同意<a href="#/terms" target="_blank" rel="noopener noreferrer">《用户协议》</a>和<a href="#/privacy" target="_blank" rel="noopener noreferrer">《隐私政策》</a></span></label>
+      <button type="submit">登录并继续评分</button>
+      <div id="rating-auth-email-sent" class="auth-sent"></div>
+      <div class="auth-row">
+        <button id="rating-auth-resend" type="button">重新发送验证码</button>
+        <button id="rating-auth-change-email" type="button">更换邮箱</button>
+      </div>
+    </form>
+    <div id="rating-auth-message" class="auth-message"></div>
+    <div class="rating-auth-anonymous-row">
+      <button id="rating-auth-anonymous" type="button">不登录，匿名提交</button>
+    </div>
+  </div>
+</div>
 <div id="rating-modal" class="rating-modal hidden" role="dialog" aria-modal="true" aria-labelledby="rating-title">
   <div class="rating-dialog">
     <div class="rating-dialog-head">
@@ -631,13 +842,24 @@
     <div id="rating-details-content"></div>
   </div>
 </div>
+<div id="rating-record-picker-modal" class="rating-modal hidden" role="dialog" aria-modal="true" aria-labelledby="rating-record-picker-title">
+  <div class="rating-dialog rating-record-picker-dialog">
+    <div class="rating-dialog-head">
+      <div><h2 id="rating-record-picker-title">选择要编辑的场次</h2><p id="rating-record-picker-subject"></p></div>
+      <button id="rating-record-picker-close" class="rating-close" type="button" title="关闭" aria-label="关闭">×</button>
+    </div>
+    <p class="rating-record-picker-copy">这项评分包含多个场次。请选择一场具体演出后再修改。</p>
+    <div id="rating-record-picker-list" class="rating-record-picker-list"></div>
+  </div>
+</div>
 <script src="supabase_config.js?v=20260913-ui-sync-27"></script>
 <script src="supabase_loader.js?v=20260913-ui-sync-27"></script>
 <script src="data.js?v=20260913-ui-sync-27"></script>
 <script src="search_index.js?v=20260913-ui-sync-27"></script>
 <script src="rating_demo_data.js?v=20260913-ui-sync-27"></script>
+<script src="auth.js?v=20260915-rating-record-picker"></script>
 
-<script src="data_loader.js?v=20260913-ui-sync-27"></script>
+<script src="data_loader.js?v=20260915-feedback-email-prefill"></script>
 <!-- app.js 由 data_loader.js 在数据就绪后注入 -->
 </body>
 </html>

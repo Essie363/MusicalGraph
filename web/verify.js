@@ -57,10 +57,29 @@ function check(name, cond, extra) {
 
   console.log("== 页面导航 ==");
   check("默认落地 Home", await page.$eval("#view-home", el => !el.classList.contains("hidden")));
-  check("导航三入口", (await page.$$eval(".nav-links a", els => els.length)) === 3);
+  check("导航三个主入口", (await page.$$eval(".nav-links > a", els => els.length)) === 3);
   await page.click('.nav-links a[data-nav="graph"]');
   await page.waitForTimeout(900);
   check("进入关系图谱", await page.$eval("#view-graph", el => !el.classList.contains("hidden")));
+
+  console.log("== 用户协议与隐私政策 ==");
+  await page.evaluate(() => { location.hash = "#/terms"; });
+  await page.waitForTimeout(250);
+  check("用户协议独立阅读页", await page.$eval("#view-legal", el => !el.classList.contains("hidden")) &&
+    await page.$eval("#legal-terms", el => !el.classList.contains("hidden") && el.textContent.includes("Cast Light 用户协议")));
+  await page.evaluate(() => { location.hash = "#/privacy"; });
+  await page.waitForTimeout(250);
+  check("隐私政策独立阅读页", await page.$eval("#legal-privacy", el => !el.classList.contains("hidden") && el.textContent.includes("Cast Light 隐私政策")));
+  check("首页页脚有协议入口", await page.$eval(".home-foot-legal", el => el.querySelectorAll('a[href="#/terms"], a[href="#/privacy"]').length === 2));
+  await page.evaluate(() => { location.hash = "#/home"; });
+  await page.waitForTimeout(250);
+  await page.click("#auth-login-btn");
+  await page.fill("#auth-email", "local-check@example.com");
+  await page.click("#auth-email-form button[type='submit']");
+  check("未同意协议不发送验证码", await page.$eval("#auth-message", el => el.textContent.includes("请先阅读并同意")) &&
+    await page.$eval("#auth-token-form", el => el.classList.contains("hidden")));
+  check("两处登录均有协议确认", (await page.$$eval(".agreement-check", els => els.length)) === 4);
+  await page.click("#auth-close");
 
   console.log("== 图谱 ==");
   check("关系类型筛选已移除", await page.evaluate(() => !document.getElementById("legend")), "legend still exists");
@@ -128,6 +147,8 @@ function check(name, cond, extra) {
   });
   check("在线模式显示评分入口", await page.$eval("#ap-rate", el => !el.classList.contains("hidden")));
   await page.click("#ap-rate");
+  check("未登录打分先显示登录注册入口", await page.$eval("#rating-auth-modal", el => !el.classList.contains("hidden") && el.textContent.includes("登录/注册")));
+  await page.click("#rating-auth-anonymous");
   await page.$eval("#rating-musical", el => { el.value = "100"; el.dispatchEvent(new Event("change", { bubbles: true })); });
   await page.$eval("#rating-role", el => { el.value = "200"; el.dispatchEvent(new Event("change", { bubbles: true })); });
   await page.$eval("#rating-date", el => { el.value = "2026-09-03"; el.dispatchEvent(new Event("change", { bubbles: true })); });
@@ -149,6 +170,7 @@ function check(name, cond, extra) {
   check("提交后关闭评分弹窗", await page.$eval("#rating-modal", el => el.classList.contains("hidden")));
 
   await page.click("#ap-rate");
+  await page.click("#rating-auth-anonymous");
   await page.$eval("#rating-musical", el => { el.value = "100"; el.dispatchEvent(new Event("change", { bubbles: true })); });
   await page.$eval("#rating-role", el => { el.value = "200"; el.dispatchEvent(new Event("change", { bubbles: true })); });
   await page.$eval("#rating-date", el => { el.value = "2022-03-04"; el.dispatchEvent(new Event("change", { bubbles: true })); });
@@ -157,6 +179,7 @@ function check(name, cond, extra) {
   await page.click("#rating-close");
 
   await page.click("#ap-rate");
+  await page.click("#rating-auth-anonymous");
   await page.$eval("#rating-musical", el => { el.value = "100"; el.dispatchEvent(new Event("change", { bubbles: true })); });
   await page.$eval("#rating-role", el => { el.value = "200"; el.dispatchEvent(new Event("change", { bubbles: true })); });
   await page.$eval("#rating-date", el => { el.value = "2021-03-04"; el.dispatchEvent(new Event("change", { bubbles: true })); });
@@ -165,6 +188,7 @@ function check(name, cond, extra) {
   await page.click("#rating-close");
 
   await page.click("#ap-rate");
+  await page.click("#rating-auth-anonymous");
   await page.click("#rating-manual-subject-toggle");
   await page.fill("#rating-manual-musical", "未收录测试剧目");
   await page.fill("#rating-manual-role", "未收录测试角色");
@@ -186,6 +210,21 @@ function check(name, cond, extra) {
   check("常共演无自己", !hasSelf1);
   const rolesInMusicals = await page.$$eval("#ap-musicals li", els => els.filter(e => /（/.test(e.textContent)).length);
   check("参演剧目带角色", rolesInMusicals >= 1, "含角色条目数=" + rolesInMusicals);
+  const actorDetailId = await page.evaluate(() => window.__apCenterId());
+  const musicalDetailId = await page.evaluate(() => {
+    const item = document.querySelector("#ap-musicals .c");
+    if (!item) return null;
+    return Object.keys(window.MUSIC_GRAPH.musicals).find(id => window.MUSIC_GRAPH.musicals[id].name === item.textContent) || null;
+  });
+  if (musicalDetailId) {
+    await page.click("#ap-musicals .c");
+    await page.waitForTimeout(500);
+    check("演员页剧目进入剧目详情", await page.evaluate(id =>
+      location.hash === "#/musical/" + encodeURIComponent(id)
+      && !document.getElementById("musical-view").classList.contains("hidden"), musicalDetailId));
+    await page.evaluate(id => { location.hash = "#/actor/" + encodeURIComponent(id); }, actorDetailId);
+    await page.waitForTimeout(500);
+  }
   const apCount = await page.evaluate(() => window.__apNodeCount || 0);
   check("关系图渲染", apCount > 5, "节点数=" + apCount);
 
@@ -719,6 +758,13 @@ function check(name, cond, extra) {
   await page.waitForTimeout(600);
   check("进入贡献页", await page.$eval("#view-contribute", el => !el.classList.contains("hidden")));
   check("一级页显示大标题", await page.$eval("#view-contribute .page-head", el => !el.classList.contains("hidden")));
+  await page.click("#fb-feedback");
+  await page.waitForTimeout(250);
+  await page.click('.nav-links a[data-nav="graph"]');
+  await page.waitForTimeout(250);
+  await page.click('.nav-links a[data-nav="contribute"]');
+  await page.waitForTimeout(250);
+  check("顶部反馈入口始终回到一级页", await page.$eval("#fb-step-root", el => !el.classList.contains("hidden")));
   // 卡片式流程：一级「补充信息」→ 二级「演员」
   await page.click("#fb-add");
   await page.waitForTimeout(300);
@@ -946,6 +992,39 @@ function check(name, cond, extra) {
     check("角色卡显示唱演跳分项", false, "无模拟角色评分");
   }
   await demoPage.close();
+
+  console.log("== 我的评分与评分记录 ==");
+  const authPage = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  await authPage.goto(FILE_URL.replace("mode=static", "mode=auth-demo") + "&v=" + Date.now() + "#/my-ratings", { waitUntil: "load" });
+  await authPage.waitForTimeout(1400);
+  check("我的评分默认按角色汇总", await authPage.evaluate(() => {
+    return !document.getElementById("my-ratings-list").classList.contains("hidden") &&
+      document.querySelectorAll(".my-rating-row").length === 5 &&
+      [...document.querySelectorAll(".my-rating-row")].some(el => el.textContent.includes("基于 2 场评分"));
+  }));
+  await authPage.locator(".my-rating-row", { hasText: "基于 2 场评分" }).locator(".my-rating-edit").click();
+  await authPage.waitForTimeout(100);
+  check("多场评分编辑先选择具体场次", await authPage.evaluate(() => {
+    return !document.getElementById("rating-record-picker-modal").classList.contains("hidden") &&
+      document.querySelectorAll(".rating-record-picker-item").length === 2;
+  }));
+  await authPage.click("#rating-record-picker-close");
+  await authPage.click("#my-ratings-history-tab");
+  await authPage.waitForTimeout(100);
+  check("评分记录按评分日期展示时间线", await authPage.evaluate(() => {
+    const days = [...document.querySelectorAll(".my-rating-day-date")].map(el => el.textContent.trim());
+    return !document.getElementById("my-ratings-timeline").classList.contains("hidden") &&
+      document.querySelectorAll(".my-rating-history-card").length === 6 &&
+      document.querySelector(".my-rating-day-records").querySelectorAll(".my-rating-history-card").length === 2 &&
+      days[0] === "2025.07.13" && days.every((day, index) => index === 0 || days[index - 1] >= day);
+  }));
+  await authPage.evaluate(() => { location.hash = "#/contribute"; });
+  await authPage.waitForTimeout(100);
+  await authPage.click("#fb-feedback");
+  check("登录后反馈联系方式预填邮箱", await authPage.$eval("#fb-feedback-form [name=contact]", el => el.value === "lin.demo@example.com"));
+  await authPage.setViewportSize({ width: 390, height: 844 });
+  check("手机端评分时间线不横向撑破页面", await authPage.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
+  await authPage.close();
 
   console.log("== JS 错误 ==");
   check("无 JS 错误", errors.length === 0, errors.slice(0, 3).join("; "));

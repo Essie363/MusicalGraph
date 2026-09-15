@@ -214,7 +214,7 @@
 
   // 先用静态快照立即渲染首页；Supabase 数据就绪后由 MG_UPGRADE 热替换
   var s = document.createElement("script");
-  s.src = "app.js?v=20260913-ui-sync-27";
+  s.src = "app.js?v=20260915-feedback-email-prefill";
   document.head.appendChild(s);
   window.MG_loadSiteData().then(function (mode) {
     if (mode === "api" && window.MG_UPGRADE && window.MUSIC_GRAPH) {
