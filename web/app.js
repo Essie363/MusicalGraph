@@ -3349,11 +3349,6 @@
       var dd = document.createElement("dd"); dd.textContent = "暂无补充资料";
       dl.appendChild(dt); dl.appendChild(dd);
     }
-    if (Object.keys(actorMusicals[id] || {}).length > 0 && (coWorkByActor[id] || []).length === 0) {
-      var hintDt = document.createElement("dt"); hintDt.textContent = "提示";
-      var hintDd = document.createElement("dd"); hintDd.className = "rel-detail"; hintDd.textContent = "人物具体排期数据暂无，无法解析对应人物关系。";
-      dl.appendChild(hintDt); dl.appendChild(hintDd);
-    }
     renderRelations(id);
     renderGroups(id);
     renderMoments(id);
