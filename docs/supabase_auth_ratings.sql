@@ -245,7 +245,7 @@ returns table (
   city text,
   theatre text,
   role_confirmed boolean,
-  cast jsonb
+  "cast" jsonb
 )
 language sql
 stable
@@ -272,7 +272,7 @@ as $$
       'actor_id', sc.artist_id,
       'actor_name', a.name,
       'role_name', coalesce(nullif(btrim(sc.role), ''), subject.role_name)
-    )) as cast
+    )) as "cast"
   from subject
   join shows s on s.date = p_date
              and lower(btrim(s.musical)) = lower(btrim(subject.musical_name))
