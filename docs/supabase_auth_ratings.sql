@@ -229,6 +229,58 @@ as $$
   ) r;
 $$;
 
+-- 读取用户在评分时选择的具体演出场次。
+-- 上游排期偶尔只提供卡司、未提供角色；这类场次仍应可供评分，
+-- 只将 role_confirmed 标为 false，避免把“角色未标注”误判成“没有排期”。
+create or replace function get_rating_performances(
+  p_actor_id integer,
+  p_musical_id integer,
+  p_role_id integer,
+  p_date date
+)
+returns table (
+  id integer,
+  date date,
+  time text,
+  city text,
+  theatre text,
+  role_confirmed boolean,
+  cast jsonb
+)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  with subject as (
+    select m.name as musical_name, r.name as role_name
+    from musicals m
+    join roles r on r.id = p_role_id and r.musical_id = m.id
+    join actor_roles ar on ar.actor_id = p_actor_id
+                       and ar.musical_id = m.id
+                       and ar.role_id = r.id
+    where m.id = p_musical_id
+  )
+  select
+    s.id,
+    s.date,
+    s.time,
+    s.city,
+    s.theatre,
+    coalesce(nullif(btrim(sc.role), '') = subject.role_name, false) as role_confirmed,
+    jsonb_build_array(jsonb_build_object(
+      'actor_id', sc.artist_id,
+      'actor_name', a.name,
+      'role_name', coalesce(nullif(btrim(sc.role), ''), subject.role_name)
+    )) as cast
+  from subject
+  join shows s on s.date = p_date
+             and lower(btrim(s.musical)) = lower(btrim(subject.musical_name))
+  join show_casts sc on sc.show_id = s.id and sc.artist_id = p_actor_id
+  join artists a on a.id = sc.artist_id
+  order by s.time nulls last, s.id;
+$$;
+
 drop function if exists get_my_manual_rating(text, integer, text, text);
 
 create function get_my_manual_rating(
@@ -565,6 +617,7 @@ $$;
 -- EXECUTE to public by default; revoke that broad grant explicitly.
 revoke all on function get_rating_summary() from public;
 revoke all on function get_my_rating(text, integer, integer, integer, integer) from public;
+revoke all on function get_rating_performances(integer, integer, integer, date) from public;
 revoke all on function get_my_manual_rating(text, integer, text, text, date, text) from public;
 revoke all on function upsert_actor_rating(text, integer, integer, integer, integer, date, text, numeric, numeric, numeric) from public;
 revoke all on function upsert_manual_actor_rating(text, integer, text, text, date, text, numeric, numeric, numeric) from public;
@@ -573,6 +626,7 @@ revoke all on function claim_anonymous_ratings(text) from public;
 
 grant execute on function get_rating_summary() to anon, authenticated;
 grant execute on function get_my_rating(text, integer, integer, integer, integer) to anon, authenticated;
+grant execute on function get_rating_performances(integer, integer, integer, date) to anon, authenticated;
 grant execute on function get_my_manual_rating(text, integer, text, text, date, text) to anon, authenticated;
 grant execute on function upsert_actor_rating(text, integer, integer, integer, integer, date, text, numeric, numeric, numeric) to anon, authenticated;
 grant execute on function upsert_manual_actor_rating(text, integer, text, text, date, text, numeric, numeric, numeric) to anon, authenticated;
