@@ -241,7 +241,7 @@ create or replace function get_rating_performances(
 returns table (
   id integer,
   date date,
-  time text,
+  "time" text,
   city text,
   theatre text,
   role_confirmed boolean,
@@ -264,7 +264,7 @@ as $$
   select
     s.id,
     s.date,
-    s.time,
+    s.time as "time",
     s.city,
     s.theatre,
     coalesce(nullif(btrim(sc.role), '') = subject.role_name, false) as role_confirmed,
