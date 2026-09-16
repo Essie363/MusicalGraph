@@ -5,7 +5,7 @@ The page loads it via <script src>, so it works by double-clicking
 index.html without a server or network.
 
 Data included:
-- actors: all artists (id+name), plus profile fields when present
+- actors: performers only (id+name), plus profile fields when present
 - relations: approved relations with Chinese type name + detail
 - coWork: top N co-work partners per actor (for "expand" interactions)
 - moments: 精彩片段（标题/外链/来源平台）
@@ -32,6 +32,19 @@ def main():
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
 
+    # y.saoju's people directory includes production and creative staff.  This
+    # site is an actor graph, so only publish people with evidence of a stage
+    # role or an actual listed performance.  Raw source records stay in SQLite
+    # for traceability and can be reviewed later.
+    performer_ids = {
+        row[0] for row in cur.execute("SELECT DISTINCT artist_id FROM actor_roles")
+    }
+    performer_ids.update(
+        row[0] for row in cur.execute(
+            "SELECT DISTINCT artist_id FROM show_casts WHERE artist_id IS NOT NULL"
+        )
+    )
+
     # --- actors ---
     actors = {}
     rows = cur.execute("""
@@ -40,6 +53,8 @@ def main():
         FROM artists
     """).fetchall()
     for r in rows:
+        if r["id"] not in performer_ids:
+            continue
         a = {"id": r["id"], "name": r["name"]}
         for k in ("nickname", "birth_date", "major", "school", "hometown",
                   "enrollment_year", "height", "note", "role"):
@@ -61,6 +76,8 @@ def main():
     """).fetchall()
     for r in rows:
         t = types.get(r["type_id"], {})
+        if r["actor_a"] not in performer_ids or r["actor_b"] not in performer_ids:
+            continue
         relations.append({
             "type": t.get("code", str(r["type_id"])),
             "typeName": t.get("name", ""),
@@ -81,6 +98,8 @@ def main():
     # actor_musicals: artist_id -> {musical_name: [role_name, ...]}
     actor_musicals = {}
     for r in cur.execute("SELECT artist_id, musical_id, role_id FROM actor_roles"):
+        if r["artist_id"] not in performer_ids:
+            continue
         m = musicals.get(r["musical_id"])
         if m is None:
             continue
@@ -95,6 +114,8 @@ def main():
     for r in cur.execute("SELECT id, name FROM musicals"):
         musical_cast[r["id"]] = {"name": r["name"], "info": musical_info.get(r["id"], ""), "cast": [], "roles": {}}
     for r in cur.execute("SELECT artist_id, musical_id, role_id FROM actor_roles"):
+        if r["artist_id"] not in performer_ids:
+            continue
         if r["musical_id"] not in musical_cast:
             continue
         mc = musical_cast[r["musical_id"]]
@@ -124,12 +145,15 @@ def main():
         if g is None:
             g = {"id": gid, "name": gname, "type": gtype, "parent": parent_name or "", "members": []}
             group_list.append(g)
-        if mid is not None:
+        if mid is not None and mid in performer_ids:
             g["members"].append(mid)
+    group_list = [g for g in group_list if g["members"]]
 
     # --- 精彩片段 moments（标题/外链/来源平台） ---
     moments = []
     for r in cur.execute("SELECT id, actor_id, title, url, source FROM moments ORDER BY id"):
+        if r["actor_id"] not in performer_ids:
+            continue
         moments.append({
             "id": r["id"],
             "actorId": r["actor_id"],
@@ -141,6 +165,8 @@ def main():
     # --- 演员影响力统计（作品数/合作人数）与参演剧目 id 列表，供首页节点权重与聚焦展开 ---
     actor_musical_ids = {}
     for r in cur.execute("SELECT artist_id, musical_id FROM actor_roles"):
+        if r["artist_id"] not in performer_ids:
+            continue
         if r["musical_id"] not in musicals:
             continue
         lst = actor_musical_ids.setdefault(r["artist_id"], [])
@@ -154,11 +180,15 @@ def main():
         d[key] = max(d.get(key, 0), val)
 
     for r in cur.execute("SELECT artist_id, COUNT(DISTINCT musical_id) AS n FROM actor_roles GROUP BY artist_id"):
-        _bump(r["artist_id"], "musicals", r["n"])
-    for r in cur.execute("SELECT actor_a, COUNT(DISTINCT actor_b) AS n FROM co_work_edges GROUP BY actor_a"):
-        _bump(r["actor_a"], "partners", r["n"])
-    for r in cur.execute("SELECT actor_b, COUNT(DISTINCT actor_a) AS n FROM co_work_edges GROUP BY actor_b"):
-        _bump(r["actor_b"], "partners", r["n"])
+        if r["artist_id"] in performer_ids:
+            _bump(r["artist_id"], "musicals", r["n"])
+    partner_counts = defaultdict(int)
+    for r in cur.execute("SELECT actor_a, actor_b FROM co_work_edges"):
+        if r["actor_a"] in performer_ids and r["actor_b"] in performer_ids:
+            partner_counts[r["actor_a"]] += 1
+            partner_counts[r["actor_b"]] += 1
+    for actor_id, count in partner_counts.items():
+        _bump(actor_id, "partners", count)
     # --- 星点重要度 imp：大剧场经历 / 剧目多样性 / 角色深耕 / 总场次 ---
     # 大剧场判定：名称含 大剧院/大剧场/歌剧厅/主剧场 或知名中大型剧场；小剧场（星空间/新空间等）不计
     BIG_THEATRE_RE = re.compile(
@@ -168,6 +198,8 @@ def main():
     for aid, theatre in cur.execute(
         "SELECT sc.artist_id, sh.theatre FROM show_casts sc JOIN shows sh ON sh.id = sc.show_id"
     ):
+        if aid not in performer_ids:
+            continue
         st = show_stat.setdefault(aid, [0, 0])
         st[0] += 1
         if theatre and BIG_THEATRE_RE.search(theatre):
@@ -179,7 +211,8 @@ def main():
     for aid, cnt in cur.execute(
         "SELECT artist_id, COUNT(DISTINCT musical_id || '-' || role_id) c FROM actor_roles GROUP BY artist_id"
     ):
-        role_deep[aid] = cnt
+        if aid in performer_ids:
+            role_deep[aid] = cnt
 
     # 只有演出记录、但没有 actor_roles/共演数据的演员也补一条计数
     for aid in show_stat:
@@ -237,6 +270,8 @@ def main():
     """, (MIN_COWORK,)).fetchall()
     by_actor = defaultdict(list)
     for r in rows:
+        if r["actor_a"] not in performer_ids or r["actor_b"] not in performer_ids:
+            continue
         by_actor[r["actor_a"]].append((r["actor_b"], r["co_show_count"]))
         by_actor[r["actor_b"]].append((r["actor_a"], r["co_show_count"]))
     co_work = []
@@ -256,6 +291,8 @@ def main():
     for r in cur.execute(
         "SELECT actor_a, actor_b, co_show_count, co_musical_count, first_co_date, last_co_date FROM co_work_edges"
     ):
+        if r["actor_a"] not in performer_ids or r["actor_b"] not in performer_ids:
+            continue
         cowork_all.append({
             "a": r["actor_a"], "b": r["actor_b"],
             "c": r["co_show_count"], "m": r["co_musical_count"],

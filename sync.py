@@ -40,6 +40,58 @@ def get_json(path):
     return r.json()
 
 
+def prepare_integrity_guards(cur):
+    """Create the small safeguards needed before a source refresh.
+
+    The source's person IDs are normally stable, but a reused ID must never
+    silently turn an existing person into somebody else.  We retain those
+    observations for review instead of overwriting the local identity.
+
+    A recent-date refresh reads the same cast again.  The source table has no
+    native uniqueness constraint, so SQLite's ``INSERT OR IGNORE`` alone was
+    not enough to prevent duplicate rows.  Deduplicate exact copies first and
+    then make that identity explicit at the database level.
+    """
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS source_identity_conflicts (
+            artist_id INTEGER NOT NULL,
+            local_name TEXT NOT NULL,
+            source_name TEXT NOT NULL,
+            source_note TEXT,
+            first_seen_at TEXT NOT NULL,
+            last_seen_at TEXT NOT NULL,
+            PRIMARY KEY (artist_id, source_name)
+        )
+    """)
+    cur.execute("""
+        DELETE FROM show_casts
+        WHERE rowid NOT IN (
+            SELECT MIN(rowid)
+            FROM show_casts
+            GROUP BY show_id, COALESCE(artist_id, -1), TRIM(COALESCE(role, ''))
+        )
+    """)
+    cur.execute("""
+        CREATE UNIQUE INDEX IF NOT EXISTS ux_show_casts_identity
+        ON show_casts (show_id, COALESCE(artist_id, -1), TRIM(COALESCE(role, '')))
+    """)
+
+
+def refresh_performer_flags(cur):
+    """Mark only people with role or cast evidence as performers.
+
+    The source person directory also contains production staff.  Keeping those
+    records is useful for provenance, but they must not be published as actors.
+    """
+    cur.execute("""
+        UPDATE artists
+        SET is_actor = CASE WHEN
+            EXISTS (SELECT 1 FROM actor_roles ar WHERE ar.artist_id = artists.id)
+            OR EXISTS (SELECT 1 FROM show_casts sc WHERE sc.artist_id = artists.id)
+        THEN 1 ELSE 0 END
+    """)
+
+
 def upsert_base_tables(cur, conn):
     """Merge base tables from the official API, preserving manually added data.
 
@@ -54,13 +106,33 @@ def upsert_base_tables(cur, conn):
     mc = get_json("/musicalcast/")
 
     api_artist_ids = []
+    conflicted_artist_ids = set()
+    now = dt.datetime.now(dt.timezone.utc).isoformat()
     for a in artists:
         aid = a["pk"]
         api_artist_ids.append(aid)
+        source_name = a["fields"]["name"]
+        source_note = a["fields"].get("note")
+        local = cur.execute("SELECT name FROM artists WHERE id=?", (aid,)).fetchone()
+        if local and local[0] != source_name:
+            conflicted_artist_ids.add(aid)
+            cur.execute(
+                """INSERT INTO source_identity_conflicts
+                   (artist_id, local_name, source_name, source_note, first_seen_at, last_seen_at)
+                   VALUES (?,?,?,?,?,?)
+                   ON CONFLICT(artist_id, source_name) DO UPDATE SET
+                     local_name=excluded.local_name,
+                     source_note=excluded.source_note,
+                     last_seen_at=excluded.last_seen_at""",
+                (aid, local[0], source_name, source_note, now, now),
+            )
+            print("  identity conflict: id={} local={!r} source={!r}; keeping local".format(
+                aid, local[0], source_name), flush=True)
+            continue
         cur.execute(
             "INSERT INTO artists (id,name,note,is_actor) VALUES (?,?,?,1) "
             "ON CONFLICT(id) DO UPDATE SET name=excluded.name, note=excluded.note, is_actor=1",
-            (aid, a["fields"]["name"], a["fields"].get("note")),
+            (aid, source_name, source_note),
         )
 
     api_musical_ids = []
@@ -86,22 +158,29 @@ def upsert_base_tables(cur, conn):
     # or a manual musical (e.g. 《坏家伙》).
     cur.execute("CREATE TEMP TABLE IF NOT EXISTS _api_artist(id INTEGER PRIMARY KEY)")
     cur.executemany("INSERT OR IGNORE INTO _api_artist(id) VALUES (?)", [(i,) for i in api_artist_ids])
+    cur.execute("CREATE TEMP TABLE IF NOT EXISTS _conflicted_api_artist(id INTEGER PRIMARY KEY)")
+    cur.executemany("INSERT OR IGNORE INTO _conflicted_api_artist(id) VALUES (?)",
+                    [(i,) for i in conflicted_artist_ids])
     cur.execute("CREATE TEMP TABLE IF NOT EXISTS _api_musical(id INTEGER PRIMARY KEY)")
     cur.executemany("INSERT OR IGNORE INTO _api_musical(id) VALUES (?)", [(i,) for i in api_musical_ids])
     cur.execute(
         "DELETE FROM actor_roles WHERE artist_id IN (SELECT id FROM _api_artist) "
+        "AND artist_id NOT IN (SELECT id FROM _conflicted_api_artist) "
         "AND musical_id IN (SELECT id FROM _api_musical)"
     )
     cur.execute("DROP TABLE _api_artist")
+    cur.execute("DROP TABLE _conflicted_api_artist")
     cur.execute("DROP TABLE _api_musical")
 
     role2musical = {r["pk"]: r["fields"]["musical"] for r in roles}
     cur.executemany(
         "INSERT INTO actor_roles (artist_id,musical_id,role_id) VALUES (?,?,?)",
-        [(c["fields"]["artist"], role2musical[c["fields"]["role"]], c["fields"]["role"]) for c in mc],
+        [(c["fields"]["artist"], role2musical[c["fields"]["role"]], c["fields"]["role"])
+         for c in mc if c["fields"]["artist"] not in conflicted_artist_ids],
     )
     conn.commit()
-    return {"artists": len(artists), "musicals": len(musicals), "actor_roles": len(mc)}
+    return {"artists": len(artists), "musicals": len(musicals), "actor_roles": len(mc),
+            "identity_conflicts": len(conflicted_artist_ids)}
 
 
 def sync_shows(cur, conn):
@@ -180,6 +259,7 @@ def sync_shows(cur, conn):
 def main():
     conn = sqlite3.connect(DB)
     cur = conn.cursor()
+    prepare_integrity_guards(cur)
     cur.execute("""CREATE TABLE IF NOT EXISTS sync_log (
         id INTEGER PRIMARY KEY,
         run_at TEXT,
@@ -199,6 +279,8 @@ def main():
 
     print("== deriving unambiguous show-cast roles ==", flush=True)
     filled_roles = fill_unique_roles(conn)
+
+    refresh_performer_flags(cur)
 
     print("== recomputing co-work edges ==", flush=True)
     n_edges = graph_utils.recompute_co_work_edges(conn)

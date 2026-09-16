@@ -33,6 +33,7 @@ from pathlib import Path
 BASE = Path(__file__).resolve().parent
 DB = BASE / "music_graph.db"
 BATCH = 500
+TOMBSTONES = BASE / "data" / "supabase_deletions.json"
 
 TABLES = [
     ("relation_types", ["id", "code", "name", "is_builtin", "description"]),
@@ -129,6 +130,32 @@ def post_json(url, payload, headers):
     req = urllib.request.Request(url, data=body, headers=headers, method="POST")
     with open_retry(req) as resp:
         return resp.status
+
+
+def apply_tombstones(url, key):
+    """Apply only explicitly reviewed remote deletions.
+
+    The normal migration upserts rows; it deliberately never prunes whole
+    tables. This small, versioned list is the safe path for confirmed removals.
+    """
+    if not TOMBSTONES.exists():
+        return
+    items = json.loads(TOMBSTONES.read_text(encoding="utf-8")).get("deletions", [])
+    for item in items:
+        table = item.get("table")
+        where = item.get("where")
+        if not table or not isinstance(where, dict) or not where:
+            raise RuntimeError("invalid Supabase tombstone entry")
+        query = urllib.parse.urlencode({k: "eq." + str(v) for k, v in where.items()})
+        req = urllib.request.Request(
+            url + "/rest/v1/" + table + "?" + query,
+            headers={**sb_headers(key), "Prefer": "return=representation"},
+            method="DELETE",
+        )
+        with open_retry(req) as resp:
+            deleted = json.loads(resp.read().decode("utf-8"))
+        print("[tombstone] {} {} -> removed {} row(s)".format(
+            table, where, len(deleted)))
 
 
 # ---------- Supabase REST 小工具 ----------
@@ -435,6 +462,8 @@ def main():
         "Content-Type": "application/json",
         "Prefer": "return=minimal, resolution=merge-duplicates",
     }
+
+    apply_tombstones(url, key)
 
     total = 0
     for table, cols in TABLES:

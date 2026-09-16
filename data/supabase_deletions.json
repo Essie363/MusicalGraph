@@ -1,0 +1,13 @@
+{
+  "deletions": [
+    {
+      "table": "group_members",
+      "where": {
+        "group_id": 32,
+        "artist_id": 4544
+      },
+      "reason": "宋璧芸已确认不是星33动物园成员",
+      "reviewed_at": "2026-09-16"
+    }
+  ]
+}
