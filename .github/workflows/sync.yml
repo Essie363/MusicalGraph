@@ -6,6 +6,12 @@ on:
   schedule:
     - cron: "0 22 * * *"
   workflow_dispatch:
+    inputs:
+      identity_recovery:
+        description: "Restore audited reused source IDs to Supabase only"
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -30,6 +36,7 @@ jobs:
 
       # music_graph.db 已入库：checkout 后做增量同步（同步逻辑见 sync.py）
       - name: Sync schedules & refresh web data
+        if: ${{ inputs.identity_recovery != true }}
         run: |
           python sync.py
           python export_graph.py
@@ -37,7 +44,11 @@ jobs:
       - name: Sync SQLite to Supabase
         if: ${{ env.SUPABASE_URL != '' && env.SUPABASE_SERVICE_KEY != '' }}
         run: |
-          python migrate_supabase.py
+          if [ "${{ inputs.identity_recovery }}" = "true" ]; then
+            python migrate_supabase.py --identity-recovery
+          else
+            python migrate_supabase.py
+          fi
 
       - name: Commit & push updates
         run: |

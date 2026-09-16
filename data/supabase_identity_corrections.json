@@ -1,0 +1,41 @@
+{
+  "patches": [
+    {
+      "table": "artists",
+      "where": { "id": 4544 },
+      "values": {
+        "name": "黎澳宁",
+        "nickname": "靠谱宁",
+        "birth_date": "2004/11/15",
+        "note": null,
+        "is_actor": true
+      },
+      "reason": "恢复被来源 ID 复用覆盖的黎澳宁身份"
+    },
+    {
+      "table": "artists",
+      "where": { "id": 4531 },
+      "values": {
+        "name": "李恩妤",
+        "nickname": null,
+        "birth_date": null,
+        "note": null,
+        "is_actor": false
+      },
+      "reason": "恢复被来源 ID 复用覆盖的李恩妤身份"
+    },
+    {
+      "table": "show_casts",
+      "where": { "artist_id": 4544 },
+      "values": { "artist_id": null },
+      "reason": "保留排期行，但解除错误的宋璧芸到黎澳宁归属"
+    }
+  ],
+  "deletions": [
+    {
+      "table": "actor_roles",
+      "where": { "artist_id": 4544 },
+      "reason": "移除串位导入的辛吉角色归属"
+    }
+  ]
+}

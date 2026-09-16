@@ -44,6 +44,16 @@ def main():
             "SELECT DISTINCT artist_id FROM show_casts WHERE artist_id IS NOT NULL"
         )
     )
+    # A small number of manually confirmed performers currently have no source
+    # schedule/role rows. Keep them visible when they belong to a curated group.
+    performer_ids.update(
+        row[0] for row in cur.execute(
+            """SELECT DISTINCT gm.artist_id
+               FROM group_members gm
+               JOIN artists a ON a.id=gm.artist_id
+               WHERE a.is_actor=1"""
+        )
+    )
 
     # --- actors ---
     actors = {}

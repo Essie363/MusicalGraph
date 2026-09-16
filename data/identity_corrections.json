@@ -1,0 +1,28 @@
+{
+  "corrections": [
+    {
+      "artist_id": 4544,
+      "name": "黎澳宁",
+      "nickname": "靠谱宁",
+      "birth_date": "2004/11/15",
+      "note": null,
+      "is_actor": true,
+      "restore_group_memberships": [32],
+      "remove_actor_roles": true,
+      "unlink_show_casts": true,
+      "reason": "2026-08-28 上游复用 ID 4544，将黎澳宁错误覆盖为宋璧芸；昵称、生日和星33动物园成员关系均属于黎澳宁。"
+    },
+    {
+      "artist_id": 4531,
+      "name": "李恩妤",
+      "nickname": null,
+      "birth_date": null,
+      "note": null,
+      "is_actor": false,
+      "restore_group_memberships": [],
+      "remove_actor_roles": true,
+      "unlink_show_casts": true,
+      "reason": "2026-08-28 上游复用 ID 4531，将李恩妤错误覆盖为非演员韩佳希；徐均朔的已审核同学关系应保留。"
+    }
+  ]
+}

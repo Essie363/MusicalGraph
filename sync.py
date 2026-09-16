@@ -78,7 +78,7 @@ def prepare_integrity_guards(cur):
 
 
 def refresh_performer_flags(cur):
-    """Mark only people with role or cast evidence as performers.
+    """Mark people with stage or manually curated group evidence as performers.
 
     The source person directory also contains production staff.  Keeping those
     records is useful for provenance, but they must not be published as actors.
@@ -88,6 +88,7 @@ def refresh_performer_flags(cur):
         SET is_actor = CASE WHEN
             EXISTS (SELECT 1 FROM actor_roles ar WHERE ar.artist_id = artists.id)
             OR EXISTS (SELECT 1 FROM show_casts sc WHERE sc.artist_id = artists.id)
+            OR EXISTS (SELECT 1 FROM group_members gm WHERE gm.artist_id = artists.id)
         THEN 1 ELSE 0 END
     """)
 

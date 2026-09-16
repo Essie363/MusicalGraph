@@ -7,6 +7,10 @@ Usage:
     # 正式导入（需要 SUPABASE_URL / SUPABASE_SERVICE_KEY）
   python migrate_supabase.py --verify
     # 导入后核对：两侧行数、主键空值、外键孤儿、随机样本一致才算迁移完成
+  python migrate_supabase.py --apply-identity-corrections
+    # 只执行 data/supabase_identity_corrections.json 中已审核的精确修复
+  python migrate_supabase.py --identity-recovery
+    # 先清除审计名单中的错误关联，再回填恢复后的本地正确数据
 
 Prereqs:
 1. Create Supabase project + run the SQL in docs/DEPLOY.md (tables)
@@ -34,6 +38,8 @@ BASE = Path(__file__).resolve().parent
 DB = BASE / "music_graph.db"
 BATCH = 500
 TOMBSTONES = BASE / "data" / "supabase_deletions.json"
+IDENTITY_CORRECTIONS = BASE / "data" / "supabase_identity_corrections.json"
+IDENTITY_AUDIT = BASE / "data" / "identity_change_audit.json"
 
 TABLES = [
     ("relation_types", ["id", "code", "name", "is_builtin", "description"]),
@@ -156,6 +162,82 @@ def apply_tombstones(url, key):
             deleted = json.loads(resp.read().decode("utf-8"))
         print("[tombstone] {} {} -> removed {} row(s)".format(
             table, where, len(deleted)))
+
+
+def apply_identity_corrections(url, key):
+    """Apply reviewed, exact remote repairs for reused upstream person IDs."""
+    if not IDENTITY_CORRECTIONS.exists():
+        return
+    data = json.loads(IDENTITY_CORRECTIONS.read_text(encoding="utf-8"))
+    allowed_tables = {name for name, _ in TABLES}
+    for item in data.get("patches", []):
+        table, where, values = item.get("table"), item.get("where"), item.get("values")
+        if table not in allowed_tables or not isinstance(where, dict) or not where or not isinstance(values, dict):
+            raise RuntimeError("invalid Supabase identity patch entry")
+        query = urllib.parse.urlencode({k: "eq." + str(v) for k, v in where.items()})
+        req = urllib.request.Request(
+            url + "/rest/v1/" + table + "?" + query,
+            data=json.dumps(values).encode("utf-8"),
+            headers={**sb_headers(key), "Content-Type": "application/json",
+                     "Prefer": "return=representation"},
+            method="PATCH",
+        )
+        with open_retry(req) as resp:
+            changed = json.loads(resp.read().decode("utf-8"))
+        print("[identity patch] {} {} -> changed {} row(s)".format(
+            table, where, len(changed)))
+    for item in data.get("deletions", []):
+        table, where = item.get("table"), item.get("where")
+        if table not in allowed_tables or not isinstance(where, dict) or not where:
+            raise RuntimeError("invalid Supabase identity deletion entry")
+        query = urllib.parse.urlencode({k: "eq." + str(v) for k, v in where.items()})
+        req = urllib.request.Request(
+            url + "/rest/v1/" + table + "?" + query,
+            headers={**sb_headers(key), "Prefer": "return=representation"},
+            method="DELETE",
+        )
+        with open_retry(req) as resp:
+            deleted = json.loads(resp.read().decode("utf-8"))
+        print("[identity delete] {} {} -> removed {} row(s)".format(
+            table, where, len(deleted)))
+
+
+def identity_recovery_ids():
+    """Return only source IDs explicitly identified by the Git-history audit."""
+    if not IDENTITY_AUDIT.exists():
+        raise RuntimeError("missing data/identity_change_audit.json")
+    changes = json.loads(IDENTITY_AUDIT.read_text(encoding="utf-8")).get("changes", [])
+    ids = sorted({int(item["id"]) for item in changes})
+    if not ids:
+        raise RuntimeError("identity audit contains no candidates")
+    return ids
+
+
+def apply_identity_recovery_cleanup(url, key):
+    """Clear only stale remote links before re-importing corrected local links.
+
+    The schedules themselves stay intact.  Their cast rows are merely made
+    unassigned until the recovered baseline links are inserted by the normal
+    migration below.
+    """
+    ids = identity_recovery_ids()
+    query = urllib.parse.urlencode({"artist_id": "in.(" + ",".join(map(str, ids)) + ")"})
+    for table, method, payload in (
+        ("actor_roles", "DELETE", None),
+        ("show_casts", "PATCH", {"artist_id": None}),
+    ):
+        headers = {**sb_headers(key), "Prefer": "return=representation"}
+        data = None
+        if payload is not None:
+            headers["Content-Type"] = "application/json"
+            data = json.dumps(payload).encode("utf-8")
+        req = urllib.request.Request(
+            url + "/rest/v1/" + table + "?" + query,
+            data=data, headers=headers, method=method,
+        )
+        with open_retry(req) as resp:
+            affected = json.loads(resp.read().decode("utf-8"))
+        print("[identity recovery] {} -> affected {} row(s)".format(table, len(affected)))
 
 
 # ---------- Supabase REST 小工具 ----------
@@ -433,10 +515,12 @@ def main():
         sys.stdout.reconfigure(encoding="utf-8")
     dry = "--dry-run" in sys.argv
     verify = "--verify" in sys.argv
+    identity_corrections_only = "--apply-identity-corrections" in sys.argv
+    identity_recovery = "--identity-recovery" in sys.argv
     env = load_env()
     url = os.environ.get("SUPABASE_URL", env.get("SUPABASE_URL", "")).rstrip("/")
     key = os.environ.get("SUPABASE_SERVICE_KEY", env.get("SUPABASE_SERVICE_KEY", ""))
-    if not dry and not verify and (not url or not key):
+    if not dry and not verify and not identity_corrections_only and (not url or not key):
         print("请先设置 SUPABASE_URL / SUPABASE_SERVICE_KEY（.env 或环境变量），或使用 --dry-run / --verify")
         sys.exit(1)
 
@@ -457,6 +541,14 @@ def main():
         conn.close()
         sys.exit(0 if ok else 1)
 
+    if identity_corrections_only:
+        if not url or not key:
+            print("--apply-identity-corrections 需要 SUPABASE_URL / SUPABASE_SERVICE_KEY")
+            sys.exit(1)
+        apply_identity_corrections(url, key)
+        conn.close()
+        return
+
     headers = {
         "apikey": key, "Authorization": "Bearer " + key,
         "Content-Type": "application/json",
@@ -464,6 +556,8 @@ def main():
     }
 
     apply_tombstones(url, key)
+    if identity_recovery:
+        apply_identity_recovery_cleanup(url, key)
 
     total = 0
     for table, cols in TABLES:
@@ -502,6 +596,7 @@ def main():
         print("  -> 已导入 {} 行".format(len(rows)))
 
     conn.close()
+    apply_identity_corrections(url, key)
     print("迁移完成：共导入 {} 行".format(total))
     print("下一步：运行 python migrate_supabase.py --verify 核对行数/主键/外键/抽样")
 

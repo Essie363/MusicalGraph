@@ -1,0 +1,464 @@
+{
+  "recovered_at": "2026-09-16T08:06:24.059881+00:00",
+  "records": [
+    {
+      "artist_id": 193,
+      "restore_name": "刘钊",
+      "baseline_commit": "6502b64",
+      "baseline_roles": 0,
+      "baseline_show_casts": 0,
+      "current_roles": 1,
+      "current_show_casts": 5
+    },
+    {
+      "artist_id": 1380,
+      "restore_name": "卢丽霞",
+      "baseline_commit": "6502b64",
+      "baseline_roles": 0,
+      "baseline_show_casts": 0,
+      "current_roles": 0,
+      "current_show_casts": 0
+    },
+    {
+      "artist_id": 1381,
+      "restore_name": "崔红娟",
+      "baseline_commit": "6502b64",
+      "baseline_roles": 0,
+      "baseline_show_casts": 0,
+      "current_roles": 0,
+      "current_show_casts": 0
+    },
+    {
+      "artist_id": 1388,
+      "restore_name": "九是无名",
+      "baseline_commit": "6502b64",
+      "baseline_roles": 1,
+      "baseline_show_casts": 0,
+      "current_roles": 1,
+      "current_show_casts": 10
+    },
+    {
+      "artist_id": 1389,
+      "restore_name": "蔺彦沛",
+      "baseline_commit": "6502b64",
+      "baseline_roles": 1,
+      "baseline_show_casts": 0,
+      "current_roles": 1,
+      "current_show_casts": 10
+    },
+    {
+      "artist_id": 1390,
+      "restore_name": "刘勇",
+      "baseline_commit": "6502b64",
+      "baseline_roles": 1,
+      "baseline_show_casts": 0,
+      "current_roles": 0,
+      "current_show_casts": 0
+    },
+    {
+      "artist_id": 1391,
+      "restore_name": "黎忆秦",
+      "baseline_commit": "6502b64",
+      "baseline_roles": 1,
+      "baseline_show_casts": 0,
+      "current_roles": 0,
+      "current_show_casts": 0
+    },
+    {
+      "artist_id": 1392,
+      "restore_name": "陈垚",
+      "baseline_commit": "6502b64",
+      "baseline_roles": 1,
+      "baseline_show_casts": 0,
+      "current_roles": 0,
+      "current_show_casts": 0
+    },
+    {
+      "artist_id": 1393,
+      "restore_name": "梁梦瑶",
+      "baseline_commit": "6502b64",
+      "baseline_roles": 1,
+      "baseline_show_casts": 0,
+      "current_roles": 0,
+      "current_show_casts": 0
+    },
+    {
+      "artist_id": 1927,
+      "restore_name": "刘轩宇",
+      "baseline_commit": "6502b64",
+      "baseline_roles": 0,
+      "baseline_show_casts": 0,
+      "current_roles": 0,
+      "current_show_casts": 0
+    },
+    {
+      "artist_id": 1928,
+      "restore_name": "杨介",
+      "baseline_commit": "6502b64",
+      "baseline_roles": 0,
+      "baseline_show_casts": 0,
+      "current_roles": 0,
+      "current_show_casts": 0
+    },
+    {
+      "artist_id": 1929,
+      "restore_name": "沈晓乐",
+      "baseline_commit": "6502b64",
+      "baseline_roles": 0,
+      "baseline_show_casts": 0,
+      "current_roles": 0,
+      "current_show_casts": 0
+    },
+    {
+      "artist_id": 1930,
+      "restore_name": "胡彦洲",
+      "baseline_commit": "6502b64",
+      "baseline_roles": 0,
+      "baseline_show_casts": 0,
+      "current_roles": 0,
+      "current_show_casts": 0
+    },
+    {
+      "artist_id": 1933,
+      "restore_name": "席成刚",
+      "baseline_commit": "6502b64",
+      "baseline_roles": 0,
+      "baseline_show_casts": 0,
+      "current_roles": 0,
+      "current_show_casts": 0
+    },
+    {
+      "artist_id": 2418,
+      "restore_name": "三界城音乐工作室",
+      "baseline_commit": "6502b64",
+      "baseline_roles": 0,
+      "baseline_show_casts": 0,
+      "current_roles": 0,
+      "current_show_casts": 0
+    },
+    {
+      "artist_id": 4425,
+      "restore_name": "西门远",
+      "baseline_commit": "6502b64",
+      "baseline_roles": 1,
+      "baseline_show_casts": 1,
+      "current_roles": 1,
+      "current_show_casts": 1
+    },
+    {
+      "artist_id": 4522,
+      "restore_name": "范景玥",
+      "baseline_commit": "6502b64",
+      "baseline_roles": 0,
+      "baseline_show_casts": 0,
+      "current_roles": 1,
+      "current_show_casts": 15
+    },
+    {
+      "artist_id": 4523,
+      "restore_name": "林忆欣",
+      "baseline_commit": "6502b64",
+      "baseline_roles": 0,
+      "baseline_show_casts": 0,
+      "current_roles": 1,
+      "current_show_casts": 28
+    },
+    {
+      "artist_id": 4524,
+      "restore_name": "王俊迪",
+      "baseline_commit": "6502b64",
+      "baseline_roles": 0,
+      "baseline_show_casts": 0,
+      "current_roles": 0,
+      "current_show_casts": 0
+    },
+    {
+      "artist_id": 4525,
+      "restore_name": "魏佳源",
+      "baseline_commit": "6502b64",
+      "baseline_roles": 0,
+      "baseline_show_casts": 0,
+      "current_roles": 0,
+      "current_show_casts": 0
+    },
+    {
+      "artist_id": 4526,
+      "restore_name": "谢文校",
+      "baseline_commit": "6502b64",
+      "baseline_roles": 0,
+      "baseline_show_casts": 0,
+      "current_roles": 0,
+      "current_show_casts": 0
+    },
+    {
+      "artist_id": 4527,
+      "restore_name": "杨依冷",
+      "baseline_commit": "6502b64",
+      "baseline_roles": 0,
+      "baseline_show_casts": 0,
+      "current_roles": 0,
+      "current_show_casts": 0
+    },
+    {
+      "artist_id": 4528,
+      "restore_name": "申申",
+      "baseline_commit": "6502b64",
+      "baseline_roles": 0,
+      "baseline_show_casts": 0,
+      "current_roles": 0,
+      "current_show_casts": 0
+    },
+    {
+      "artist_id": 4529,
+      "restore_name": "肖德俊",
+      "baseline_commit": "6502b64",
+      "baseline_roles": 0,
+      "baseline_show_casts": 0,
+      "current_roles": 0,
+      "current_show_casts": 0
+    },
+    {
+      "artist_id": 4530,
+      "restore_name": "颜嘉萱",
+      "baseline_commit": "6502b64",
+      "baseline_roles": 0,
+      "baseline_show_casts": 0,
+      "current_roles": 0,
+      "current_show_casts": 0
+    },
+    {
+      "artist_id": 4531,
+      "restore_name": "李恩妤",
+      "baseline_commit": "6502b64",
+      "baseline_roles": 0,
+      "baseline_show_casts": 0,
+      "current_roles": 0,
+      "current_show_casts": 0
+    },
+    {
+      "artist_id": 4532,
+      "restore_name": "徐丽东HSU,LI-TONG",
+      "baseline_commit": "6502b64",
+      "baseline_roles": 0,
+      "baseline_show_casts": 0,
+      "current_roles": 0,
+      "current_show_casts": 0
+    },
+    {
+      "artist_id": 4533,
+      "restore_name": "田宇铮（吉他）",
+      "baseline_commit": "6502b64",
+      "baseline_roles": 0,
+      "baseline_show_casts": 0,
+      "current_roles": 0,
+      "current_show_casts": 0
+    },
+    {
+      "artist_id": 4534,
+      "restore_name": "张雄（架子鼓）",
+      "baseline_commit": "6502b64",
+      "baseline_roles": 0,
+      "baseline_show_casts": 0,
+      "current_roles": 1,
+      "current_show_casts": 0
+    },
+    {
+      "artist_id": 4536,
+      "restore_name": "陈学冬",
+      "baseline_commit": "6502b64",
+      "baseline_roles": 0,
+      "baseline_show_casts": 0,
+      "current_roles": 1,
+      "current_show_casts": 0
+    },
+    {
+      "artist_id": 4537,
+      "restore_name": "刘令姿",
+      "baseline_commit": "6502b64",
+      "baseline_roles": 0,
+      "baseline_show_casts": 0,
+      "current_roles": 1,
+      "current_show_casts": 0
+    },
+    {
+      "artist_id": 4538,
+      "restore_name": "余承恩",
+      "baseline_commit": "6502b64",
+      "baseline_roles": 0,
+      "baseline_show_casts": 0,
+      "current_roles": 1,
+      "current_show_casts": 0
+    },
+    {
+      "artist_id": 4539,
+      "restore_name": "俞华",
+      "baseline_commit": "6502b64",
+      "baseline_roles": 0,
+      "baseline_show_casts": 0,
+      "current_roles": 1,
+      "current_show_casts": 0
+    },
+    {
+      "artist_id": 4540,
+      "restore_name": "吴超",
+      "baseline_commit": "6502b64",
+      "baseline_roles": 0,
+      "baseline_show_casts": 0,
+      "current_roles": 1,
+      "current_show_casts": 0
+    },
+    {
+      "artist_id": 4541,
+      "restore_name": "崔力戈",
+      "baseline_commit": "6502b64",
+      "baseline_roles": 0,
+      "baseline_show_casts": 0,
+      "current_roles": 1,
+      "current_show_casts": 0
+    },
+    {
+      "artist_id": 4542,
+      "restore_name": "良知真次",
+      "baseline_commit": "6502b64",
+      "baseline_roles": 0,
+      "baseline_show_casts": 0,
+      "current_roles": 1,
+      "current_show_casts": 0
+    },
+    {
+      "artist_id": 4543,
+      "restore_name": "新里宏太",
+      "baseline_commit": "6502b64",
+      "baseline_roles": 0,
+      "baseline_show_casts": 0,
+      "current_roles": 1,
+      "current_show_casts": 0
+    },
+    {
+      "artist_id": 4544,
+      "restore_name": "黎澳宁",
+      "baseline_commit": "6502b64",
+      "baseline_roles": 0,
+      "baseline_show_casts": 0,
+      "current_roles": 0,
+      "current_show_casts": 0
+    },
+    {
+      "artist_id": 4545,
+      "restore_name": "李昕怡",
+      "baseline_commit": "6502b64",
+      "baseline_roles": 0,
+      "baseline_show_casts": 0,
+      "current_roles": 1,
+      "current_show_casts": 18
+    },
+    {
+      "artist_id": 4546,
+      "restore_name": "蒋奇明",
+      "baseline_commit": "6502b64",
+      "baseline_roles": 5,
+      "baseline_show_casts": 0,
+      "current_roles": 1,
+      "current_show_casts": 0
+    },
+    {
+      "artist_id": 640,
+      "restore_name": "王芳",
+      "baseline_commit": "de5347d",
+      "baseline_roles": 0,
+      "baseline_show_casts": 0,
+      "current_roles": 0,
+      "current_show_casts": 0
+    },
+    {
+      "artist_id": 643,
+      "restore_name": "马苏",
+      "baseline_commit": "de5347d",
+      "baseline_roles": 0,
+      "baseline_show_casts": 0,
+      "current_roles": 0,
+      "current_show_casts": 0
+    },
+    {
+      "artist_id": 1934,
+      "restore_name": "黄沁潇",
+      "baseline_commit": "de5347d",
+      "baseline_roles": 0,
+      "baseline_show_casts": 0,
+      "current_roles": 0,
+      "current_show_casts": 0
+    },
+    {
+      "artist_id": 2038,
+      "restore_name": "田格",
+      "baseline_commit": "de5347d",
+      "baseline_roles": 4,
+      "baseline_show_casts": 47,
+      "current_roles": 5,
+      "current_show_casts": 72
+    },
+    {
+      "artist_id": 2576,
+      "restore_name": "陈新瑜",
+      "baseline_commit": "de5347d",
+      "baseline_roles": 0,
+      "baseline_show_casts": 0,
+      "current_roles": 0,
+      "current_show_casts": 0
+    },
+    {
+      "artist_id": 4016,
+      "restore_name": "朱苏洁",
+      "baseline_commit": "de5347d",
+      "baseline_roles": 0,
+      "baseline_show_casts": 0,
+      "current_roles": 1,
+      "current_show_casts": 35
+    },
+    {
+      "artist_id": 4017,
+      "restore_name": "俞韵",
+      "baseline_commit": "de5347d",
+      "baseline_roles": 0,
+      "baseline_show_casts": 0,
+      "current_roles": 1,
+      "current_show_casts": 25
+    },
+    {
+      "artist_id": 4018,
+      "restore_name": "WCl Lab",
+      "baseline_commit": "de5347d",
+      "baseline_roles": 0,
+      "baseline_show_casts": 0,
+      "current_roles": 2,
+      "current_show_casts": 20
+    },
+    {
+      "artist_id": 4019,
+      "restore_name": "卢嘉颖",
+      "baseline_commit": "de5347d",
+      "baseline_roles": 0,
+      "baseline_show_casts": 0,
+      "current_roles": 0,
+      "current_show_casts": 0
+    },
+    {
+      "artist_id": 4020,
+      "restore_name": "陈佳蕾",
+      "baseline_commit": "de5347d",
+      "baseline_roles": 0,
+      "baseline_show_casts": 0,
+      "current_roles": 1,
+      "current_show_casts": 25
+    },
+    {
+      "artist_id": 4247,
+      "restore_name": "徐亦澄",
+      "baseline_commit": "de5347d",
+      "baseline_roles": 1,
+      "baseline_show_casts": 3,
+      "current_roles": 1,
+      "current_show_casts": 13
+    }
+  ]
+}
