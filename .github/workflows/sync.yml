@@ -25,9 +25,9 @@ jobs:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
@@ -38,7 +38,18 @@ jobs:
       - name: Sync schedules & refresh web data
         if: ${{ inputs.identity_recovery != true }}
         run: |
-          python sync.py
+          for attempt in 1 2 3; do
+            if python sync.py; then
+              break
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "Sync failed after 3 attempts"
+              exit 1
+            fi
+            delay=$((attempt * 30))
+            echo "Sync attempt $attempt failed; retrying in ${delay}s"
+            sleep "$delay"
+          done
           python export_graph.py
           python refresh_all.py
       - name: Sync SQLite to Supabase

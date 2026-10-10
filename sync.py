@@ -32,12 +32,33 @@ REFRESH_DAYS = 120       # recheck this many upcoming days for source-site amend
 
 SESSION = requests.Session()
 SESSION.headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+RETRYABLE_HTTP_STATUS = {408, 425, 429, 500, 502, 503, 504}
 
 
-def get_json(path):
-    r = SESSION.get(API + path, timeout=60)
-    r.raise_for_status()
-    return r.json()
+def get_json(path, tries=4):
+    """Fetch one source response, retrying temporary network/API failures."""
+    for attempt in range(1, tries + 1):
+        try:
+            r = SESSION.get(API + path, timeout=60)
+            r.raise_for_status()
+            return r.json()
+        except requests.HTTPError as exc:
+            status = exc.response.status_code if exc.response is not None else None
+            if status not in RETRYABLE_HTTP_STATUS or attempt == tries:
+                raise
+            error = f"HTTP {status}"
+        except (requests.ConnectionError, requests.Timeout, ValueError) as exc:
+            if attempt == tries:
+                raise
+            error = str(exc)
+
+        delay = min(2 ** (attempt - 1), 8)
+        print(
+            f"  temporary fetch failure {path} ({error}); "
+            f"retry {attempt}/{tries - 1} in {delay}s",
+            flush=True,
+        )
+        time.sleep(delay)
 
 
 def prepare_integrity_guards(cur):
