@@ -218,7 +218,18 @@ function check(name, cond, extra) {
       }
     }));
   });
-  check("未满 5 人隐藏分数并显示解锁进度", await page.$eval("#ap-rating-body", el => el.textContent.includes("已有 4 人评价") && el.textContent.includes("还差 1 人解锁评分") && !el.textContent.includes("9.0")));
+  check("未满 5 人隐藏分数并显示解锁进度", await page.$eval("#ap-rating-body", el => el.querySelector(".rating-dashboard-score").textContent === "4" && el.textContent.includes("还差 1 人解锁评分") && !el.textContent.includes("9.0")));
+  check("未满 5 人保留分项与总分卡结构", await page.$eval("#ap-rating-body", el =>
+    el.querySelectorAll(".rating-dashboard-dimension").length === 3 &&
+    el.textContent.includes("唱") && el.textContent.includes("演") && el.textContent.includes("跳") &&
+    el.textContent.includes("待解锁") && el.textContent.includes("还差 1 人解锁评分")
+  ));
+  check("未满 5 人不展示具体角色排名和进度", await page.$eval("#ap-rating-detail", el =>
+    el.textContent.includes("暂无公开角色评分") &&
+    !el.textContent.includes("测试剧目") &&
+    !el.textContent.includes("还差") &&
+    !el.querySelector("#rating-details-open")
+  ));
   await page.evaluate(() => {
     const actorId = window.__apCenterId();
     window.MG_UPGRADE(Object.assign({}, window.MUSIC_GRAPH, {
@@ -230,6 +241,9 @@ function check(name, cond, extra) {
     }));
   });
   check("满 5 人展示分数并标记样本较少", await page.$eval("#ap-rating-body", el => el.textContent.includes("9.0") && el.textContent.includes("5 人评价") && el.textContent.includes("样本较少")));
+  check("满 5 人后进入角色 Top 榜单", await page.$eval("#ap-rating-detail", el =>
+    el.textContent.includes("Top1") && el.textContent.includes("测试剧目") && !!el.querySelector("#rating-details-open")
+  ));
 
   check("详情页姓名", (await page.textContent("#ap-name")) === "郑云龙", await page.textContent("#ap-name"));
   check("关系列表有内容", await page.$$eval("#ap-relations li", els => els.length) >= 1);

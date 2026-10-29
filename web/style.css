@@ -1332,7 +1332,10 @@ body.side-open #graph-main { margin-right: 300px; }
   }
   #actor-view .ap-sidebar-graph-link:hover { background: #2a2a2a; border-color: transparent; }
   #actor-view .ap-sidebar-graph-link:active { background: #252525; }
-  #actor-view .ap-content .ap-rating { padding-top: 0; margin-bottom: var(--space-6); }
+  #actor-view .ap-content .ap-rating {
+    padding-top: 0; padding-bottom: 0;
+    margin-bottom: var(--space-5);
+  }
   #actor-view .ap-content .ap-net { margin-bottom: var(--space-6); }
   #actor-view .ap-content .ap-sections { margin-top: 0; }
 
@@ -2378,12 +2381,15 @@ a.mom-title:hover { color: var(--text-primary); }   /* 精彩片段标题悬停�
 .rating-dashboard-dimension b { color: var(--text-primary); font-weight: 600; }
 .rating-dashboard-dimension .rating-stars { font-size: 16px; }
 .rating-dashboard-dimension strong { color: var(--text-primary); font-family: var(--font-sans); font-size: 13px; font-variant-numeric: tabular-nums; }
+.rating-dashboard-dimensions.is-locked .rating-stars { opacity: .48; }
+.rating-dashboard-dimensions.is-locked .rating-dashboard-dimension strong { color: var(--text-tertiary); font-weight: 500; }
 .rating-dashboard-overall {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
   padding: 20px; background: rgba(0, 0, 0, .1); text-align: center;
 }
 .rating-dashboard-score { color: var(--text-primary); font-family: var(--font-sans); font-size: 38px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
 .rating-dashboard-count { color: var(--text-tertiary); font-size: 11px; line-height: 1.2; }
+.rating-dashboard-unlock-remain { max-width: 100px; color: var(--text-tertiary); font-size: 11px; line-height: 1.45; }
 .rating-dashboard-overall .rating-stars { font-size: 20px; }
 .rating-cta {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
@@ -2436,6 +2442,9 @@ a.mom-title:hover { color: var(--text-primary); }   /* 精彩片段标题悬停�
   .rating-score-card { grid-template-columns: minmax(0, 1fr) 132px; min-height: 0; }
   .rating-dashboard-dimensions { padding: 12px 16px; }
   .rating-dashboard-dimension { min-height: 48px; font-size: 13px; }
+  .rating-dashboard-dimensions.is-locked .rating-dashboard-dimension { grid-template-columns: 24px minmax(0, 1fr); }
+  .rating-dashboard-dimensions.is-locked .rating-stars { display: none; }
+  .rating-dashboard-dimensions.is-locked .rating-dashboard-dimension strong { justify-self: end; white-space: nowrap; }
   .rating-dashboard-overall { padding: 16px 10px; }
   .rating-dashboard-score { font-size: 30px; }
   .rating-cta, .rating-role-preview { min-height: 150px; }
