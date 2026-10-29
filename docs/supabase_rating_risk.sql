@@ -376,12 +376,11 @@ as $$
     select
       actor_id,
       count(*)::integer as user_count,
-      round(avg(singing_avg) filter (where singing_avg is not null), 2) as singing_avg,
-      round(avg(dancing_avg) filter (where dancing_avg is not null), 2) as dancing_avg,
-      round(avg(acting_avg) filter (where acting_avg is not null), 2) as acting_avg
+      case when count(*) >= 5 then round(avg(singing_avg) filter (where singing_avg is not null), 2) end as singing_avg,
+      case when count(*) >= 5 then round(avg(dancing_avg) filter (where dancing_avg is not null), 2) end as dancing_avg,
+      case when count(*) >= 5 then round(avg(acting_avg) filter (where acting_avg is not null), 2) end as acting_avg
     from per_user_actor
     group by actor_id
-    having count(*) >= 10
   ),
   role_summary as (
     select
@@ -389,12 +388,11 @@ as $$
       musical_id,
       role_id,
       count(*)::integer as user_count,
-      round(avg(singing_avg) filter (where singing_avg is not null), 2) as singing_avg,
-      round(avg(dancing_avg) filter (where dancing_avg is not null), 2) as dancing_avg,
-      round(avg(acting_avg) filter (where acting_avg is not null), 2) as acting_avg
+      case when count(*) >= 5 then round(avg(singing_avg) filter (where singing_avg is not null), 2) end as singing_avg,
+      case when count(*) >= 5 then round(avg(dancing_avg) filter (where dancing_avg is not null), 2) end as dancing_avg,
+      case when count(*) >= 5 then round(avg(acting_avg) filter (where acting_avg is not null), 2) end as acting_avg
     from per_user_role
     group by actor_id, musical_id, role_id
-    having count(*) >= 10
   )
   select jsonb_build_object(
     'actors', coalesce((select jsonb_agg(to_jsonb(actor_summary) order by actor_id) from actor_summary), '[]'::jsonb),

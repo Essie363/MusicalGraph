@@ -1700,6 +1700,20 @@
     }).map(Number);
     return values.length ? values.reduce(function (sum, value) { return sum + value; }, 0) / values.length : null;
   }
+  var RATING_UNLOCK_COUNT = 5;
+  var RATING_STABLE_COUNT = 10;
+  function ratingUserCount(item) { return Math.max(0, Number(item && item.user_count) || 0); }
+  function ratingIsUnlocked(item) { return ratingUserCount(item) >= RATING_UNLOCK_COUNT && isFinite(ratingAverage(item)); }
+  function ratingCountLabel(item) { return ratingUserCount(item) + (ratingDemoMode() ? " 人模拟评分" : " 人评价"); }
+  function ratingUnlockHtml(item, className) {
+    var count = ratingUserCount(item);
+    if (!count) return "<p class='rating-empty'>暂无评分</p>";
+    return "<p class='rating-unlock-status" + (className ? " " + className : "") + "'>已有 " + count + " 人评价<span>还差 " + Math.max(0, RATING_UNLOCK_COUNT - count) + " 人解锁评分</span></p>";
+  }
+  function ratingTrustHtml(item) {
+    return ratingUserCount(item) >= RATING_UNLOCK_COUNT && ratingUserCount(item) < RATING_STABLE_COUNT
+      ? "<span class='rating-sample-note'>样本较少</span>" : "";
+  }
   function ownRatingSummary(rows) {
     var latest = rows.slice().sort(function (a, b) { return String(b.updated_at || "").localeCompare(String(a.updated_at || "")); })[0];
     function average(field) {
@@ -1741,10 +1755,10 @@
   }
   function ratingSummaryHtml(item, compact) {
     if (!item) return "<p class='rating-empty'>暂无评分</p>";
+    if (!ratingIsUnlocked(item)) return ratingUnlockHtml(item);
     var avg = ratingAverage(item);
     if (!isFinite(avg)) return "<p class='rating-empty'>暂无评分</p>";
-    var countLabel = Number(item.user_count) + (ratingDemoMode() ? " 人模拟评分" : " 人评分");
-    var html = "<div class='rating-summary'><span class='rating-stars'>" + ratingStars(avg) + "</span><strong class='rating-score'>" + ratingScore10(avg) + "</strong><span class='rating-count'>" + countLabel + "</span></div>";
+    var html = "<div class='rating-summary'><span class='rating-stars'>" + ratingStars(avg) + "</span><strong class='rating-score'>" + ratingScore10(avg) + "</strong><span class='rating-count'>" + ratingCountLabel(item) + "</span>" + ratingTrustHtml(item) + "</div>";
     html += "<div class='rating-dimension-list'>";
     [["唱", item.singing_avg], ["演", item.acting_avg], ["跳", item.dancing_avg]].forEach(function (row) {
       var value = Number(row[1]);
@@ -1754,35 +1768,42 @@
   }
   function ratingBriefHtml(item) {
     if (!item) return "<p class='rating-empty'>暂无评分</p>";
+    if (!ratingIsUnlocked(item)) return ratingUnlockHtml(item);
     var avg = ratingAverage(item);
     if (!isFinite(avg)) return "<p class='rating-empty'>暂无评分</p>";
-    return "<div class='rating-summary'><span class='rating-stars'>" + ratingStars(avg) + "</span><strong class='rating-score'>" + ratingScore10(avg) + "</strong></div>";
+    return "<div class='rating-summary'><span class='rating-stars'>" + ratingStars(avg) + "</span><strong class='rating-score'>" + ratingScore10(avg) + "</strong><span class='rating-count'>" + ratingCountLabel(item) + "</span>" + ratingTrustHtml(item) + "</div>";
   }
   function ratingDashboardHtml(item) {
+    if (!item) return "<div class='rating-dashboard-locked'><p class='rating-empty'>暂无评分</p></div>";
+    if (!ratingIsUnlocked(item)) return "<div class='rating-dashboard-locked'>" + ratingUnlockHtml(item) + "</div>";
     var dimensions = [["唱", "singing_avg"], ["演", "acting_avg"], ["跳", "dancing_avg"]];
     var rows = dimensions.map(function (dimension) {
-      var value = item && Number(item[dimension[1]]);
+      var raw = item[dimension[1]], value = raw == null ? NaN : Number(raw);
       if (!isFinite(value)) return "<div class='rating-dashboard-dimension'><b>" + dimension[0] + "</b><span class='rating-empty'>暂无</span></div>";
       return "<div class='rating-dashboard-dimension'><b>" + dimension[0] + "</b><span class='rating-stars'>" + ratingStars(value) + "</span><strong>" + ratingScore10(value) + "</strong></div>";
     }).join("");
     var avg = ratingAverage(item);
-    var countLabel = item ? Number(item.user_count) + (ratingDemoMode() ? " 人模拟评分" : " 人评分") : "";
+    var countLabel = ratingCountLabel(item);
     var overall = isFinite(avg)
-      ? "<strong class='rating-dashboard-score'>" + ratingScore10(avg) + "</strong><span class='rating-stars'>" + ratingStars(avg) + "</span><span class='rating-dashboard-count'>" + countLabel + "</span>"
+      ? "<strong class='rating-dashboard-score'>" + ratingScore10(avg) + "</strong><span class='rating-stars'>" + ratingStars(avg) + "</span><span class='rating-dashboard-count'>" + countLabel + "</span>" + ratingTrustHtml(item)
       : "<span class='rating-empty'>暂无评分</span>";
     return "<div class='rating-dashboard-dimensions'>" + rows + "</div><div class='rating-dashboard-overall'>" + overall + "</div>";
   }
   function ratingRolePreviewHtml(id) {
-    var preview = (actorRoleOptions[id] || []).map(function (option) {
+    var all = (actorRoleOptions[id] || []).map(function (option) {
       var item = ratingsByRole[ratingRoleKey(id, option.musicalId, option.roleId)];
       var avg = ratingAverage(item);
-      return item && isFinite(avg) ? { option: option, avg: avg, count: Number(item.user_count) || 0 } : null;
-    }).filter(Boolean).sort(function (a, b) { return b.avg - a.avg || b.count - a.count; }).slice(0, 3);
+      return item ? { option: option, avg: avg, count: ratingUserCount(item), unlocked: ratingIsUnlocked(item) } : null;
+    }).filter(Boolean);
+    var preview = all.filter(function (entry) { return entry.unlocked; }).sort(function (a, b) { return b.avg - a.avg || b.count - a.count; }).slice(0, 3);
+    var pending = all.filter(function (entry) { return !entry.unlocked && entry.count > 0; }).sort(function (a, b) { return b.count - a.count; }).slice(0, 3);
     var list = preview.length
       ? "<ol class='rating-role-preview-list'>" + preview.map(function (entry, index) {
-        return "<li><b>Top" + (index + 1) + "</b><span>《" + escHtml(entry.option.musicalName) + "》/ " + escHtml(entry.option.roleName) + "</span><strong>" + ratingScore10(entry.avg) + "</strong></li>";
+        return "<li><b>Top" + (index + 1) + "</b><span>《" + escHtml(entry.option.musicalName) + "》/ " + escHtml(entry.option.roleName) + "</span><strong>" + ratingScore10(entry.avg) + "</strong>" + (entry.count < RATING_STABLE_COUNT ? "<span class='rating-sample-note'>样本较少</span>" : "") + "</li>";
       }).join("") + "</ol>"
-      : "<p class='rating-empty'>暂无公开角色评分</p>";
+      : (pending.length ? "<ol class='rating-role-preview-list rating-role-preview-pending'>" + pending.map(function (entry) {
+        return "<li><span>《" + escHtml(entry.option.musicalName) + "》/ " + escHtml(entry.option.roleName) + "</span><small>已有 " + entry.count + " 人评价，还差 " + (RATING_UNLOCK_COUNT - entry.count) + " 人解锁</small></li>";
+      }).join("") + "</ol>" : "<p class='rating-empty'>暂无公开角色评分</p>");
     return "<h4>演员角色详细评分</h4>" + list + "<button id='rating-details-open' class='rating-role-preview-more' type='button'>展开更多</button>";
   }
   function renderFocusRating(id) {
@@ -1812,13 +1833,13 @@
   function ratingRoleDetailHtml(id, option, ownRow) {
     var item = ratingsByRole[ratingRoleKey(id, option.musicalId, option.roleId)];
     var audience = "<section class='rating-detail-panel rating-detail-audience'><div class='rating-detail-panel-head'><span>观众评分</span></div>";
-    if (!item) {
-      audience += "<p class='rating-empty'>评分人数不足，暂不展示</p>";
+    if (!item || !ratingIsUnlocked(item)) {
+      audience += ratingUnlockHtml(item);
     } else {
       var avg = ratingAverage(item);
       var rows = [["唱", item.singing_avg], ["演", item.acting_avg], ["跳", item.dancing_avg]].map(function (row) {
-        var value = Number(row[1]);
-        return "<span>" + row[0] + " " + ratingScore10(value) + "</span>";
+        var value = row[1] == null ? NaN : Number(row[1]);
+        return "<span>" + row[0] + " " + (isFinite(value) ? ratingScore10(value) : "暂无") + "</span>";
       }).join("");
       audience += "<div class='rating-detail-overall'><span class='rating-stars'>" + ratingStars(avg) + "</span><strong>" + ratingScore10(avg) + "</strong><small>" + Number(item.user_count) + (ratingDemoMode() ? " 人模拟评分" : " 人评分") + "</small></div><div class='rating-detail-dimensions'>" + rows + "</div>";
     }
@@ -1885,6 +1906,9 @@
   function actorRatingScoreCardHtml(kind, item, ownRow, id, option) {
     var isMine = kind === "mine";
     if (isMine && !ownRow) return "";
+    if (!isMine && item && !ratingIsUnlocked(item)) {
+      return "<section class='actor-rating-score-card actor-rating-" + kind + "'><div class='actor-rating-card-head'><span>观众评分</span></div>" + ratingUnlockHtml(item, "actor-rating-lock") + "</section>";
+    }
     var values = isMine
       ? [ownRow.singing_score, ownRow.acting_score, ownRow.dancing_score]
       : item ? [item.singing_avg, item.acting_avg, item.dancing_avg] : [];
@@ -1896,7 +1920,7 @@
     var metrics = [["唱", values[0]], ["演", values[1]], ["跳", values[2]]].filter(function (row) { return row[1] != null; }).map(function (row) {
       return "<span>" + row[0] + " " + ratingScore10(Number(row[1])) + "</span>";
     }).join("");
-    var count = !isMine && item ? "<small>" + Number(item.user_count) + (ratingDemoMode() ? " 人模拟评分" : " 人评分") + "</small>" : "";
+    var count = !isMine && item ? "<small>" + ratingCountLabel(item) + "</small>" + ratingTrustHtml(item) : "";
     var ownCount = isMine ? Number(ownRow.performance_count) || 1 : 0;
     var ownNote = ownCount > 1 ? "<small>基于 " + ownCount + " 场评分</small>" : "";
     var edit = isMine ? "<button type='button' class='actor-rating-edit' data-rating-key='" + escHtml(ratingRoleKey(id, option.musicalId, option.roleId)) + "' title='编辑最近一场评分' aria-label='编辑最近一场评分'><svg viewBox='0 0 24 24' width='17' height='17' aria-hidden='true' focusable='false'><path d='M12 20h9' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round'/><path d='M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/></svg></button>" : "";
@@ -1921,7 +1945,7 @@
       (actorRoleOptions[id] || []).forEach(function (option) { (byMusical[option.musicalId] = byMusical[option.musicalId] || []).push(option); });
       var orderedOptions = Object.keys(byMusical).reduce(function (all, mid) { return all.concat(byMusical[mid]); }, []).sort(function (a, b) {
         var aItem = ratingsByRole[ratingRoleKey(id, a.musicalId, a.roleId)], bItem = ratingsByRole[ratingRoleKey(id, b.musicalId, b.roleId)];
-        var aScore = aItem ? ratingAverage(aItem) : -1, bScore = bItem ? ratingAverage(bItem) : -1;
+        var aScore = ratingIsUnlocked(aItem) ? ratingAverage(aItem) : -1, bScore = ratingIsUnlocked(bItem) ? ratingAverage(bItem) : -1;
         return bScore - aScore;
       });
       content.innerHTML = "<div class='actor-role-card-grid'>" + orderedOptions.map(function (option) {

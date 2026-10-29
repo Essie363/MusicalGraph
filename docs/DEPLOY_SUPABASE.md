@@ -68,9 +68,9 @@ create index if not exists idx_moments_actor on moments(actor_id);
 
 3. 再执行下面的 `submissions` 表与安全对象。
 
-4. 要启用演员评分与邮箱登录，继续执行 [`supabase_auth_ratings.sql`](supabase_auth_ratings.sql)，再执行 [`supabase_rpc_graph.sql`](supabase_rpc_graph.sql)。匿名评分使用浏览器本地随机 `client_id`，不是硬件设备 ID；用户在同一浏览器登录后，匿名评分会自动归并到 `auth.uid()` 账号。相同评分对象与场次发生冲突时，保留更新时间较晚的一份。不同场次分别保存；公开汇总会先取该用户在同一角色的多场均值，再按每位用户一票计算。
+4. 要启用演员评分与邮箱登录，继续执行 [`supabase_auth_ratings.sql`](supabase_auth_ratings.sql)，再执行 [`supabase_rating_risk.sql`](supabase_rating_risk.sql)、[`supabase_rating_unlock.sql`](supabase_rating_unlock.sql) 和 [`supabase_rpc_graph.sql`](supabase_rpc_graph.sql)。匿名评分使用浏览器本地随机 `client_id`，不是硬件设备 ID；用户在同一浏览器登录后，匿名评分会自动归并到 `auth.uid()` 账号。相同评分对象与场次发生冲突时，保留更新时间较晚的一份。不同场次分别保存；公开汇总会先取该用户在同一角色的多场均值，再按每位用户一票计算。未满 5 人时只公开参与人数，满 5 人后公开分数，满 10 人后不再标记为小样本。
 
-> 已经配置过评分功能的项目，只需额外执行 [`supabase_claim_anonymous_ratings.sql`](supabase_claim_anonymous_ratings.sql)，不必重跑整份评分建表脚本。
+> 已经配置过评分功能的项目，只需执行 [`supabase_rating_unlock.sql`](supabase_rating_unlock.sql) 更新公开门槛；匿名评分尚未支持登录归并时，再执行 [`supabase_claim_anonymous_ratings.sql`](supabase_claim_anonymous_ratings.sql)。
 
 5. 邮箱登录需要在 Supabase Dashboard 的 Authentication 中启用 Email OTP，并配置 Brevo SMTP。SMTP 密钥只填写在 Supabase Dashboard，不要写入前端文件或仓库。
 

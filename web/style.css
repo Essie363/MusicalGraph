@@ -2094,6 +2094,11 @@ a.mom-title:hover { color: var(--text-primary); }   /* 精彩片段标题悬停�
 #fc-rate:hover { background: #303030; }
 #fc-rate:active { background: #1f1f1f; }
 .rating-empty { color: var(--text-tertiary); font-size: 12px; line-height: 1.6; }
+.rating-unlock-status { margin: 0; color: var(--text-secondary); font-size: 12px; line-height: 1.65; }
+.rating-unlock-status span { display: block; color: var(--text-tertiary); }
+.rating-sample-note { color: var(--text-tertiary); font-size: 11px; font-weight: 400; white-space: nowrap; }
+.rating-dashboard-locked { display: flex; align-items: center; min-height: 72px; }
+.actor-rating-lock { margin: 14px 0 6px; }
 .rating-summary { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
 .rating-stars { color: #dfbf69; letter-spacing: .04em; font-size: 14px; white-space: nowrap; }
 .rating-star { display: inline-block; position: relative; font-style: normal; letter-spacing: 0; color: #dfbf69; }

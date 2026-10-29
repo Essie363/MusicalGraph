@@ -120,7 +120,7 @@ function check(name, cond, extra) {
   await openActor("郑云龙");
   check("详情页打开", await page.$eval("#actor-view", el => !el.classList.contains("hidden")));
   check("静态模式详情评分模块存在", await page.$eval("#ap-rating-body", el =>
-    !!el.querySelector(".rating-dashboard-dimensions") && !!el.querySelector(".rating-dashboard-overall")
+    !!el.querySelector(".rating-dashboard-dimensions") || !!el.querySelector(".rating-dashboard-locked")
   ));
   check("静态模式详情评分入口隐藏", await page.$eval("#ap-rate", el => el.classList.contains("hidden")));
 
@@ -206,6 +206,30 @@ function check(name, cond, extra) {
   await page.click("#rating-submit");
   await page.waitForTimeout(100);
   check("手动补充调用独立评分 RPC", await page.evaluate(() => window.__ratingRpcCalls.some(x => x.url.includes("upsert_manual_actor_rating") && x.body.p_musical_name === "未收录测试剧目" && x.body.p_role_name === "未收录测试角色" && x.body.p_session_period === "night" && x.body.p_singing_score === 4.5 && x.body.p_acting_score === 5 && typeof x.body.p_device_id === "string" && x.body.p_device_id.length > 0)));
+
+  console.log("== 评分公开门槛 ==");
+  await page.evaluate(() => {
+    const actorId = window.__apCenterId();
+    window.MG_UPGRADE(Object.assign({}, window.MUSIC_GRAPH, {
+      actorRoleOptions: { [actorId]: [{ musicalId: "100", musicalName: "测试剧目", roleId: "200", roleName: "测试角色" }] },
+      ratings: {
+        actors: [{ actor_id: actorId, user_count: 4, singing_avg: null, acting_avg: null, dancing_avg: null }],
+        roles: [{ actor_id: actorId, musical_id: "100", role_id: "200", user_count: 4, singing_avg: null, acting_avg: null, dancing_avg: null }]
+      }
+    }));
+  });
+  check("未满 5 人隐藏分数并显示解锁进度", await page.$eval("#ap-rating-body", el => el.textContent.includes("已有 4 人评价") && el.textContent.includes("还差 1 人解锁评分") && !el.textContent.includes("9.0")));
+  await page.evaluate(() => {
+    const actorId = window.__apCenterId();
+    window.MG_UPGRADE(Object.assign({}, window.MUSIC_GRAPH, {
+      actorRoleOptions: { [actorId]: [{ musicalId: "100", musicalName: "测试剧目", roleId: "200", roleName: "测试角色" }] },
+      ratings: {
+        actors: [{ actor_id: actorId, user_count: 5, singing_avg: 4.5, acting_avg: 4.3, dancing_avg: 4.1 }],
+        roles: [{ actor_id: actorId, musical_id: "100", role_id: "200", user_count: 5, singing_avg: 4.5, acting_avg: 4.3, dancing_avg: 4.1 }]
+      }
+    }));
+  });
+  check("满 5 人展示分数并标记样本较少", await page.$eval("#ap-rating-body", el => el.textContent.includes("9.0") && el.textContent.includes("5 人评价") && el.textContent.includes("样本较少")));
 
   check("详情页姓名", (await page.textContent("#ap-name")) === "郑云龙", await page.textContent("#ap-name"));
   check("关系列表有内容", await page.$$eval("#ap-relations li", els => els.length) >= 1);
