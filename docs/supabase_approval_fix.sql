@@ -140,10 +140,13 @@ begin
     for item in select value from jsonb_array_elements(d) loop
       if item.value->>'date' is null then continue; end if;
       insert into shows(date, time, city, musical, theatre)
-      values (item.value->>'date', item.value->>'time', item.value->>'city', item.value->>'musical', item.value->>'theatre')
-      on conflict (date, time, city, musical, theatre) do nothing
+      values (coalesce(item.value->>'date',''), coalesce(item.value->>'time',''),
+              coalesce(item.value->>'city',''), coalesce(item.value->>'musical',''),
+              coalesce(item.value->>'theatre',''))
+      on conflict (date, time, city, musical, theatre) do update
+        set date = excluded.date
       returning id into sid;
-      if sid is not null and jsonb_typeof(item.value->'cast') = 'array' then
+      if jsonb_typeof(item.value->'cast') = 'array' then
         for c in select value from jsonb_array_elements(item.value->'cast') loop
           select id into aid2 from artists where name = c.value->>'actor' order by id limit 1;
           if aid2 is null then insert into artists(name) values (c.value->>'actor') returning id into aid2; end if;

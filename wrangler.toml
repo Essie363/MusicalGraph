@@ -1,5 +1,23 @@
 name = "musicalgraph"
 compatibility_date = "2026-08-29"
+main = "./worker/index.mjs"
 
 # 把 web/ 目录作为 Worker 静态资源发布，保持现有 workers.dev 地址不变
-assets = { directory = "./web", not_found_handling = "single-page-application" }
+[assets]
+directory = "./web"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*"]
+
+[ai]
+binding = "AI"
+
+[secrets]
+required = ["SUPABASE_URL", "SUPABASE_SERVICE_KEY", "FEEDBACK_REVIEW_TOKEN"]
+
+# 每天北京时间 09:00（UTC 01:00）整理待审核反馈；正式部署前先执行 SQL 并配置 Secrets。
+[triggers]
+crons = ["0 1 * * *"]
+
+[observability]
+enabled = true

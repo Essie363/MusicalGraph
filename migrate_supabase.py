@@ -23,6 +23,9 @@ Design: stdlib only (urllib), batch inserts, preserves SQLite ids so
 foreign keys stay valid. Tables import in dependency order.
 Idempotent-ish: uses upsert (Prefer: resolution=merge-duplicates) on tables
 with primary keys; simple insert for join tables.
+
+This command is for initial migration/manual repair only. Daily Actions must use
+sync_supabase_daily.py so reviewed online fields are never overwritten.
 """
 import json
 import os
@@ -93,7 +96,7 @@ def load_env():
     env = {}
     p = BASE / ".env"
     if p.exists():
-        for line in p.read_text(encoding="utf-8").splitlines():
+        for line in p.read_text(encoding="utf-8-sig").splitlines():
             line = line.strip()
             if not line or line.startswith("#") or "=" not in line:
                 continue

@@ -3,3 +3,4 @@ drop policy if exists "anon insert submissions" on submissions;
 create policy "anon insert submissions" on submissions
   for insert to anon with check (true);
 grant insert on submissions to anon;
+grant usage, select on sequence submissions_id_seq to anon;

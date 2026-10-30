@@ -64,7 +64,9 @@ create index if not exists idx_actor_roles_musical on actor_roles(musical_id);
 
 create table if not exists shows (
   id serial primary key,
-  date text, time text, city text, musical text, theatre text,
+  date text not null default '', time text not null default '',
+  city text not null default '', musical text not null default '',
+  theatre text not null default '',
   unique(date,time,city,musical,theatre)
 );
 create index if not exists idx_shows_date on shows(date);
@@ -72,7 +74,8 @@ create index if not exists idx_shows_date on shows(date);
 create table if not exists show_casts (
   show_id integer references shows(id),
   artist_id integer references artists(id),
-  role text
+  role text not null default '',
+  unique(show_id, artist_id, role)
 );
 create index if not exists idx_show_casts_show on show_casts(show_id);
 create index if not exists idx_show_casts_artist on show_casts(artist_id);
@@ -300,10 +303,13 @@ begin
     for item in select value from jsonb_array_elements(new.details) loop
       if item.value->>'date' is null then continue; end if;
       insert into shows(date, time, city, musical, theatre)
-      values (item.value->>'date', item.value->>'time', item.value->>'city', item.value->>'musical', item.value->>'theatre')
-      on conflict (date, time, city, musical, theatre) do nothing
+      values (coalesce(item.value->>'date',''), coalesce(item.value->>'time',''),
+              coalesce(item.value->>'city',''), coalesce(item.value->>'musical',''),
+              coalesce(item.value->>'theatre',''))
+      on conflict (date, time, city, musical, theatre) do update
+        set date = excluded.date
       returning id into sid;
-      if sid is not null and jsonb_typeof(item.value->'cast') = 'array' then
+      if jsonb_typeof(item.value->'cast') = 'array' then
         for c in select value from jsonb_array_elements(item.value->'cast') loop
           select id into aid2 from artists where name = c.value->>'actor' order by id limit 1;
           if aid2 is null then

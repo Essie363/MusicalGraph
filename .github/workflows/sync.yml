@@ -1,6 +1,6 @@
 name: Daily Data Sync
 
-# 每日自动同步：抓取 y.saoju.net 演出排期 → 重算共演边 → 刷新网页数据（data.js / 快照 CSV）
+# 每日自动同步：抓取 y.saoju.net 演出排期 → 安全合并到 Supabase → 重算共演边 → 刷新静态数据
 # 北京时间每日 06:00 运行（UTC 22:00）；也可在 Actions 页手动 Run workflow
 on:
   schedule:
@@ -58,7 +58,8 @@ jobs:
           if [ "${{ inputs.identity_recovery }}" = "true" ]; then
             python migrate_supabase.py --identity-recovery
           else
-            python migrate_supabase.py
+            # 日常只追加 API 数据，保留线上人工审核结果与人工维护字段。
+            python sync_supabase_daily.py
           fi
 
       - name: Commit & push updates

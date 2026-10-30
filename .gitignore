@@ -64,5 +64,6 @@ merge_baike.py
 save_profiles_0_1.py
 # Cloudflare Wrangler cache (not committed)
 .wrangler/
+.dev.vars*
 # Supabase CLI local temp (not committed)
 supabase/.temp/
